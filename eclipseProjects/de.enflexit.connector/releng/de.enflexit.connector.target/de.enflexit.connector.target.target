@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<target includeMode="feature" name="de.enflexit.connector.target" sequenceNumber="74">
+	<locations>
+		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+			<repository location="https://p2.enflex.it/awb/snapshots/"/>
+			<unit id="de.enflexit.common.feature.feature.group" version="2.1.11.202311300816"/>
+			<unit id="org.agentgui.feature.feature.group" version="2.3.1.202311300818"/>
+		</location>
+		<location includeDependencyDepth="infinite" includeDependencyScopes="compile,runtime" includeSource="true" missingManifest="generate" type="Maven">
+			<dependencies>
+				<dependency>
+					<groupId>com.hivemq</groupId>
+					<artifactId>hivemq-mqtt-client</artifactId>
+					<version>1.3.0</version>
+					<type>jar</type>
+				</dependency>
+			</dependencies>
+		</location>
+	</locations>
+</target>

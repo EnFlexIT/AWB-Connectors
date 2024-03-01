@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.enflexit.connector</groupId>
+    <artifactId>de.enflexit.connector.releng</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>de.enflexit.connector</groupId>
+        <artifactId>de.enflexit.connector.root</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <modules>
+      <module>de.enflexit.connector.configuration</module>
+      <module>de.enflexit.connector.target</module>
+      <module>de.enflexit.connector.update</module> 
+    </modules>
+</project>
