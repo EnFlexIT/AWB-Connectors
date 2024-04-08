@@ -22,7 +22,7 @@ public class MQTTConnector {
 	
 	private MqttClient client;
 	
-	private MQTTConfiguration configuraiton;
+	private ConnectorConfigurationMQTT configuraiton;
 	
 	/**
 	 * Instantiates a new MQTT connector, using the default configuration.
@@ -37,7 +37,7 @@ public class MQTTConnector {
 	 * @param clientID the client ID
 	 * @param configuraiton the configuraiton
 	 */
-	public MQTTConnector(String clientID, MQTTConfiguration configuraiton) {
+	public MQTTConnector(String clientID, ConnectorConfigurationMQTT configuraiton) {
 		this.clientID = clientID;
 		this.configuraiton = configuraiton;
 	}
@@ -52,7 +52,7 @@ public class MQTTConnector {
 				System.err.println("[" + this.getClass().getSimpleName() + "] MQTT configuration not specified!");
 				return null;
 			}
-			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.clientID).serverHost(this.configuraiton.getBrokerURL()).serverPort(this.configuraiton.getBrokerPort());
+			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.clientID).serverHost(this.configuraiton.getUrlOrIP()).serverPort(this.configuraiton.getPort());
 			switch(this.configuraiton.getMqttVersion()) {
 			case MQTT_3_1_1:
 				client = clientBuilder.useMqttVersion3().build().toBlocking();
@@ -147,10 +147,10 @@ public class MQTTConnector {
 		
 	}
 	
-	public static MQTTConfiguration getDefaultConfiguration() {
-		MQTTConfiguration defaultConfiguratin = new MQTTConfiguration();
-		defaultConfiguratin.setBrokerURL("localhost");
-		defaultConfiguratin.setBrokerPort(1883);
+	public static ConnectorConfigurationMQTT getDefaultConfiguration() {
+		ConnectorConfigurationMQTT defaultConfiguratin = new ConnectorConfigurationMQTT();
+		defaultConfiguratin.setUrlOrIP("localhost");
+		defaultConfiguratin.setPort(1883);
 		defaultConfiguratin.setMqttVersion(MqttVersion.MQTT_3_1_1);
 		return defaultConfiguratin;
 	}

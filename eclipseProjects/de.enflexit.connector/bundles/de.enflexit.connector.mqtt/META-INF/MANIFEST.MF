@@ -8,7 +8,8 @@ Export-Package: de.enflexit.connector.mqtt
 Require-Bundle: com.hivemq.client.mqtt;bundle-version="1.3.0",
  de.enflexit.common,
  org.agentgui.lib.jade,
- org.agentgui.core
+ org.agentgui.core,
+ de.enflexit.connector.core
 Automatic-Module-Name: de.enflexit.connector.mqtt
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-11

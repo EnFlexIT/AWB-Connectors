@@ -19,9 +19,9 @@ public class MqttTestAgent extends Agent {
 	
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			MQTTConfiguration mqttConfig = new MQTTConfiguration();
-			mqttConfig.setBrokerURL("localhost");
-			mqttConfig.setBrokerPort(1883);
+			ConnectorConfigurationMQTT mqttConfig = new ConnectorConfigurationMQTT();
+			mqttConfig.setUrlOrIP("localhost");
+			mqttConfig.setPort(1883);
 			mqttConfig.setMqttVersion(MqttVersion.MQTT_3_1_1);
 			mqttConnector = new MQTTConnector(this.getLocalName(), mqttConfig);
 		}
