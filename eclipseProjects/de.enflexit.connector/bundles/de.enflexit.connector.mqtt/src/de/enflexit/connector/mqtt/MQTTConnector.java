@@ -16,31 +16,15 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 
-public class MQTTConnector {
+import de.enflexit.connector.core.AbstractConnector;
+
+public class MQTTConnector extends AbstractConnector {
 	
 	private String clientID;
 	
 	private MqttClient client;
 	
 	private ConnectorConfigurationMQTT configuraiton;
-	
-	/**
-	 * Instantiates a new MQTT connector, using the default configuration.
-	 * @param clientID the client ID
-	 */
-	public MQTTConnector(String clientID) {
-		this(clientID, MQTTConnector.getDefaultConfiguration());
-	}
-
-	/**
-	 * Instantiates a new MQTT connector, using the provided configuration.
-	 * @param clientID the client ID
-	 * @param configuraiton the configuraiton
-	 */
-	public MQTTConnector(String clientID, ConnectorConfigurationMQTT configuraiton) {
-		this.clientID = clientID;
-		this.configuraiton = configuraiton;
-	}
 
 	/**
 	 * Gets the MQTT client instance.
@@ -65,10 +49,10 @@ public class MQTTConnector {
 		return client;
 	}
 	
-	/**
-	 * Connects to the specified MQTT broker.
-	 * @return true, if successful
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#connect()
 	 */
+	@Override
 	public boolean connect() {
 		switch (this.configuraiton.getMqttVersion()) {
 		case MQTT_3_1_1:
@@ -190,6 +174,7 @@ public class MQTTConnector {
 		}
 		
 	}
+
 	
 	
 }

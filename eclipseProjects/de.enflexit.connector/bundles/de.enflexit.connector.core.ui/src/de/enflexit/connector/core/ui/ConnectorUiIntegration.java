@@ -10,14 +10,19 @@ import javax.swing.JButton;
 import org.agentgui.gui.swing.MainWindowExtension;
 
 import agentgui.core.application.Application;
+import de.enflexit.connector.core.ConnectorManager;
 
-public class ConnectorManagerUiIntegration extends MainWindowExtension implements ActionListener {
+/**
+ * This class implements the UI integration for the {@link ConnectorManager} into the AWB:
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
+public class ConnectorUiIntegration extends MainWindowExtension implements ActionListener {
 	
 	private enum IntegrationType {
 		APPLICATION, TRAY_ICON, NONE
 	}
 	
-	private static final String ICON_PATH = "/icons/LanPlug_16x16.png";
+	private static final String ICON_PATH = "/icons/Connection.png";
 	
 	private JButton toolbarButton;
 	private MenuItem trayIconMenuItem;
@@ -30,12 +35,12 @@ public class ConnectorManagerUiIntegration extends MainWindowExtension implement
 		switch (this.getIntegrationType()) {
 		case APPLICATION:
 			// --- Tool bar and tray icon menu ------------
-			this.addToolbarComponent(this.getToolbarButton(), 9, SeparatorPosition.NoSeparator);
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, SeparatorPosition.NoSeparator);
+			this.addToolbarComponent(this.getToolbarButton(), null, null);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), null, null);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, SeparatorPosition.NoSeparator);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), null, null);
 			break;
 		case NONE:
 			// --- Nothing to do here ---------------------
@@ -73,11 +78,16 @@ public class ConnectorManagerUiIntegration extends MainWindowExtension implement
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
-	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
-		
+	public void actionPerformed(ActionEvent ae) {
+		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getTrayIconMenuItem()) {
+			new ConnectorManagerDialog().setVisible(true);
+		}
 	}
 	
+	/**
+	 * Gets the integration type.
+	 * @return the integration type
+	 */
 	private IntegrationType getIntegrationType() {
 		IntegrationType integrationType = null;
 		
@@ -110,5 +120,5 @@ public class ConnectorManagerUiIntegration extends MainWindowExtension implement
 		
 		return integrationType;
 	}
-
+	
 }

@@ -2,20 +2,41 @@ package de.enflexit.connector.mqtt;
 
 import com.hivemq.client.mqtt.MqttVersion;
 
-import de.enflexit.connector.core.AbstractConfiguration;
+import de.enflexit.common.properties.Properties;
+import de.enflexit.connector.core.ConnectorConfiguration;
 
 /**
  * This class specifies the configuration of a MQTT connection.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorConfigurationMQTT extends AbstractConfiguration {
+public class ConnectorConfigurationMQTT extends ConnectorConfiguration {
+	
+	public static final String PROPERTY_MQTT_VERSION = "Mqtt.version";
 	
 	public enum QosLevel {
 		AtMaxOnce, AtLeastOnce, ExactlyOnce
 	}
 	
+	private static final int MQTT_DEFAULT_PORT = 1883;
+	
+	private String clientID;
 	private MqttVersion mqttVersion;
-
+	
+	/**
+	 * Gets the client ID.
+	 * @return the client ID
+	 */
+	public String getClientID() {
+		return clientID;
+	}
+	
+	/**
+	 * Sets the client ID.
+	 * @param clientID the new client ID
+	 */
+	public void setClientID(String clientID) {
+		this.clientID = clientID;
+	}
 	/**
 	 * Gets the configured MQTT version.
 	 * @return the mqtt version
@@ -31,19 +52,14 @@ public class ConnectorConfigurationMQTT extends AbstractConfiguration {
 		this.mqttVersion = mqttVersion;
 	}
 	
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.ConnectorConfigurationBase#getDefaultPort()
-	 */
 	@Override
-	public int getDefaultPort() {
-		return 1883;
-	}
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.ConnectorConfigurationBase#getDefaultPortSecured()
-	 */
-	@Override
-	public int getDefaultPortSecured() {
-		return 8883;
+	public Properties getInitialProperties() {
+		Properties properties = new Properties();
+		properties.setStringValue(ConnectorConfiguration.PROPERTY_SERVER_HOST, "localhost");
+		properties.setIntegerValue(ConnectorConfiguration.PROPERTY_SERVER_PORT, MQTT_DEFAULT_PORT);
+		properties.setStringValue(PROPERTY_MQTT_VERSION, MqttVersion.MQTT_5_0.toString());
+		
+		return properties;
 	}
 	
 }

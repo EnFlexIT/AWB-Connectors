@@ -4,7 +4,9 @@ Bundle-Name: Core
 Bundle-SymbolicName: de.enflexit.connector.core
 Bundle-Version: 1.0.0.qualifier
 Export-Package: de.enflexit.connector.core
-Require-Bundle: org.agentgui.core
+Require-Bundle: de.enflexit.common,
+ org.agentgui.core
 Bundle-Vendor: EnFlex.IT
 Automatic-Module-Name: de.enflexit.connector.core
+Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-11
