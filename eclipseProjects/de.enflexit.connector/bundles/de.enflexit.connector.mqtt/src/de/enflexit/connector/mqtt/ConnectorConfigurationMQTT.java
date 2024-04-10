@@ -18,9 +18,18 @@ public class ConnectorConfigurationMQTT extends ConnectorConfiguration {
 	}
 	
 	private static final int MQTT_DEFAULT_PORT = 1883;
-	
+
 	private String clientID;
 	private MqttVersion mqttVersion;
+	
+	public static ConnectorConfigurationMQTT fromProperties(MqttConnectorProperties properties) {
+		ConnectorConfigurationMQTT config = new ConnectorConfigurationMQTT();
+		config.setUrlOrIP(properties.getStringValue(PROPERTY_SERVER_HOST));
+		config.setPort(properties.getIntegerValue(PROPERTY_SERVER_PORT));
+		config.setClientID(properties.getStringValue(MqttConnectorProperties.PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER));
+		config.setMqttVersion(MqttVersion.valueOf(properties.getStringValue(PROPERTY_MQTT_VERSION)));
+		return config;
+	}
 	
 	/**
 	 * Gets the client ID.

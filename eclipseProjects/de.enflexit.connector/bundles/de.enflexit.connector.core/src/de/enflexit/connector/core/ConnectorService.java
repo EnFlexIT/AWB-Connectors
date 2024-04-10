@@ -18,10 +18,10 @@ public interface ConnectorService {
 	 * @return the new connector instance
 	 */
 	public AbstractConnector getNewConnectorInstance();
-	
+
 	/**
-	 * Gets a new instance of the relevant configuration class for the protocol
-	 * @return the new configuration instance
+	 * Gets an initial set of properties, that should specify keys for all required/expected settings, and provide reasonable default values if possible. 
+	 * @return the initial properties
 	 */
-	public ConnectorConfiguration getNewConfigurationInstance();
+	public AbstractConnectorProperties getInitialProperties();
 }

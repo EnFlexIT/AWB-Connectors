@@ -1,11 +1,24 @@
 package de.enflexit.connector.core;
 
+
+/**
+ * Abstract superclass for connectors to different communication protocols.
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
 public abstract class AbstractConnector {
-	
-	private ConnectorConfiguration connectorConfiguration;
 	
 	protected ConnectorManager connectorManager;
 	
+	private AbstractConnectorProperties connectorProperties;
+	
+	public AbstractConnectorProperties getConnectorProperties() {
+		return connectorProperties;
+	}
+
+	public void setConnectorProperties(AbstractConnectorProperties connectorProperties) {
+		this.connectorProperties = connectorProperties;
+	}
+
 	/**
 	 * Establishes the connection.
 	 * @return true, if successful
@@ -18,19 +31,11 @@ public abstract class AbstractConnector {
 	public abstract void disconnect();
 	
 	/**
-	 * Gets the connector configuration.
-	 * @return the connector configuration
+	 * Sets the connector manager.
+	 * @param connectorManager the new connector manager
 	 */
-	public ConnectorConfiguration getConnectorConfiguration() {
-		return connectorConfiguration;
-	}
-	
-	/**
-	 * Sets the connector configuration.
-	 * @param connectorConfiguration the new connector configuration
-	 */
-	public void setConnectorConfiguration(ConnectorConfiguration connectorConfiguration) {
-		this.connectorConfiguration = connectorConfiguration;
+	public void setConnectorManager(ConnectorManager connectorManager) {
+		this.connectorManager = connectorManager;
 	}
 	
 	/**

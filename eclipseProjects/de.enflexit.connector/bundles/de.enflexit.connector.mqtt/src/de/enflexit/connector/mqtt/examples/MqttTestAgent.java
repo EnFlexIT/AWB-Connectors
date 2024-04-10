@@ -27,7 +27,7 @@ public class MqttTestAgent extends Agent {
 			mqttConfig.setClientID(this.getLocalName());
 			mqttConfig.setMqttVersion(MqttVersion.MQTT_3_1_1);
 			mqttConnector = new MQTTConnector();
-			mqttConnector.setConnectorConfiguration(mqttConfig);
+//			mqttConnector.setConnectorConfiguration(mqttConfig);
 		}
 		return mqttConnector;
 	}
