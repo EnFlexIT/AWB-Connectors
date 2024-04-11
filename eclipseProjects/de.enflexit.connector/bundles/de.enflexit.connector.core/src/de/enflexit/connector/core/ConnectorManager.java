@@ -76,6 +76,27 @@ public class ConnectorManager {
 		}
 	}
 	
+	public boolean removeConnector(String connectorName) {
+		AbstractConnector connector = this.getConnector(connectorName);
+		
+		// --- Connector not found ------------------------
+		if (connector==null) return false;
+		
+		// --- Can't delete active connectors -------------
+		if (connector.isConnected()==true) return false;
+		
+		// --- Remove the connector -----------------------
+		this.getAvailableConnectors().remove(connectorName);
+		
+		// --- Notify registered listeners ----------------
+		PropertyChangeEvent removedEvent = new PropertyChangeEvent(this, CONNECTOR_REMOVED, connectorName, null);
+		this.notifyListeners(removedEvent);
+		
+		return true;
+		
+		
+	}
+	
 	/**
 	 * Handle connector events.
 	 * @param connectorEvent the connector event

@@ -30,6 +30,13 @@ public abstract class AbstractConnector {
 	 */
 	public abstract void disconnect();
 	
+	
+	/**
+	 * Checks if this connector instance is currently connected.
+	 * @return 
+	 */
+	public abstract boolean isConnected();
+	
 	/**
 	 * Sets the connector manager.
 	 * @param connectorManager the new connector manager

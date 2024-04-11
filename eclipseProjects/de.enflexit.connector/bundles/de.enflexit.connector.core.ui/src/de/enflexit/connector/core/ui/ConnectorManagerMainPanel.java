@@ -102,17 +102,70 @@ public class ConnectorManagerMainPanel extends JPanel implements ListSelectionLi
 		return connectorsListModel;
 	}
 	
+	/**
+	 * Gets the index of list element.
+	 * @param element the element
+	 * @return the index of list element
+	 */
+	private int getIndexOfListElement(String element) {
+		for (int i=0; i<this.getConnectorsListModel().getSize(); i++) {
+			if (this.getConnectorsListModel().elementAt(i).equals(element)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private JSplitPane getSubSplitPane() {
+		if (subSplitPane == null) {
+			subSplitPane = new JSplitPane();
+			subSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+			subSplitPane.setDividerLocation(100);
+			subSplitPane.setLeftComponent(getCreateConnectionPanel());
+			subSplitPane.setRightComponent(getManageConnectionPanel());
+		}
+		return subSplitPane;
+	}
+
+	private CreateConnectionPanel getCreateConnectionPanel() {
+		if (createConnectionPanel == null) {
+			createConnectionPanel = new CreateConnectionPanel();
+		}
+		return createConnectionPanel;
+	}
+
+	private ManageConnectionPanel getManageConnectionPanel() {
+		if (manageConnectionPanel == null) {
+			manageConnectionPanel = new ManageConnectionPanel();
+		}
+		return manageConnectionPanel;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
 	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
-		if (evt.getSource()==ConnectorManager.getInstance() && evt.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
-			String newConnectorName = (String) evt.getNewValue();
-			this.getConnectorsListModel().addElement(newConnectorName);
+		if (evt.getSource()==ConnectorManager.getInstance()) {
+			
+			if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
+				String newConnectorName = (String) evt.getNewValue();
+				this.getConnectorsListModel().addElement(newConnectorName);
+				int newElementIndex = this.getIndexOfListElement(newConnectorName);
+				if (newElementIndex>=0) {
+					this.getConnectorsList().setSelectedIndex(newElementIndex);
+				}
+			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_REMOVED)) {
+				String removedConnectorName = (String) evt.getOldValue();
+				int elementIndex = this.getIndexOfListElement(removedConnectorName);
+				if (elementIndex>-1) {
+					this.getConnectorsList().clearSelection();
+					this.getConnectorsListModel().remove(elementIndex);
+				}
+				
+			}
 		}
 	}
-
 	/* (non-Javadoc)
 	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
 	 */
@@ -124,26 +177,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ListSelectionLi
 			this.getManageConnectionPanel().setConnector(selectedConnector);
 		}
 	}
-	private JSplitPane getSubSplitPane() {
-		if (subSplitPane == null) {
-			subSplitPane = new JSplitPane();
-			subSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-			subSplitPane.setDividerLocation(100);
-			subSplitPane.setLeftComponent(getCreateConnectionPanel());
-			subSplitPane.setRightComponent(getManageConnectionPanel());
-		}
-		return subSplitPane;
-	}
-	private CreateConnectionPanel getCreateConnectionPanel() {
-		if (createConnectionPanel == null) {
-			createConnectionPanel = new CreateConnectionPanel();
-		}
-		return createConnectionPanel;
-	}
-	private ManageConnectionPanel getManageConnectionPanel() {
-		if (manageConnectionPanel == null) {
-			manageConnectionPanel = new ManageConnectionPanel();
-		}
-		return manageConnectionPanel;
+	protected void dispose() {
+		ConnectorManager.getInstance().removeListener(this);
 	}
 }

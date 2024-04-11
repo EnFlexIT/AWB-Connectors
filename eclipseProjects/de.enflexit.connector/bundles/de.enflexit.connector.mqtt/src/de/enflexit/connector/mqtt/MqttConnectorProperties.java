@@ -14,19 +14,11 @@ public class MqttConnectorProperties extends AbstractConnectorProperties {
 	public static final String PROPERTY_KEY_MQTT_VERSION = "Mqtt.version";
 	public static final String PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER = "Mqtt.clientIdentifier";
 
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.AbstractConnectorProperties#getDefaultPort()
-	 */
-	@Override
-	public int getDefaultPort() {
-		return MQTT_DEFAULT_PORT;
-	}
-	
 	/**
 	 * Populates this instance with default values.
 	 */
 	protected void populateWithDefaultValues() {
-		this.setStringValue(PROPERTY_KEY_CONNECTOR_CLASS, MQTTConnector.class.getName());
+		this.setStringValue(PROPERTY_KEY_CONNECTOR_SERVICE_CLASS, MQTTConnectorService.class.getName());
 		this.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
 		this.setStringValue(PROPERTY_KEY_SERVER_HOST, "localhost");
 		this.setIntegerValue(PROPERTY_KEY_SERVER_PORT, MQTT_DEFAULT_PORT);
