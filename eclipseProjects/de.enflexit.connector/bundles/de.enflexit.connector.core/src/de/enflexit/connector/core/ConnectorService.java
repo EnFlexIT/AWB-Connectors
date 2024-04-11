@@ -1,5 +1,6 @@
 package de.enflexit.connector.core;
 
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * This interface specifies the necessary methods to integrate a communication protocol connector into the {@link ConnectorManager}.

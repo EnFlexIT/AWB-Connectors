@@ -1,9 +1,16 @@
-package de.enflexit.connector.core;
+package de.enflexit.connector.core.manager;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import de.enflexit.common.ServiceFinder;
+import de.enflexit.common.properties.Properties;
+import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.AbstractConnectorProperties;
+import de.enflexit.connector.core.ConnectorService;
 
 /**
  * The ConnectorManager manages all {@link AbstractConnector}s used within one Java VM..
@@ -76,6 +83,11 @@ public class ConnectorManager {
 		}
 	}
 	
+	/**
+	 * Removes the specified connector.
+	 * @param connectorName the connector name
+	 * @return true, if successful
+	 */
 	public boolean removeConnector(String connectorName) {
 		AbstractConnector connector = this.getConnector(connectorName);
 		
@@ -93,15 +105,13 @@ public class ConnectorManager {
 		this.notifyListeners(removedEvent);
 		
 		return true;
-		
-		
 	}
 	
 	/**
 	 * Handle connector events.
 	 * @param connectorEvent the connector event
 	 */
-	protected void onConnectorEvent(ConnectorEvent connectorEvent) {
+	public void onConnectorEvent(ConnectorEvent connectorEvent) {
 		//TODO implement reactions on events.
 	}
 	
@@ -136,10 +146,68 @@ public class ConnectorManager {
 		}
 	}
 	
+	/**
+	 * Notifies the registered listener about an event.
+	 * @param event the event
+	 */
 	private void notifyListeners(PropertyChangeEvent event) {
 		for (PropertyChangeListener listener : listeners) {
 			listener.propertyChange(event);
 		}
 	}
+	
+	/**
+	 * Stores the current configuration to a JSON file.
+	 * @param jsonFile the json file
+	 */
+	public void storeConfigurationToJSON(File jsonFile) {
+		
+		ConnectorPropertiesTreeMap connectorConfiguraitons = new ConnectorPropertiesTreeMap();
+		for (String connectorName : this.getAvailableConnectors().keySet()) {
+			AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
+			connectorConfiguraitons.put(connectorName, connector.getConnectorProperties());
+		}
+		connectorConfiguraitons.storeToJsonFile(jsonFile);
+	}
+
+	/**
+	 * Loads stored configurations from  a JSON file.
+	 * @param jsonFile the json file
+	 */
+	public void loadConfigurationFromJSON(File jsonFile) {
+		ConnectorPropertiesTreeMap loadedConfig = ConnectorPropertiesTreeMap.loadFromJsonFile(jsonFile);
+		if (loadedConfig!=null) {
+			for (String connectorName : loadedConfig.keySet()) {
+				Properties loadedPropertiess = loadedConfig.get(connectorName);
+				String serviceClassName = loadedPropertiess.getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_SERVICE_CLASS);
+				ConnectorService service = this.getServiceImplementation(loadedPropertiess.getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_SERVICE_CLASS));
+				if (service != null) {
+					AbstractConnector connectorInstance = service.getNewConnectorInstance();
+					AbstractConnectorProperties properties = service.getInitialProperties();
+					properties.addAll(loadedPropertiess);
+					connectorInstance.setConnectorProperties(properties);
+					this.addNewConnector(connectorName, connectorInstance);
+				} else {
+					System.err.println("[" + this.getClass().getSimpleName() + "] Could not find a ConnectorService implementation for " + serviceClassName);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Gets the {@link ConnectorService} implementation with the specified class name.
+	 * @param serviceClassName the service class name
+	 * @return the service implementation
+	 */
+	private ConnectorService getServiceImplementation(String serviceClassName) {
+		List<ConnectorService> services = ServiceFinder.findServices(ConnectorService.class);
+		for (ConnectorService service : services) {
+			if (service.getClass().getName().equals(serviceClassName)) {
+				return service;
+			}
+		}
+		return null;
+	}
+	
 	
 }

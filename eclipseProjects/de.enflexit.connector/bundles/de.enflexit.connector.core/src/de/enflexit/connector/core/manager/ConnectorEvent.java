@@ -1,4 +1,4 @@
-package de.enflexit.connector.core;
+package de.enflexit.connector.core.manager;
 
 /**
  * The Class ConnectorEvent.

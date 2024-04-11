@@ -4,6 +4,10 @@ import com.hivemq.client.mqtt.MqttVersion;
 
 import de.enflexit.connector.core.AbstractConnectorProperties;
 
+/**
+ * The Class MqttConnectorProperties.
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
 public class MqttConnectorProperties extends AbstractConnectorProperties {
 	
 	private static final long serialVersionUID = 1701328833652172937L;

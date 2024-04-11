@@ -10,7 +10,7 @@ import javax.swing.JButton;
 import org.agentgui.gui.swing.MainWindowExtension;
 
 import agentgui.core.application.Application;
-import de.enflexit.connector.core.ConnectorManager;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * This class implements the UI integration for the {@link ConnectorManager} into the AWB:

@@ -3,9 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core
 Bundle-SymbolicName: de.enflexit.connector.core
 Bundle-Version: 1.0.0.qualifier
-Export-Package: de.enflexit.connector.core
+Export-Package: de.enflexit.connector.core,
+ de.enflexit.connector.core.manager
 Require-Bundle: de.enflexit.common,
- org.agentgui.core
+ org.agentgui.core,
+ com.google.gson;bundle-version="2.10.1"
 Bundle-Vendor: EnFlex.IT
 Automatic-Module-Name: de.enflexit.connector.core
 Bundle-ActivationPolicy: lazy

@@ -1,5 +1,7 @@
 package de.enflexit.connector.core;
 
+import de.enflexit.connector.core.manager.ConnectorEvent;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * Abstract superclass for connectors to different communication protocols.

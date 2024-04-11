@@ -9,7 +9,7 @@ import de.enflexit.common.properties.PropertiesPanel;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
-import de.enflexit.connector.core.ConnectorManager;
+import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.core.ConnectorService;
 
 import java.awt.GridBagLayout;

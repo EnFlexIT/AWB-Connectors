@@ -2,25 +2,32 @@ package de.enflexit.connector.core.ui;
 
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-
+import agentgui.core.application.Application;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.ConnectorManager;
+import de.enflexit.connector.core.manager.ConnectorManager;
+
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.DefaultListModel;
+import javax.swing.JToolBar;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
 
 /**
  * The main panel for the {@link ConnectorManager}'s configuration UI.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManagerMainPanel extends JPanel implements ListSelectionListener, PropertyChangeListener {
+public class ConnectorManagerMainPanel extends JPanel implements ActionListener, ListSelectionListener, PropertyChangeListener {
 	
 	private static final long serialVersionUID = 3162788243111915591L;
 	
@@ -31,6 +38,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ListSelectionLi
 	private JSplitPane subSplitPane;
 	private CreateConnectionPanel createConnectionPanel;
 	private ManageConnectionPanel manageConnectionPanel;
+	private JToolBar mainToolBar;
+	
+	private JButton jButtonSave;
+	private JButton jButtonLoad;
+	private JFileChooser fileChooser;
 	
 	/**
 	 * Instantiates a new connector manager main panel.
@@ -46,6 +58,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ListSelectionLi
 		this.setLayout(new BorderLayout(0, 0));
 		this.add(getMainSplitPane(), BorderLayout.CENTER);
 		ConnectorManager.getInstance().addListener(this);
+		add(getMainToolBar(), BorderLayout.NORTH);
 	}
 	
 	/**
@@ -179,5 +192,58 @@ public class ConnectorManagerMainPanel extends JPanel implements ListSelectionLi
 	}
 	protected void dispose() {
 		ConnectorManager.getInstance().removeListener(this);
+	}
+	private JToolBar getMainToolBar() {
+		if (mainToolBar == null) {
+			mainToolBar = new JToolBar();
+			mainToolBar.add(getJButtonSave());
+			mainToolBar.add(getJButtonLoad());
+		}
+		return mainToolBar;
+	}
+	private JButton getJButtonSave() {
+		if (jButtonSave == null) {
+			jButtonSave = new JButton("Save");
+			jButtonSave.addActionListener(this);
+		}
+		return jButtonSave;
+	}
+	private JButton getJButtonLoad() {
+		if (jButtonLoad == null) {
+			jButtonLoad = new JButton("Load");
+			jButtonLoad.addActionListener(this);
+		}
+		return jButtonLoad;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
+	@Override
+	public void actionPerformed(ActionEvent ae) {
+		if (ae.getSource()==this.getJButtonSave()) {
+			int result = this.getFileChooser().showSaveDialog(this);
+			if (result==JFileChooser.APPROVE_OPTION) {
+				File jsonFile = this.getFileChooser().getSelectedFile();
+				ConnectorManager.getInstance().storeConfigurationToJSON(jsonFile);
+				Application.getGlobalInfo().setLastSelectedFolder(jsonFile.getParentFile());
+			}
+		} else if (ae.getSource()==this.getJButtonLoad()){
+			int result = this.getFileChooser().showOpenDialog(this);
+			if (result==JFileChooser.APPROVE_OPTION) {
+				File jsonFile = this.getFileChooser().getSelectedFile();
+				ConnectorManager.getInstance().loadConfigurationFromJSON(jsonFile);
+				Application.getGlobalInfo().setLastSelectedFolder(jsonFile.getParentFile());
+			}
+		}
+	}
+	
+	private JFileChooser getFileChooser() {
+		if (fileChooser==null) {
+			fileChooser = new JFileChooser();
+			fileChooser.setAcceptAllFileFilterUsed(false);
+			fileChooser.setCurrentDirectory(Application.getGlobalInfo().getLastSelectedFolder());
+		}
+		return fileChooser;
 	}
 }

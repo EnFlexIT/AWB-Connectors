@@ -9,8 +9,8 @@ import javax.swing.JTextField;
 
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
-import de.enflexit.connector.core.ConnectorManager;
 import de.enflexit.connector.core.ConnectorService;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -19,6 +19,11 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import java.awt.Color;
 
+/**
+ * This class provides a UI for adding new connectors.
+ *
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
 public class CreateConnectionPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 4105793443627183974L;
