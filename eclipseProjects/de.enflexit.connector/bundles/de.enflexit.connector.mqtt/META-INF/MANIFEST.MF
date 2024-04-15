@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Mqtt
+Bundle-Name: AWB MQTT - Connector
 Bundle-SymbolicName: de.enflexit.connector.mqtt
 Bundle-Vendor: EnFlex.IT
 Bundle-Version: 1.0.0.qualifier

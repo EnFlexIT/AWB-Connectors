@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="de.enflexit.connector.mqtt.feature"
-      label="AWB MQTT Connector"
+      label="AWB MQTT Feature"
       version="1.0.0.qualifier"
       provider-name="EnFlex.IT">
 

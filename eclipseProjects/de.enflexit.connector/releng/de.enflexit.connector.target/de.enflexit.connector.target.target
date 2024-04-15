@@ -2,6 +2,25 @@
 <?pde version="3.8"?>
 <target includeMode="feature" name="de.enflexit.connector.target" sequenceNumber="74">
 	<locations>
+		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+			<repository location="https://p2.enflex.it/awb/latest/"/>
+			<unit id="org.agentgui.feature.feature.group" version="2.4.0.202404020903"/>
+			<unit id="de.enflexit.awb.ws.feature.feature.group" version="1.0.0.202403281522"/>
+			<unit id="de.enflexit.awb.ws.feature.source.feature.group" version="1.0.0.202403281522"/>
+			<unit id="de.enflexit.awb.ws.restapi.feature.feature.group" version="0.2.0.202403211626"/>
+			<unit id="de.enflexit.awb.ws.restapi.feature.source.feature.group" version="0.2.0.202403211626"/>
+			<unit id="de.enflexit.common.feature.feature.group" version="2.1.11.202402281513"/>
+			<unit id="de.enflexit.common.feature.source.feature.group" version="2.1.11.202402281513"/>
+			<unit id="de.enflexit.ea.feature.feature.group" version="1.7.0.202404131037"/>
+			<unit id="de.enflexit.ea.feature.source.feature.group" version="1.7.0.202404131037"/>
+			<unit id="de.enflexit.eom.feature.feature.group" version="2.7.1.202404131037"/>
+			<unit id="de.enflexit.eom.feature.source.feature.group" version="2.7.1.202404131037"/>
+			<unit id="de.enflexit.eom.optimization.feature.feature.group" version="0.0.3.202404131037"/>
+			<unit id="de.enflexit.eom.optimization.feature.source.feature.group" version="0.0.3.202404131037"/>
+			<unit id="de.enflexit.optimization.feature.feature.group" version="1.0.0.202404080819"/>
+			<unit id="de.enflexit.optimization.feature.source.feature.group" version="1.0.0.202404080819"/>
+			<unit id="org.agentgui.feature.source.feature.group" version="2.4.0.202404020903"/>
+		</location>
 		<location includeDependencyDepth="infinite" includeDependencyScopes="compile,runtime" includeSource="true" missingManifest="generate" type="Maven">
 			<dependencies>
 				<dependency>
@@ -11,10 +30,6 @@
 					<type>jar</type>
 				</dependency>
 			</dependencies>
-		</location>
-		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-			<repository location="https://p2.enflex.it/awb/latest/"/>
-			<unit id="org.agentgui.feature.feature.group" version="0.0.0"/>
 		</location>
 	</locations>
 </target>

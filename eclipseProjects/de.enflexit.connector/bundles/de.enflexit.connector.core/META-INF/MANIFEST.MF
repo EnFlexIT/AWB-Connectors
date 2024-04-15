@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Core
+Bundle-Name: AWB Connector - Core
 Bundle-SymbolicName: de.enflexit.connector.core
 Bundle-Version: 1.0.0.qualifier
 Export-Package: de.enflexit.connector.core,
