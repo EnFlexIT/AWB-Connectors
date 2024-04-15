@@ -23,9 +23,11 @@
 				<artifactId>tycho-source-plugin</artifactId>
 				<version>${tycho-extras-version}</version>
 				<configuration>
+					<!--
 					<excludes>
 						<plugin id="de.enflexit.connector" />
 					</excludes>
+					-->
 				</configuration>
 				<executions>
 					<execution>
