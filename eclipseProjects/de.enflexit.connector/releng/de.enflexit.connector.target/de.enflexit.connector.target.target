@@ -12,6 +12,9 @@
 				</dependency>
 			</dependencies>
 		</location>
-		<location type="Target" uri="file:${project_loc:/de.enflexit.awb.target}/de.enflexit.awb.target.target"/>
+		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+			<repository location="https://p2.enflex.it/awb/latest/"/>
+			<unit id="org.agentgui.feature.feature.group" version="0.0.0"/>
+		</location>
 	</locations>
 </target>
