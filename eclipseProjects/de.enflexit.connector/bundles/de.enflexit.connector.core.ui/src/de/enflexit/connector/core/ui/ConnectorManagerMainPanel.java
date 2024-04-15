@@ -11,6 +11,8 @@ import java.io.File;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import agentgui.core.application.Application;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -31,6 +33,9 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	
 	private static final long serialVersionUID = 3162788243111915591L;
 	
+	private static final String FILE_SUFFIX_XML = "xml";
+	private static final String FILE_SUFFIX_JSON = "json";
+	
 	private JSplitPane mainSplitPane;
 	private JScrollPane jScrollPane;
 	private JList<String> connectorsList;
@@ -43,6 +48,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JButton jButtonSave;
 	private JButton jButtonLoad;
 	private JFileChooser fileChooser;
+	
+	private AbstractConnector currentConnector;
 	
 	/**
 	 * Instantiates a new connector manager main panel.
@@ -185,6 +192,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	@Override
 	public void valueChanged(ListSelectionEvent lse) {
 		if (lse.getSource()==this.getConnectorsList()) {
+			
+			if (currentConnector!=null) {
+				//TODO check for unsaved changes, ask user to save or discard 
+			}
+			
 			String selectedConnectorName = this.getConnectorsList().getSelectedValue();
 			AbstractConnector selectedConnector = ConnectorManager.getInstance().getConnector(selectedConnectorName);
 			this.getManageConnectionPanel().setConnector(selectedConnector);
@@ -241,9 +253,29 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JFileChooser getFileChooser() {
 		if (fileChooser==null) {
 			fileChooser = new JFileChooser();
+			fileChooser.addChoosableFileFilter(this.getFileFilterJSON());
+			fileChooser.addChoosableFileFilter(this.getFileFilterXML());
 			fileChooser.setAcceptAllFileFilterUsed(false);
 			fileChooser.setCurrentDirectory(Application.getGlobalInfo().getLastSelectedFolder());
 		}
 		return fileChooser;
+	}
+	
+	/**
+	 * Gets the file filter for XML files.
+	 * @return the file filter XML
+	 */
+	private FileNameExtensionFilter getFileFilterXML() {
+		FileNameExtensionFilter	fileFilterXML = new FileNameExtensionFilter("XML files", FILE_SUFFIX_XML);
+		return fileFilterXML;
+	}
+	
+	/**
+	 * Gets the file filter for JSON files.
+	 * @return the file filter JSON
+	 */
+	private FileNameExtensionFilter getFileFilterJSON() {
+		FileNameExtensionFilter	fileFilterJSON = new FileNameExtensionFilter("JSON files", FILE_SUFFIX_JSON);
+		return fileFilterJSON;
 	}
 }

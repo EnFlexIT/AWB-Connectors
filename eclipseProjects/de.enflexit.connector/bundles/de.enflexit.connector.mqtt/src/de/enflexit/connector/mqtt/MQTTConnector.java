@@ -17,6 +17,7 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCo
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.AbstractConnectorConfiguration;
 
 public class MQTTConnector extends AbstractConnector {
 	
@@ -174,6 +175,12 @@ public class MQTTConnector extends AbstractConnector {
 			configuration = ConnectorConfigurationMQTT.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
 		}
 		return configuration;
+	}
+
+	@Override
+	public AbstractConnectorConfiguration getConnectorConfiguration() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

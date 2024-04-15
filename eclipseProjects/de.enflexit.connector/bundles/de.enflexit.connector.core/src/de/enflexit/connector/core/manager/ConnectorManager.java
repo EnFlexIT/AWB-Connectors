@@ -3,13 +3,17 @@ package de.enflexit.connector.core.manager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import agentgui.core.application.Application;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
+import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 
 /**
@@ -21,6 +25,8 @@ public class ConnectorManager {
 	public static final String CONNECTOR_ADDED = "Connector added";
 	public static final String CONNECTOR_REMOVED = "Connector removed";
 	public static final String CONNECTOR_RENAMED = "Connector renamed";
+	
+	private static final String DEFAULT_CONFIG_FILE_NAME = "ConnectorProperties.json";
 	
 	private static ConnectorManager instance;
 	private HashMap<String, AbstractConnector> availableConnectors;
@@ -209,5 +215,69 @@ public class ConnectorManager {
 		return null;
 	}
 	
+	/**
+	 * Start connections with start level.
+	 * @param startOn the start on
+	 */
+	public void startConnectionsWithStartLevel(StartOn startOn) {
+		for (String connectorName : this.getAvailableConnectors().keySet()) {
+			AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
+			
+			if (connector.isConnected()==false && connector.getStartOn()==startOn) {
+				boolean success = connector.connect();
+				if (success==false) {
+					System.err.println("[" + this.getClass().getSimpleName() + "] Error connecting " + connectorName + " at " + startOn);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Stops all connectors that are currently connected.
+	 */
+	protected void stopAllConnectors() {
+		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
+			if (connector.isConnected()==true) {
+				connector.disconnect();
+			}
+		}
+	}
+	
+	/**
+	 * Loads connector configurations from the default configuration file.
+	 */
+	protected void loadConfigurationsFromDefaultFile() {
+		
+		File configFile = this.getDefaultConfigFile();
+		if (configFile!=null && configFile.exists()) {
+			this.loadConfigurationFromJSON(configFile);
+		}
+	}
+	
+	/**
+	 * Saves connector configurations to the default configuration file.
+	 */
+	protected void saveConfigurationsToDefaultFile() {
+
+		File configFile = this.getDefaultConfigFile();
+		if (configFile!=null) {
+			this.storeConfigurationToJSON(configFile);
+		}
+	}
+	
+	/**
+	 * Gets the default config file.
+	 * @return the default config file
+	 */
+	public File getDefaultConfigFile() {
+		File configFile = null;
+		String propertiesFolder = Application.getGlobalInfo().getPathProperty(true);
+		if (propertiesFolder!=null && propertiesFolder.isBlank()==false) {
+			Path propertiesPath = new File(propertiesFolder).toPath();
+			configFile = propertiesPath.resolve(DEFAULT_CONFIG_FILE_NAME).toFile();
+		}
+		
+		return configFile;
+	}
 	
 }

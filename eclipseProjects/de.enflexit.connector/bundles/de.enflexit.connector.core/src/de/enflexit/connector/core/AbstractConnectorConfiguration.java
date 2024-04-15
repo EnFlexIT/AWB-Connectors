@@ -1,16 +1,14 @@
 package de.enflexit.connector.core;
 
 import de.enflexit.common.properties.Properties;
+import de.enflexit.common.properties.PropertiesListener;
+import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
 
 /**
  * This class contains base configuration data, that is required by any kind of connector.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public abstract class ConnectorConfiguration {
-	
-	public enum StartOn{
-		AwbStart, ProjectLoaded, JadeStart, ManualStart
-	}
+public abstract class AbstractConnectorConfiguration implements PropertiesListener {
 	
 	public static final String PROPERTY_SERVER_HOST = "Server.host";
 	public static final String PROPERTY_SERVER_PORT = "Server.port";
@@ -23,6 +21,8 @@ public abstract class ConnectorConfiguration {
 	private int port;
 	
 	private Properties connectorProperties;
+	
+	private boolean changed;
 	
 	/**
 	 * Gets the name.
@@ -106,5 +106,23 @@ public abstract class ConnectorConfiguration {
 	 * @return the initial properties
 	 */
 	public abstract Properties getInitialProperties();
+	
+	/**
+	 * Checks if the configuration was changed.
+	 * @return true, if is changed
+	 */
+	public boolean isChanged() {
+		return changed;
+	}
+	
+	/**
+	 * Specifies if the configuration was changed.
+	 * @param changed the new changed
+	 */
+	public void setChanged(boolean changed) {
+		this.changed = changed;
+	}
+	
+	
 	
 }

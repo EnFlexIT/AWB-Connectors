@@ -3,13 +3,14 @@ package de.enflexit.connector.mqtt;
 import com.hivemq.client.mqtt.MqttVersion;
 
 import de.enflexit.common.properties.Properties;
-import de.enflexit.connector.core.ConnectorConfiguration;
+import de.enflexit.common.properties.PropertiesEvent;
+import de.enflexit.connector.core.AbstractConnectorConfiguration;
 
 /**
  * This class specifies the configuration of a MQTT connection.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorConfigurationMQTT extends ConnectorConfiguration {
+public class ConnectorConfigurationMQTT extends AbstractConnectorConfiguration {
 	
 	public static final String PROPERTY_MQTT_VERSION = "Mqtt.version";
 	
@@ -64,11 +65,16 @@ public class ConnectorConfigurationMQTT extends ConnectorConfiguration {
 	@Override
 	public Properties getInitialProperties() {
 		Properties properties = new Properties();
-		properties.setStringValue(ConnectorConfiguration.PROPERTY_SERVER_HOST, "localhost");
-		properties.setIntegerValue(ConnectorConfiguration.PROPERTY_SERVER_PORT, MQTT_DEFAULT_PORT);
+		properties.setStringValue(AbstractConnectorConfiguration.PROPERTY_SERVER_HOST, "localhost");
+		properties.setIntegerValue(AbstractConnectorConfiguration.PROPERTY_SERVER_PORT, MQTT_DEFAULT_PORT);
 		properties.setStringValue(PROPERTY_MQTT_VERSION, MqttVersion.MQTT_5_0.toString());
 		
 		return properties;
+	}
+
+	@Override
+	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
+		
 	}
 	
 }

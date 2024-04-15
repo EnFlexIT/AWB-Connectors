@@ -7,6 +7,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.TreeMap;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -19,6 +24,36 @@ import de.enflexit.common.properties.Properties;
 public class ConnectorPropertiesTreeMap extends TreeMap<String, Properties> {
 
 	private static final long serialVersionUID = 8348119759217794256L;
+	private static final String FILE_ENCODING = "UTF-8";
+	
+	/**
+	 * Stores a ConnectorPropertiesTreeMap to a JSON file.
+	 * @param jsonFile the json file
+	 */
+	public void storeToJsonFile(File jsonFile) {
+		
+		FileWriter fileWriter = null;
+		
+		try {
+			fileWriter = new FileWriter(jsonFile);
+			GsonBuilder gsonBuilder = new GsonBuilder();
+			gsonBuilder.setPrettyPrinting();
+			Gson gson = gsonBuilder.create();
+			gson.toJson(this, fileWriter);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally { 
+			if (fileWriter!=null) {
+				try {
+					fileWriter.close();
+				} catch (IOException e) {
+					System.err.println("[" + this.getClass().getSimpleName() + "] Error closing file writer!");
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Loads a ConnectorPropertiesTreeMap from a JSON file.
@@ -53,33 +88,70 @@ public class ConnectorPropertiesTreeMap extends TreeMap<String, Properties> {
 		return loadedMap;
 	}
 	
-	/**
-	 * Stores a ConnectorPropertiesTreeMap to a JSON file.
-	 * @param jsonFile the json file
-	 */
-	public void storeToJsonFile(File jsonFile) {
+	
+	public boolean storeToXmlFile(File xmlFile) {
+		boolean success = false;
 		
 		FileWriter fileWriter = null;
-		
 		try {
-			fileWriter = new FileWriter(jsonFile);
-			GsonBuilder gsonBuilder = new GsonBuilder();
-			gsonBuilder.setPrettyPrinting();
-			Gson gson = gsonBuilder.create();
-			gson.toJson(this, fileWriter);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
+			JAXBContext context = JAXBContext.newInstance(this.getClass());
+			Marshaller marshaller = context.createMarshaller();
+			marshaller.setProperty(Marshaller.JAXB_ENCODING, FILE_ENCODING);
+			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			
+			fileWriter = new FileWriter(xmlFile);
+			marshaller.marshal(this, fileWriter);
+			
+			success = true;
+			
+		} catch (Exception e) {
+			System.err.println("[" + this.getClass().getSimpleName() + "] Error storing connector configuraiton to XML file!");
 			e.printStackTrace();
-		} finally { 
-			if (fileWriter!=null) {
-				try {
+		} finally {
+			try {
+				if (fileWriter!=null) {
 					fileWriter.close();
+				}
+			} catch (IOException e) {
+				System.err.println("[" + this.getClass().getSimpleName() + "] Error closing file writer!");
+				e.printStackTrace();
+			}
+		}
+		
+		return success;
+	}
+	
+	public static ConnectorPropertiesTreeMap loadFromXmlFile(File xmlFile) {
+		ConnectorPropertiesTreeMap loadedConfig = null;
+		
+		if (xmlFile!=null && xmlFile.exists()==true) {
+			FileReader fileReader = null;
+			
+			try {
+				JAXBContext context = JAXBContext.newInstance(ConnectorPropertiesTreeMap.class);
+				Unmarshaller unmarshaller = context.createUnmarshaller();
+				
+				fileReader = new FileReader(xmlFile);
+				loadedConfig = (ConnectorPropertiesTreeMap) unmarshaller.unmarshal(fileReader);
+				
+			} catch (JAXBException e) {
+				System.err.println("[" + ConnectorPropertiesTreeMap.class.getSimpleName() + "] Error reading connector configuraiton from XML file!");
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				System.err.println("[" + ConnectorPropertiesTreeMap.class.getSimpleName() + "] Connector configuration file not found!");
+				e.printStackTrace();
+			} finally {
+				try {
+					if (fileReader!=null) fileReader.close();
 				} catch (IOException e) {
-					System.err.println("[" + this.getClass().getSimpleName() + "] Error closing file writer!");
+					System.err.println("[" + ConnectorPropertiesTreeMap.class.getSimpleName() + "] Error closing file writer!");
 					e.printStackTrace();
 				}
 			}
 		}
+		
+		return loadedConfig;
 	}
 
 }

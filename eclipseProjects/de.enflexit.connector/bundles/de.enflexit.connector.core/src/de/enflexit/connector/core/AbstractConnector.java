@@ -1,5 +1,6 @@
 package de.enflexit.connector.core;
 
+import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
 import de.enflexit.connector.core.manager.ConnectorEvent;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -57,6 +58,26 @@ public abstract class AbstractConnector {
 		}
 	}
 	
+	/**
+	 * Checks when this connector is supposed to be started.
+	 * @return the start on
+	 */
+	public StartOn getStartOn() {
+		// --- Default case if nothing else is configured -----------
+		StartOn startOn = StartOn.ManualStart;
+		
+		// --- Try to get the configured start level from the properties
+		String startLevelFromProperties = this.getConnectorProperties().getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_START_ON);
+		if (startLevelFromProperties!=null && startLevelFromProperties.isBlank()==false) {
+			startOn = StartOn.valueOf(startLevelFromProperties);
+		}
+		return startOn;
+	}
 	
+	/**
+	 * Gets the connector configuration.
+	 * @return the connector configuration
+	 */
+	public abstract AbstractConnectorConfiguration getConnectorConfiguration();
 	
 }
