@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
+   <!--
    <feature id="de.enflexit.connector.core.feature" version="0.0.0" os="linux,macosx,win32" arch="x86_64">
       <category name="de.enflexit.connector"/>
    </feature>
    <feature id="de.enflexit.connector.core.feature.source" version="0.0.0">
       <category name="de.enflexit.connector"/>
    </feature>
+   -->
    <feature id="de.enflexit.connector.mqtt.feature" version="0.0.0" os="linux,macosx,win32" arch="x86_64">
       <category name="de.enflexit.connector.implementations"/>
    </feature>
@@ -13,8 +15,12 @@
       <category name="de.enflexit.connector.implementations"/>
    </feature>
    
+   <!--
    <category-def name="de.enflexit.connector" label="AWB Connector Base"/>
+   -->
    <category-def name="de.enflexit.connector.implementations" label="AWB Connector Implementations">
+      <!--
       <category name="de.enflexit.connector"/>
+      -->
    </category-def>
 </site>

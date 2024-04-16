@@ -13,7 +13,7 @@
 	</parent>
 
 	<modules>	
-		<module>de.enflexit.connector.core.feature</module>
+		<!-- <module>de.enflexit.connector.core.feature</module> -->
 		<module>de.enflexit.connector.mqtt.feature</module>	
 	</modules>
 	

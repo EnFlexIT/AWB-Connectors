@@ -17,16 +17,16 @@
       [Enter License Description here.]
    </license>
 
-   <includes
-         id="de.enflexit.connector.core.feature"
-         version="0.0.0"/>
-
-   <requires>
-      <import feature="de.enflexit.connector.core.feature" version="1.0.0.qualifier" match="greaterOrEqual"/>
-   </requires>
-
    <plugin
          id="de.enflexit.connector.mqtt"
+         version="0.0.0"/>
+
+   <plugin
+         id="de.enflexit.connector.core"
+         version="0.0.0"/>
+
+   <plugin
+         id="de.enflexit.connector.core.ui"
          version="0.0.0"/>
 
 </feature>
