@@ -123,6 +123,4 @@ public abstract class AbstractConnectorConfiguration implements PropertiesListen
 		this.changed = changed;
 	}
 	
-	
-	
 }

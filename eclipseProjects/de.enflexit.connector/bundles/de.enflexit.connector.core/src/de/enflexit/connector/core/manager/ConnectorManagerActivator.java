@@ -1,4 +1,4 @@
-package de.enflexit.connector.core;
+package de.enflexit.connector.core.manager;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -6,13 +6,13 @@ import org.osgi.framework.BundleContext;
 import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
 import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
-import de.enflexit.connector.core.manager.ConnectorManager;
 
 public class ConnectorManagerActivator implements BundleActivator, ApplicationListener {
 
 	@Override
 	public void start(BundleContext context) throws Exception {
 		Application.addApplicationListener(this);
+//		ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);
 	}
 	@Override
 	public void stop(BundleContext context) throws Exception {
@@ -20,6 +20,7 @@ public class ConnectorManagerActivator implements BundleActivator, ApplicationLi
 	}
 	@Override
 	public void onApplicationEvent(ApplicationEvent ae) {
+		System.out.println("[" + this.getClass().getSimpleName() + "] Application event: " + ae.getApplicationEvent());
 		switch(ae.getApplicationEvent()) {
 		case ApplicationEvent.AWB_START:
 			ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);

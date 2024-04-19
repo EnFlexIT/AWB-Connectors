@@ -34,7 +34,7 @@ public class ConnectorManager {
 	private ArrayList<PropertyChangeListener> listeners;
 	
 	private ConnectorManager() {}
-
+	
 	/**
 	 * Gets the single instance of ConnectorManager.
 	 * @return single instance of ConnectorManager
@@ -42,6 +42,7 @@ public class ConnectorManager {
 	public static ConnectorManager getInstance() {
 		if (instance==null) {
 			instance = new ConnectorManager();
+			instance.loadConfigurationsFromDefaultFile();
 		}
 		return instance;
 	}
@@ -157,7 +158,7 @@ public class ConnectorManager {
 	 * @param event the event
 	 */
 	private void notifyListeners(PropertyChangeEvent event) {
-		for (PropertyChangeListener listener : listeners) {
+		for (PropertyChangeListener listener : this.getListeners()) {
 			listener.propertyChange(event);
 		}
 	}
@@ -249,8 +250,12 @@ public class ConnectorManager {
 	protected void loadConfigurationsFromDefaultFile() {
 		
 		File configFile = this.getDefaultConfigFile();
+		System.out.print("[" + this.getClass().getSimpleName() + "] Config file: " + configFile.getPath());
 		if (configFile!=null && configFile.exists()) {
 			this.loadConfigurationFromJSON(configFile);
+			System.out.println(" loaded");
+		} else {
+			System.out.println(" not found");
 		}
 	}
 	

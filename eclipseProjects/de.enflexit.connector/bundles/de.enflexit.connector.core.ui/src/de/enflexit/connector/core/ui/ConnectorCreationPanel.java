@@ -24,27 +24,47 @@ import java.awt.Color;
  *
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class CreateConnectionPanel extends JPanel implements ActionListener {
+public class ConnectorCreationPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 4105793443627183974L;
+	
+	private static final String ICON_APPLY = "Apply.png";
+	private static final String ICON_CANCEL = "Cancel.png";
+	
+	private ConnectorManagerMainPanel parent;
 	
 	private JLabel jLabelManageConnections;
 	private JTextField jTextFieldName;
 	private JLabel jLabelName;
 	private JLabel jLabelProtocol;
 	private ConnectorServiceComboBox connectorServiceComboBox;
-	private JButton jButtonCreate;
 	private JLabel jLabelErrorMessage;
+	private JButton jButtonCancel;
+	private JButton jButtonApply;
 	
-	public CreateConnectionPanel() {
-		initialize();
+	/**
+	 * Instantiates a new creates the connection panel.
+	 * @deprecated For window builder compatibility only! Please use the other constructor.
+	 */
+	@Deprecated
+	public ConnectorCreationPanel() {
+		this.initialize();
+	}
+	
+	/**
+	 * Instantiates a new creates the connection panel.
+	 * @param parent the parent panel
+	 */
+	public ConnectorCreationPanel(ConnectorManagerMainPanel parent) {
+		this.parent = parent;
+		this.initialize();
 	}
 	
 	private void initialize() {
 		GridBagLayout gridBagLayout = new GridBagLayout();
-		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
+		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0};
 		gridBagLayout.rowHeights = new int[]{0, 0, 0, 0};
-		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
+		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE};
 		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, Double.MIN_VALUE};
 		setLayout(gridBagLayout);
 		GridBagConstraints gbc_jLabelManageConnections = new GridBagConstraints();
@@ -73,22 +93,27 @@ public class CreateConnectionPanel extends JPanel implements ActionListener {
 		gbc_jLabelProtocol.gridy = 1;
 		add(getJLabelProtocol(), gbc_jLabelProtocol);
 		GridBagConstraints gbc_connectorServiceComboBox = new GridBagConstraints();
+		gbc_connectorServiceComboBox.anchor = GridBagConstraints.WEST;
 		gbc_connectorServiceComboBox.insets = new Insets(5, 0, 5, 5);
-		gbc_connectorServiceComboBox.fill = GridBagConstraints.HORIZONTAL;
 		gbc_connectorServiceComboBox.gridx = 3;
 		gbc_connectorServiceComboBox.gridy = 1;
 		add(getConnectorServiceComboBox(), gbc_connectorServiceComboBox);
-		GridBagConstraints gbc_jButtonCreate = new GridBagConstraints();
-		gbc_jButtonCreate.anchor = GridBagConstraints.WEST;
-		gbc_jButtonCreate.insets = new Insets(5, 10, 5, 0);
-		gbc_jButtonCreate.gridx = 4;
-		gbc_jButtonCreate.gridy = 1;
-		add(getJButtonCreate(), gbc_jButtonCreate);
 		GridBagConstraints gbc_jLabelErrorMessage = new GridBagConstraints();
-		gbc_jLabelErrorMessage.gridwidth = 5;
+		gbc_jLabelErrorMessage.insets = new Insets(0, 0, 0, 5);
+		gbc_jLabelErrorMessage.gridwidth = 4;
 		gbc_jLabelErrorMessage.gridx = 0;
 		gbc_jLabelErrorMessage.gridy = 2;
 		add(getJLabelErrorMessage(), gbc_jLabelErrorMessage);
+		GridBagConstraints gbc_jButtonApply = new GridBagConstraints();
+		gbc_jButtonApply.anchor = GridBagConstraints.EAST;
+		gbc_jButtonApply.insets = new Insets(0, 0, 0, 5);
+		gbc_jButtonApply.gridx = 4;
+		gbc_jButtonApply.gridy = 2;
+		add(getJButtonApply(), gbc_jButtonApply);
+		GridBagConstraints gbc_jButtonCancel = new GridBagConstraints();
+		gbc_jButtonCancel.gridx = 5;
+		gbc_jButtonCancel.gridy = 2;
+		add(getJButtonCancel(), gbc_jButtonCancel);
 	}
 
 
@@ -126,14 +151,6 @@ public class CreateConnectionPanel extends JPanel implements ActionListener {
 		}
 		return connectorServiceComboBox;
 	}
-	private JButton getJButtonCreate() {
-		if (jButtonCreate == null) {
-			jButtonCreate = new JButton("Create");
-			jButtonCreate.setFont(new Font("Dialog", Font.BOLD, 12));
-			jButtonCreate.addActionListener(this);
-		}
-		return jButtonCreate;
-	}
 	private JLabel getJLabelErrorMessage() {
 		if (jLabelErrorMessage == null) {
 			jLabelErrorMessage = new JLabel("");
@@ -142,33 +159,61 @@ public class CreateConnectionPanel extends JPanel implements ActionListener {
 		}
 		return jLabelErrorMessage;
 	}
-
+	private JButton getJButtonApply() {
+		if (jButtonApply == null) {
+			jButtonApply = new JButton(BundleHelper.getImageIcon(ICON_APPLY));
+			jButtonApply.addActionListener(this);
+		}
+		return jButtonApply;
+	}
+	private JButton getJButtonCancel() {
+		if (jButtonCancel == null) {
+			jButtonCancel = new JButton(BundleHelper.getImageIcon(ICON_CANCEL));
+			jButtonCancel.addActionListener(this);
+		}
+		return jButtonCancel;
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
-		if (ae.getSource()==this.getJButtonCreate()) {
-			
-			String connectorName = this.getJTextFieldName().getText();
-			
-			if (connectorName.isBlank()==true) {
-				String errorMessage = "The connector name must not be empty! Please specify a unique name.";
-				this.getJLabelErrorMessage().setText(errorMessage);
-			} else if (ConnectorManager.getInstance().getConnector(connectorName)!=null) {
-				String errorMessage = "A connector with the name " + connectorName + "already exists! Please choose a different name.";
-				this.getJLabelErrorMessage().setText(errorMessage);
-			} else {
-				this.getJLabelErrorMessage().setText("");
-				ConnectorService connectorService = (ConnectorService) this.getConnectorServiceComboBox().getSelectedItem();
-				AbstractConnector newConnector = connectorService.getNewConnectorInstance();
-				AbstractConnectorProperties connectorProperties = connectorService.getInitialProperties();
-				connectorProperties.setStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
-				newConnector.setConnectorProperties(connectorProperties);
-				ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
-				this.getJTextFieldName().setText("");
-			}
-			
+		if (ae.getSource()==this.getJButtonApply()) {
+			this.createNewConnector();
+		} else if (ae.getSource()==this.getJButtonCancel()) {
+			this.hidePanel();
 		}
 	}
+	
+	private void createNewConnector() {
+		String connectorName = this.getJTextFieldName().getText();
+		
+		// --- Check if a unique name is specified ------------------
+		if (connectorName.isBlank()==true) {
+			String errorMessage = "The connector name must not be empty! Please specify a unique name.";
+			this.getJLabelErrorMessage().setText(errorMessage);
+		} else if (ConnectorManager.getInstance().getConnector(connectorName)!=null) {
+			String errorMessage = "A connector with the name " + connectorName + "already exists! Please choose a different name.";
+			this.getJLabelErrorMessage().setText(errorMessage);
+		} else {
+			
+			// --- Create the connector -----------------------------
+			ConnectorService connectorService = (ConnectorService) this.getConnectorServiceComboBox().getSelectedItem();
+			AbstractConnector newConnector = connectorService.getNewConnectorInstance();
+			AbstractConnectorProperties connectorProperties = connectorService.getInitialProperties();
+			connectorProperties.setStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
+			newConnector.setConnectorProperties(connectorProperties);
+			ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
+			
+			this.hidePanel();
+		}
+	}
+	
+	private void hidePanel() {
+		this.getJTextFieldName().setText("");
+		this.getJLabelErrorMessage().setText("");
+		this.parent.hideCreatePanel();
+	}
+	
 }
