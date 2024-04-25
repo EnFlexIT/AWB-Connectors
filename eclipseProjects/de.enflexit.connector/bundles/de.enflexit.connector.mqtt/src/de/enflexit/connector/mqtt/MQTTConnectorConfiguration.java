@@ -10,7 +10,7 @@ import de.enflexit.connector.core.AbstractConnectorConfiguration;
  * This class specifies the configuration of a MQTT connection.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorConfigurationMQTT extends AbstractConnectorConfiguration {
+public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	
 	public static final String PROPERTY_MQTT_VERSION = "Mqtt.version";
 	
@@ -23,8 +23,8 @@ public class ConnectorConfigurationMQTT extends AbstractConnectorConfiguration {
 	private String clientID;
 	private MqttVersion mqttVersion;
 	
-	public static ConnectorConfigurationMQTT fromProperties(MqttConnectorProperties properties) {
-		ConnectorConfigurationMQTT config = new ConnectorConfigurationMQTT();
+	public static MQTTConnectorConfiguration fromProperties(MqttConnectorProperties properties) {
+		MQTTConnectorConfiguration config = new MQTTConnectorConfiguration();
 		config.setUrlOrIP(properties.getStringValue(PROPERTY_SERVER_HOST));
 		config.setPort(properties.getIntegerValue(PROPERTY_SERVER_PORT));
 		config.setClientID(properties.getStringValue(MqttConnectorProperties.PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER));

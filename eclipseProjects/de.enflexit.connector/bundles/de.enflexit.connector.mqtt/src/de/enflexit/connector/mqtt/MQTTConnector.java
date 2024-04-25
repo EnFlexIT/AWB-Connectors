@@ -1,5 +1,6 @@
 package de.enflexit.connector.mqtt;
 
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 import com.hivemq.client.mqtt.MqttClient;
@@ -19,11 +20,18 @@ import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorConfiguration;
 
+/**
+ * This class manages the connection to one MQTT broker. It allows to publish messages and subscribe to topics.
+ * Incoming messages will be forwarded to all {@link MQTTSubscriber}s that subscribed to the corresponding topic. 
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
 public class MQTTConnector extends AbstractConnector {
 	
 	private MqttClient client;
 	
-	private ConnectorConfigurationMQTT configuration;
+	private MQTTConnectorConfiguration configuration;
+	
+	private HashMap<String, MQTTSubscription> activeSubscriptions;
 
 	/**
 	 * Gets the MQTT client instance.
@@ -126,61 +134,173 @@ public class MQTTConnector extends AbstractConnector {
 		
 	}
 	
-	public static ConnectorConfigurationMQTT getDefaultConfiguration() {
-		ConnectorConfigurationMQTT defaultConfiguratin = new ConnectorConfigurationMQTT();
+	public static MQTTConnectorConfiguration getDefaultConfiguration() {
+		MQTTConnectorConfiguration defaultConfiguratin = new MQTTConnectorConfiguration();
 		defaultConfiguratin.setUrlOrIP("localhost");
 		defaultConfiguratin.setPort(1883);
 		defaultConfiguratin.setMqttVersion(MqttVersion.MQTT_3_1_1);
 		return defaultConfiguratin;
 	}
 	
-	public void subscribe (String topic) {
+	private HashMap<String, MQTTSubscription> getActiveSubscriptions() {
+		if (activeSubscriptions==null) {
+			activeSubscriptions = new HashMap<>();
+		}
+		return activeSubscriptions;
+	}
+	
+	/**
+	 * Subscribe to the specified topic.
+	 * @param topic the topic
+	 */
+	public void subscribe (String topic, MQTTSubscriber subscriber) {
+		
+		// --- CHeck if there is an active subscription for this topic --------
+		MQTTSubscription subscription = this.getActiveSubscriptions().get(topic);
+		
+		// --- If not, create a new one ---------------------------------------
+		if (subscription==null) {
+			subscription = new MQTTSubscription();
+			subscription.setTopic(topic);
+			this.activeSubscriptions.put(topic, subscription);
+			this.startSubscription(subscription);
+		}
+		
+		// --- Add the new subscriber to the subscription ---------------------
+		subscription.addSubscriber(subscriber);
+	}
+	
+	private void startSubscription(MQTTSubscription subscription) {
 		switch (this.getConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
-			clientV3.subscribeWith().topicFilter(topic).send();
-			clientV3.toAsync().publishes(MqttGlobalPublishFilter.ALL, new Mqtt3Consumer());
+			clientV3.subscribeWith().topicFilter(subscription.getTopic()).send();
+			// --- Register the consumer to process messages --------
+			clientV3.toAsync().publishes(MqttGlobalPublishFilter.ALL, new Mqtt3Consumer(subscription));
 			break;
 		case MQTT_5_0:
 			Mqtt5BlockingClient clientV5 = (Mqtt5BlockingClient) this.getClient();
-			clientV5.subscribeWith().topicFilter(topic).send();
-			clientV5.toAsync().publishes(MqttGlobalPublishFilter.ALL, new Mqtt5Consumer());
+			clientV5.subscribeWith().topicFilter(subscription.getTopic()).send();
+			// --- Register the consumer to process messages --------
+			clientV5.toAsync().publishes(MqttGlobalPublishFilter.ALL, new Mqtt5Consumer(subscription));
+			break;
+		}
+		
+	}
+	
+	/**
+	 * Unsubscribe from the specified topic.
+	 * @param topic the topic
+	 */
+	public void unsubscribe(String topic, MQTTSubscriber subscriber) {
+		
+		// --- Get the subscription for the specified topic ---------
+		MQTTSubscription subscription = this.getActiveSubscriptions().get(topic);
+		if (subscription!=null) {
+			
+			// --- Remove the subscriber ----------------------------
+			subscription.removeSubscriber(subscriber);
+			
+			// --- I fno subscribers left, unsbscribe from the broker
+			if (subscription.getSubscribers().isEmpty()) {
+				this.stopSubscription(topic);
+				this.getActiveSubscriptions().remove(topic);
+			}
+		}
+	}
+	
+	private void stopSubscription(String topic) {
+		switch (this.getConfiguration().getMqttVersion()) {
+		case MQTT_3_1_1:
+			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
+			clientV3.unsubscribeWith().topicFilter(topic).send();
+			break;
+		case MQTT_5_0:
+			Mqtt5BlockingClient clientV5 = (Mqtt5BlockingClient) this.getClient();
+			clientV5.unsubscribeWith().topicFilter(topic).send();
 			break;
 		}
 	}
 	
 	
-	private class Mqtt3Consumer implements Consumer<Mqtt3Publish> {
-
-		@Override
-		public void accept(Mqtt3Publish t) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-	}
-	
-	private class Mqtt5Consumer implements Consumer<Mqtt5Publish> {
-		
-		@Override
-		public void accept(Mqtt5Publish t) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-	}
-
-	private ConnectorConfigurationMQTT getConfiguration() {
+	private MQTTConnectorConfiguration getConfiguration() {
 		if (configuration==null) {
-			configuration = ConnectorConfigurationMQTT.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
+			configuration = MQTTConnectorConfiguration.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
 		}
 		return configuration;
 	}
-
+	
 	@Override
 	public AbstractConnectorConfiguration getConnectorConfiguration() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	
+	// --------------------------------------------------------------------------------------------
+	// -- From here, consumer implementations to receive and forward incoming MQTT messages -------
+	// --------------------------------------------------------------------------------------------
+	
+	/**
+	 * The Class Mqtt3Consumer.
+	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+	 */
+	private class Mqtt3Consumer implements Consumer<Mqtt3Publish> {
+		
+		private MQTTSubscription subscription;
+
+		/**
+		 * Instantiates a new mqtt 3 consumer.
+		 * @param subscription the subscription
+		 */
+		public Mqtt3Consumer(MQTTSubscription subscription) {
+			this.subscription = subscription;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.util.function.Consumer#accept(java.lang.Object)
+		 */
+		@Override
+		public void accept(Mqtt3Publish message) {
+			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
+			for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
+				listener.handleMessage(messageWrapper);
+			}
+			
+			this.subscription.getSubscribers();
+		}
+		
+	}
+	
+	/**
+	 * The Class Mqtt5Consumer.
+	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+	 */
+	private class Mqtt5Consumer implements Consumer<Mqtt5Publish> {
+		
+		private MQTTSubscription subscription;
+		
+		/**
+		 * Instantiates a new mqtt 5 consumer.
+		 * @param subscription the subscription
+		 */
+		public Mqtt5Consumer(MQTTSubscription subscription) {
+			this.subscription = subscription;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.util.function.Consumer#accept(java.lang.Object)
+		 */
+		@Override
+		public void accept(Mqtt5Publish message) {
+			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
+			for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
+				listener.handleMessage(messageWrapper);
+			}
+			
+			this.subscription.getSubscribers();
+		}
+		
 	}
 	
 }

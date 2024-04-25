@@ -12,7 +12,7 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 
-import de.enflexit.connector.mqtt.ConnectorConfigurationMQTT;
+import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
 import jade.core.Agent;
 
 /**
@@ -25,7 +25,7 @@ public class PingPongAgentMQTT extends Agent{
 	
 	private static final String MQTT_TOPIC = "pingpong";
 	
-	private ConnectorConfigurationMQTT mqttConfiguration;
+	private MQTTConnectorConfiguration mqttConfiguration;
 	
 	private Mqtt5BlockingClient mqttClient;
 	private Consumer<Mqtt5Publish> consumer;
@@ -61,9 +61,9 @@ public class PingPongAgentMQTT extends Agent{
 		}
 	}
 	
-	private ConnectorConfigurationMQTT getMqttConfiguration() {
+	private MQTTConnectorConfiguration getMqttConfiguration() {
 		if (mqttConfiguration==null) {
-			mqttConfiguration = new ConnectorConfigurationMQTT();
+			mqttConfiguration = new MQTTConnectorConfiguration();
 			mqttConfiguration.setUrlOrIP("localhost");
 			mqttConfiguration.setPort(1883);
 			mqttConfiguration.setMqttVersion(MqttVersion.MQTT_5_0);

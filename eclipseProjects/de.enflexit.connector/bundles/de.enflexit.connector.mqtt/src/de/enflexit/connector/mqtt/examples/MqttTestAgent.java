@@ -2,7 +2,7 @@ package de.enflexit.connector.mqtt.examples;
 
 import com.hivemq.client.mqtt.MqttVersion;
 
-import de.enflexit.connector.mqtt.ConnectorConfigurationMQTT;
+import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
 import de.enflexit.connector.mqtt.MQTTConnector;
 import jade.core.Agent;
 
@@ -21,7 +21,7 @@ public class MqttTestAgent extends Agent {
 	
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			ConnectorConfigurationMQTT mqttConfig = new ConnectorConfigurationMQTT();
+			MQTTConnectorConfiguration mqttConfig = new MQTTConnectorConfiguration();
 			mqttConfig.setUrlOrIP("localhost");
 			mqttConfig.setPort(1883);
 			mqttConfig.setClientID(this.getLocalName());
