@@ -41,6 +41,12 @@ public abstract class AbstractConnector {
 	public abstract boolean isConnected();
 	
 	/**
+	 * Gets the protocol name.
+	 * @return the protocol name
+	 */
+	public abstract String getProtocolName();
+	
+	/**
 	 * Sets the connector manager.
 	 * @param connectorManager the new connector manager
 	 */

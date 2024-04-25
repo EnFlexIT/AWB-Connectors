@@ -19,6 +19,16 @@ public class MQTTMessageWrapper {
 		this.mqtt5message = mqtt5message;
 	}
 	
+	public String getMessageTopic() {
+		String topicString = "";
+		if (this.mqtt3message!=null) {
+			topicString = this.mqtt3message.getTopic().toString();
+		} else if (this.mqtt5message!=null) {
+			topicString = this.mqtt5message.getTopic().toString();
+		}
+		return topicString;
+	}
+	
 	/**
 	 * Gets the unprocessed message payload.
 	 * @return the payload bytes

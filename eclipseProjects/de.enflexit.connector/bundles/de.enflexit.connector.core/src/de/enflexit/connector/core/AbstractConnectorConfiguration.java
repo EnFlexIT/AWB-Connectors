@@ -14,7 +14,6 @@ public abstract class AbstractConnectorConfiguration implements PropertiesListen
 	public static final String PROPERTY_SERVER_PORT = "Server.port";
 	
 	private String name;
-	private String protocol;
 	
 	private StartOn startOn;
 	private String host;
@@ -37,20 +36,6 @@ public abstract class AbstractConnectorConfiguration implements PropertiesListen
 	 */
 	public void setName(String name) {
 		this.name = name;
-	}
-	/**
-	 * Gets the protocol.
-	 * @return the protocol
-	 */
-	public String getProtocol() {
-		return protocol;
-	}
-	/**
-	 * Sets the protocol.
-	 * @param protocol the new protocol
-	 */
-	public void setProtocol(String protocol) {
-		this.protocol = protocol;
 	}
 	/**
 	 * Gets the start on.

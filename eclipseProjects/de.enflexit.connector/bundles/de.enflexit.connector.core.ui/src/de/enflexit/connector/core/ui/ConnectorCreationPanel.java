@@ -193,7 +193,7 @@ public class ConnectorCreationPanel extends JPanel implements ActionListener {
 		if (connectorName.isBlank()==true) {
 			String errorMessage = "The connector name must not be empty! Please specify a unique name.";
 			this.getJLabelErrorMessage().setText(errorMessage);
-		} else if (ConnectorManager.getInstance().getConnector(connectorName)!=null) {
+		} else if (ConnectorManager.getInstance().getConnectorByName(connectorName)!=null) {
 			String errorMessage = "A connector with the name " + connectorName + "already exists! Please choose a different name.";
 			this.getJLabelErrorMessage().setText(errorMessage);
 		} else {

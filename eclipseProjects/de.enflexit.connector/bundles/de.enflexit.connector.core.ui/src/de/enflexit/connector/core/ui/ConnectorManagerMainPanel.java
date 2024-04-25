@@ -313,7 +313,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			
 			String selectedConnectorName = this.getConnectorsList().getSelectedValue();
 			if (selectedConnectorName!=null) {
-				this.selectedConnector = ConnectorManager.getInstance().getConnector(selectedConnectorName);
+				this.selectedConnector = ConnectorManager.getInstance().getConnectorByName(selectedConnectorName);
 			} else {
 				this.selectedConnector = null;
 			}

@@ -27,6 +27,8 @@ import de.enflexit.connector.core.AbstractConnectorConfiguration;
  */
 public class MQTTConnector extends AbstractConnector {
 	
+	public static final String PROTOCOL_NAME = "MQTT";
+	
 	private MqttClient client;
 	
 	private MQTTConnectorConfiguration configuration;
@@ -39,8 +41,8 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	private MqttClient getClient() {
 		if (client==null) {
-			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.getConfiguration().getClientID()).serverHost(this.getConfiguration().getUrlOrIP()).serverPort(this.getConfiguration().getPort());
-			switch(this.getConfiguration().getMqttVersion()) {
+			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.getMqttConfiguration().getClientID()).serverHost(this.getMqttConfiguration().getUrlOrIP()).serverPort(this.getMqttConfiguration().getPort());
+			switch(this.getMqttConfiguration().getMqttVersion()) {
 			case MQTT_3_1_1:
 				client = clientBuilder.useMqttVersion3().build().toBlocking();
 				break;
@@ -57,7 +59,7 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	@Override
 	public boolean connect() {
-		switch (this.getConfiguration().getMqttVersion()) {
+		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			return this.connectV3();
 		case MQTT_5_0:
@@ -101,7 +103,7 @@ public class MQTTConnector extends AbstractConnector {
 	 * Disconnects from the broker.
 	 */
 	public void disconnect() {
-		switch (this.getConfiguration().getMqttVersion()) {
+		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.disconnect();
@@ -119,7 +121,7 @@ public class MQTTConnector extends AbstractConnector {
 	 * @param messageString the message string
 	 */
 	public void publish(String topic, String messageString) {
-		switch (this.getConfiguration().getMqttVersion()) {
+		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			Mqtt3Publish messageV3 = Mqtt3Publish.builder().topic(topic).payload(messageString.getBytes()).build();
@@ -158,20 +160,22 @@ public class MQTTConnector extends AbstractConnector {
 		// --- CHeck if there is an active subscription for this topic --------
 		MQTTSubscription subscription = this.getActiveSubscriptions().get(topic);
 		
-		// --- If not, create a new one ---------------------------------------
+		// --- If not, create a new one -------------------
 		if (subscription==null) {
 			subscription = new MQTTSubscription();
 			subscription.setTopic(topic);
+			subscription.addSubscriber(subscriber);
 			this.activeSubscriptions.put(topic, subscription);
 			this.startSubscription(subscription);
+		} else {
+			// --- Add to an existing subscription --------
+			subscription.addSubscriber(subscriber);
 		}
 		
-		// --- Add the new subscriber to the subscription ---------------------
-		subscription.addSubscriber(subscriber);
 	}
 	
 	private void startSubscription(MQTTSubscription subscription) {
-		switch (this.getConfiguration().getMqttVersion()) {
+		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.subscribeWith().topicFilter(subscription.getTopic()).send();
@@ -210,7 +214,7 @@ public class MQTTConnector extends AbstractConnector {
 	}
 	
 	private void stopSubscription(String topic) {
-		switch (this.getConfiguration().getMqttVersion()) {
+		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.unsubscribeWith().topicFilter(topic).send();
@@ -222,18 +226,19 @@ public class MQTTConnector extends AbstractConnector {
 		}
 	}
 	
-	
-	private MQTTConnectorConfiguration getConfiguration() {
+	private MQTTConnectorConfiguration getMqttConfiguration() {
 		if (configuration==null) {
 			configuration = MQTTConnectorConfiguration.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
 		}
 		return configuration;
 	}
 	
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#getConnectorConfiguration()
+	 */
 	@Override
 	public AbstractConnectorConfiguration getConnectorConfiguration() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.getMqttConfiguration();
 	}
 	
 	
@@ -263,11 +268,11 @@ public class MQTTConnector extends AbstractConnector {
 		@Override
 		public void accept(Mqtt3Publish message) {
 			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
-			for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
-				listener.handleMessage(messageWrapper);
+			if (messageWrapper.getMessageTopic().equals(this.subscription.getTopic())) {
+				for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
+					listener.handleMessage(messageWrapper);
+				}
 			}
-			
-			this.subscription.getSubscribers();
 		}
 		
 	}
@@ -294,13 +299,21 @@ public class MQTTConnector extends AbstractConnector {
 		@Override
 		public void accept(Mqtt5Publish message) {
 			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
-			for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
-				listener.handleMessage(messageWrapper);
+			if (messageWrapper.getMessageTopic().equals(this.subscription.getTopic())) {
+				for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
+					listener.handleMessage(messageWrapper);
+				}
 			}
-			
-			this.subscription.getSubscribers();
 		}
 		
+	}
+
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#getProtocolName()
+	 */
+	@Override
+	public String getProtocolName() {
+		return PROTOCOL_NAME;
 	}
 	
 }

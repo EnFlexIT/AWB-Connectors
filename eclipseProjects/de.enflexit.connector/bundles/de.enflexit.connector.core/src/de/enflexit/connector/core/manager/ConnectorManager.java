@@ -71,9 +71,25 @@ public class ConnectorManager {
 	 * @param connectorName the connector name
 	 * @return the connector
 	 */
-	public AbstractConnector getConnector(String connectorName) {
+	public AbstractConnector getConnectorByName(String connectorName) {
 		return this.getAvailableConnectors().get(connectorName);
 	}
+	
+	/**
+	 * Gets the connector with the specified host and protocol, if there is one.
+	 * @param host the host
+	 * @param protocol the protocol
+	 * @return the connector, or null if not found
+	 */
+	public AbstractConnector getConnectorByHostAndProtocol(String host, String protocol) {
+		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
+			if (connector.getProtocolName().equals(protocol) && connector.getConnectorConfiguration().getUrlOrIP().equals(host)) {
+				return connector;
+			}
+		}
+		return null;
+	}
+	
 	
 	/**
 	 * Adds a new connector.
@@ -81,7 +97,7 @@ public class ConnectorManager {
 	 * @param connector the connector
 	 */
 	public void addNewConnector(String connectorName, AbstractConnector connector) {
-		if (this.getConnector(connectorName)!=null) {
+		if (this.getConnectorByName(connectorName)!=null) {
 			throw new IllegalArgumentException("A connector with the name " + connectorName + " already exists!");
 		} else {
 			this.getAvailableConnectors().put(connectorName, connector);
@@ -96,7 +112,7 @@ public class ConnectorManager {
 	 * @return true, if successful
 	 */
 	public boolean removeConnector(String connectorName) {
-		AbstractConnector connector = this.getConnector(connectorName);
+		AbstractConnector connector = this.getConnectorByName(connectorName);
 		
 		// --- Connector not found ------------------------
 		if (connector==null) return false;
@@ -250,12 +266,8 @@ public class ConnectorManager {
 	protected void loadConfigurationsFromDefaultFile() {
 		
 		File configFile = this.getDefaultConfigFile();
-		System.out.print("[" + this.getClass().getSimpleName() + "] Config file: " + configFile.getPath());
 		if (configFile!=null && configFile.exists()) {
 			this.loadConfigurationFromJSON(configFile);
-			System.out.println(" loaded");
-		} else {
-			System.out.println(" not found");
 		}
 	}
 	

@@ -12,7 +12,6 @@ public class ConnectorManagerActivator implements BundleActivator, ApplicationLi
 	@Override
 	public void start(BundleContext context) throws Exception {
 		Application.addApplicationListener(this);
-//		ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);
 	}
 	@Override
 	public void stop(BundleContext context) throws Exception {
@@ -20,7 +19,6 @@ public class ConnectorManagerActivator implements BundleActivator, ApplicationLi
 	}
 	@Override
 	public void onApplicationEvent(ApplicationEvent ae) {
-		System.out.println("[" + this.getClass().getSimpleName() + "] Application event: " + ae.getApplicationEvent());
 		switch(ae.getApplicationEvent()) {
 		case ApplicationEvent.AWB_START:
 			ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);
