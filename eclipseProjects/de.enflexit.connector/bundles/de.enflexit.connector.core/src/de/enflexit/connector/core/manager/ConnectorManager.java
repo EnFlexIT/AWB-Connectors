@@ -11,6 +11,8 @@ import java.util.List;
 import agentgui.core.application.Application;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
+import de.enflexit.common.properties.PropertiesEvent;
+import de.enflexit.common.properties.PropertiesListener;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
@@ -20,7 +22,7 @@ import de.enflexit.connector.core.ConnectorService;
  * The ConnectorManager manages all {@link AbstractConnector}s used within one Java VM..
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManager {
+public class ConnectorManager implements PropertiesListener {
 	
 	public static final String CONNECTOR_ADDED = "Connector added";
 	public static final String CONNECTOR_REMOVED = "Connector removed";
@@ -32,6 +34,8 @@ public class ConnectorManager {
 	private HashMap<String, AbstractConnector> availableConnectors;
 	
 	private ArrayList<PropertyChangeListener> listeners;
+	
+	private boolean configChanged;
 	
 	private ConnectorManager() {}
 	
@@ -101,8 +105,10 @@ public class ConnectorManager {
 			throw new IllegalArgumentException("A connector with the name " + connectorName + " already exists!");
 		} else {
 			this.getAvailableConnectors().put(connectorName, connector);
+			connector.getConnectorProperties().addPropertiesListener(this);
 			PropertyChangeEvent eventAdded = new PropertyChangeEvent(this, CONNECTOR_ADDED, null, connectorName);
 			this.notifyListeners(eventAdded);
+			this.setConfigChanged(true);
 		}
 	}
 	
@@ -122,10 +128,13 @@ public class ConnectorManager {
 		
 		// --- Remove the connector -----------------------
 		this.getAvailableConnectors().remove(connectorName);
+		connector.getConnectorProperties().removePropertiesListener(this);
 		
 		// --- Notify registered listeners ----------------
 		PropertyChangeEvent removedEvent = new PropertyChangeEvent(this, CONNECTOR_REMOVED, connectorName, null);
 		this.notifyListeners(removedEvent);
+		
+		this.setConfigChanged(true);
 		
 		return true;
 	}
@@ -191,6 +200,7 @@ public class ConnectorManager {
 			connectorConfiguraitons.put(connectorName, connector.getConnectorProperties());
 		}
 		connectorConfiguraitons.storeToJsonFile(jsonFile);
+		this.setConfigChanged(false);
 	}
 
 	/**
@@ -208,12 +218,15 @@ public class ConnectorManager {
 					AbstractConnector connectorInstance = service.getNewConnectorInstance();
 					AbstractConnectorProperties properties = service.getInitialProperties();
 					properties.addAll(loadedPropertiess);
+					properties.addPropertiesListener(this);
 					connectorInstance.setConnectorProperties(properties);
 					this.addNewConnector(connectorName, connectorInstance);
 				} else {
 					System.err.println("[" + this.getClass().getSimpleName() + "] Could not find a ConnectorService implementation for " + serviceClassName);
 				}
 			}
+			// -- Was set to true when adding the connectors during loading
+			this.setConfigChanged(false);
 		}
 	}
 	
@@ -263,7 +276,7 @@ public class ConnectorManager {
 	/**
 	 * Loads connector configurations from the default configuration file.
 	 */
-	protected void loadConfigurationsFromDefaultFile() {
+	public void loadConfigurationsFromDefaultFile() {
 		
 		File configFile = this.getDefaultConfigFile();
 		if (configFile!=null && configFile.exists()) {
@@ -274,7 +287,7 @@ public class ConnectorManager {
 	/**
 	 * Saves connector configurations to the default configuration file.
 	 */
-	protected void saveConfigurationsToDefaultFile() {
+	public void saveConfigurationsToDefaultFile() {
 
 		File configFile = this.getDefaultConfigFile();
 		if (configFile!=null) {
@@ -296,5 +309,20 @@ public class ConnectorManager {
 		
 		return configFile;
 	}
+
+	public boolean isConfigChanged() {
+		return configChanged;
+	}
+
+	public void setConfigChanged(boolean configChanged) {
+		this.configChanged = configChanged;
+	}
+
+	@Override
+	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
+		this.setConfigChanged(true);
+	}
+	
+	
 	
 }

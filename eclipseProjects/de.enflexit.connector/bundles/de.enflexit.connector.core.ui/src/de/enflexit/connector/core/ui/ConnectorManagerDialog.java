@@ -7,11 +7,13 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import agentgui.core.application.Application;
 import de.enflexit.common.swing.JDialogSizeAndPostionController;
 import de.enflexit.common.swing.JDialogSizeAndPostionController.JDialogPosition;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * A dialog to configure connectors.
@@ -44,6 +46,17 @@ public class ConnectorManagerDialog extends JDialog {
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
+
+				if (ConnectorManager.getInstance().isConfigChanged()==true
+						) {
+					String userMessage = "Your configuration has unsaved changes! Store before closing?";
+					int userReply = JOptionPane.showConfirmDialog(ConnectorManagerDialog.this, userMessage, "Save changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					
+					if (userReply==JOptionPane.YES_OPTION) {
+						ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
+					}
+				}
+				
 				ConnectorManagerDialog.this.setVisible(false);
 				ConnectorManagerDialog.this.dispose();
 			}
