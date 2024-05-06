@@ -55,6 +55,8 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private JButton jButtonApply;
 	
 	private boolean isChanged;
+	private JLabel jLabelProtocol;
+	private JLabel jLabelProtocolName;
 	
 	/**
 	 * Instantiates a new manage connection panel.
@@ -68,21 +70,21 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 */
 	private void initialize() {
 		GridBagLayout gridBagLayout = new GridBagLayout();
-		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0};
+		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
 		gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
-		gridBagLayout.columnWeights = new double[]{0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE};
+		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE};
 		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE};
 		setLayout(gridBagLayout);
 		GridBagConstraints gbc_jLabelManageConnection = new GridBagConstraints();
 		gbc_jLabelManageConnection.anchor = GridBagConstraints.WEST;
 		gbc_jLabelManageConnection.gridwidth = 4;
-		gbc_jLabelManageConnection.insets = new Insets(5, 5, 5, 0);
+		gbc_jLabelManageConnection.insets = new Insets(5, 13, 5, 0);
 		gbc_jLabelManageConnection.gridx = 0;
 		gbc_jLabelManageConnection.gridy = 0;
 		add(getJLabelManageConnection(), gbc_jLabelManageConnection);
 		GridBagConstraints gbc_jLabelStartOn = new GridBagConstraints();
 		gbc_jLabelStartOn.anchor = GridBagConstraints.EAST;
-		gbc_jLabelStartOn.insets = new Insets(5, 5, 5, 5);
+		gbc_jLabelStartOn.insets = new Insets(5, 13, 5, 5);
 		gbc_jLabelStartOn.gridx = 0;
 		gbc_jLabelStartOn.gridy = 1;
 		add(getJLabelStartOn(), gbc_jLabelStartOn);
@@ -99,14 +101,25 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		add(getSeparator(), gbc_separator);
 		GridBagConstraints gbc_jLabelConnectionDetails = new GridBagConstraints();
 		gbc_jLabelConnectionDetails.anchor = GridBagConstraints.WEST;
-		gbc_jLabelConnectionDetails.gridwidth = 4;
-		gbc_jLabelConnectionDetails.insets = new Insets(10, 5, 5, 0);
+		gbc_jLabelConnectionDetails.gridwidth = 2;
+		gbc_jLabelConnectionDetails.insets = new Insets(10, 13, 5, 5);
 		gbc_jLabelConnectionDetails.gridx = 0;
 		gbc_jLabelConnectionDetails.gridy = 2;
 		add(getJLabelConnectionDetails(), gbc_jLabelConnectionDetails);
+		GridBagConstraints gbc_jLabelProtocol = new GridBagConstraints();
+		gbc_jLabelProtocol.insets = new Insets(10, 5, 5, 5);
+		gbc_jLabelProtocol.gridx = 2;
+		gbc_jLabelProtocol.gridy = 2;
+		add(getJLabelProtocol(), gbc_jLabelProtocol);
+		GridBagConstraints gbc_jLabelProtocolName = new GridBagConstraints();
+		gbc_jLabelProtocolName.anchor = GridBagConstraints.WEST;
+		gbc_jLabelProtocolName.insets = new Insets(10, 5, 5, 0);
+		gbc_jLabelProtocolName.gridx = 3;
+		gbc_jLabelProtocolName.gridy = 2;
+		add(getJLabelProtocolName(), gbc_jLabelProtocolName);
 		GridBagConstraints gbc_connectionPropertiesPanel = new GridBagConstraints();
-		gbc_connectionPropertiesPanel.insets = new Insets(5, 5, 5, 0);
-		gbc_connectionPropertiesPanel.gridwidth = 4;
+		gbc_connectionPropertiesPanel.insets = new Insets(5, 0, 5, 0);
+		gbc_connectionPropertiesPanel.gridwidth = 5;
 		gbc_connectionPropertiesPanel.fill = GridBagConstraints.BOTH;
 		gbc_connectionPropertiesPanel.gridx = 0;
 		gbc_connectionPropertiesPanel.gridy = 3;
@@ -119,14 +132,14 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		gbc_jButtonTest.gridy = 4;
 		add(getJButtonTest(), gbc_jButtonTest);
 		GridBagConstraints gbc_jButtonApply = new GridBagConstraints();
-		gbc_jButtonApply.anchor = GridBagConstraints.ABOVE_BASELINE;
+		gbc_jButtonApply.anchor = GridBagConstraints.ABOVE_BASELINE_TRAILING;
 		gbc_jButtonApply.insets = new Insets(5, 0, 10, 5);
-		gbc_jButtonApply.gridx = 2;
+		gbc_jButtonApply.gridx = 3;
 		gbc_jButtonApply.gridy = 4;
 		add(getJButtonApply(), gbc_jButtonApply);
 		GridBagConstraints gbc_jButtonDiscard = new GridBagConstraints();
-		gbc_jButtonDiscard.insets = new Insets(5, 5, 10, 5);
-		gbc_jButtonDiscard.gridx = 3;
+		gbc_jButtonDiscard.insets = new Insets(5, 5, 10, 0);
+		gbc_jButtonDiscard.gridx = 4;
 		gbc_jButtonDiscard.gridy = 4;
 		add(getJButtonDiscard(), gbc_jButtonDiscard);
 	}
@@ -196,6 +209,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 			this.pauseListener = true;
 			AbstractConnectorProperties propsClone = SerialClone.clone(connector.getConnectorProperties());
 			propsClone.addPropertiesListener(this);
+			this.getJLabelProtocolName().setText(connector.getProtocolName());
 			this.getConnectionPropertiesPanel().setProperties(propsClone);
 			this.setChanged(false);
 			StartOn startOn = StartOn.valueOf(connector.getConnectorProperties().getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_START_ON));
@@ -203,6 +217,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 			this.getJButtonTest().setEnabled(true);
 			this.pauseListener = false;
 		} else {
+			this.getJLabelProtocolName().setText("No connection selected");
 			this.getConnectionPropertiesPanel().setProperties(null);
 			this.getJButtonTest().setEnabled(false);
 		}
@@ -223,7 +238,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getJComboBoxStartOn()) {
 			if (this.pauseListener==false ) {
-				this.connector.getConnectorProperties().setStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
+				this.getConnectionPropertiesPanel().getProperties().setValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
 			}
 		} else if (ae.getSource()==this.getJButtonTest()) {
 			this.testConnection();
@@ -247,7 +262,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 				JOptionPane.showMessageDialog(this, "Connection successful!", "Connection successful!", JOptionPane.INFORMATION_MESSAGE);
 				testConnector.disconnect();
 			} else {
-				JOptionPane.showMessageDialog(this, "Connection failed", "Connection failed!", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Connection test failed, please check your settings!", "Connection failed!", JOptionPane.ERROR_MESSAGE);
 			}
 		} else {
 			System.err.println("[" + this.getClass().getSimpleName() + "] The connector service implementation " + serviceClassName + " could not be found!");
@@ -325,4 +340,18 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		}
 	}
 	
+	private JLabel getJLabelProtocol() {
+		if (jLabelProtocol == null) {
+			jLabelProtocol = new JLabel("Protocol:");
+			jLabelProtocol.setFont(new Font("Dialog", Font.BOLD, 12));
+		}
+		return jLabelProtocol;
+	}
+	private JLabel getJLabelProtocolName() {
+		if (jLabelProtocolName == null) {
+			jLabelProtocolName = new JLabel("No connection selected");
+			jLabelProtocolName.setFont(new Font("Dialog", Font.PLAIN, 12));
+		}
+		return jLabelProtocolName;
+	}
 }

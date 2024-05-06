@@ -8,6 +8,7 @@ import com.hivemq.client.mqtt.MqttClientBuilder;
 import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.MqttVersion;
+import com.hivemq.client.mqtt.exceptions.ConnectionFailedException;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3BlockingClient;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAckReturnCode;
@@ -59,14 +60,20 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	@Override
 	public boolean connect() {
-		switch (this.getMqttConfiguration().getMqttVersion()) {
-		case MQTT_3_1_1:
-			return this.connectV3();
-		case MQTT_5_0:
-			return this.connectV5();
-		default:
+		try {
+			switch (this.getMqttConfiguration().getMqttVersion()) {
+			case MQTT_3_1_1:
+				return this.connectV3();
+			case MQTT_5_0:
+				return this.connectV5();
+			default:
+				return false;
+			}
+		} catch (ConnectionFailedException cfe) {
+			System.err.println("[" + this.getClass().getSimpleName() + "] Connection failed: " + cfe.getMessage() + " (Exception)");
 			return false;
 		}
+		
 	}
 	
 	private boolean connectV3() {
@@ -82,11 +89,12 @@ public class MQTTConnector extends AbstractConnector {
 	
 	private boolean connectV5() {
 		Mqtt5BlockingClient mqtt5Client = (Mqtt5BlockingClient) this.getClient();
+		
 		Mqtt5ConnAck connAck = mqtt5Client.connect();
 		if (connAck.getReasonCode() == Mqtt5ConnAckReasonCode.SUCCESS) {
 			return true;
 		} else {
-			System.err.println("[" + this.getClass().getSimpleName() + "] Connection failed: " + connAck.getReasonString());
+			System.err.println("[" + this.getClass().getSimpleName() + "] Connection failed: " + connAck.getReasonString() + " (Else-Zweig)");
 			return false;
 		}
 	}

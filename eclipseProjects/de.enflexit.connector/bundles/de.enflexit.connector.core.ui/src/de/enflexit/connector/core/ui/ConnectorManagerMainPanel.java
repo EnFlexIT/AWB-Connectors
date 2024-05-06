@@ -2,6 +2,7 @@ package de.enflexit.connector.core.ui;
 
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -9,6 +10,8 @@ import java.beans.PropertyChangeListener;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import de.enflexit.common.swing.OwnerDetection;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -49,7 +52,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JList<String> connectorsList;
 	private DefaultListModel<String> connectorsListModel;
 	
-	private JSplitPane subSplitPane;
 	private ConnectorCreationPanel createConnectionPanel;
 	private ConnectorConfigurationPanel manageConnectionPanel;
 	
@@ -153,8 +155,9 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (mainSplitPane == null) {
 			mainSplitPane = new JSplitPane();
 			mainSplitPane.setLeftComponent(getJScrollPane());
-			mainSplitPane.setRightComponent(getSubSplitPane());
+			mainSplitPane.setRightComponent(getConfigurationPanel());
 			mainSplitPane.setDividerLocation(250);
+			mainSplitPane.setResizeWeight(0.5);
 		}
 		return mainSplitPane;
 	}
@@ -199,21 +202,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return connectorsListModel;
 	}
 	
-	private JSplitPane getSubSplitPane() {
-		if (subSplitPane == null) {
-			subSplitPane = new JSplitPane();
-			subSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-			subSplitPane.setDividerSize(0);
-			subSplitPane.setDividerLocation(0);
-			subSplitPane.setLeftComponent(getCreateConnectionPanel());
-			subSplitPane.setRightComponent(getConfigurationPanel());
-		}
-		return subSplitPane;
-	}
-
 	private ConnectorCreationPanel getCreateConnectionPanel() {
 		if (createConnectionPanel == null) {
-			createConnectionPanel = new ConnectorCreationPanel(this);
+			Frame owner = OwnerDetection.getOwnerFrameForComponent(this);
+			createConnectionPanel = new ConnectorCreationPanel(owner, this);
 		}
 		return createConnectionPanel;
 	}
@@ -316,10 +308,14 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 
 	private void showCreatePanel() {
-		this.getSubSplitPane().setDividerLocation(100);
-	}
-	protected void hideCreatePanel() {
-		this.getSubSplitPane().setDividerLocation(0);
+		this.getCreateConnectionPanel();
+		int posX = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getX()).intValue();
+		int posY = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getY()).intValue();
+		int width = this.getConfigurationPanel().getWidth();
+		this.getCreateConnectionPanel().setLocation(posX, posY);
+		this.getCreateConnectionPanel().setSize(width, 135);
+		this.getCreateConnectionPanel().requestFocus();
+		this.getCreateConnectionPanel().setVisible(true);
 	}
 	
 	private void updateButtonState() {

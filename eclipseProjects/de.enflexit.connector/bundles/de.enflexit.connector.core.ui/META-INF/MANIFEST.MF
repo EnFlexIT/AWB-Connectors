@@ -5,6 +5,8 @@ Bundle-SymbolicName: de.enflexit.connector.core.ui;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.agentgui.core,
  de.enflexit.connector.core,
- de.enflexit.common
+ de.enflexit.common,
+ org.eclipse.osgi,
+ org.eclipse.equinox.preferences
 Automatic-Module-Name: de.enflexit.connector.core.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-11

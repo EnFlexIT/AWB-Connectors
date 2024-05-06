@@ -37,6 +37,8 @@ public class ConnectorManager implements PropertiesListener {
 	
 	private boolean configChanged;
 	
+	private HashMap<String, ConnectorService> availableConnectorServices;
+	
 	private ConnectorManager() {}
 	
 	/**
@@ -323,6 +325,28 @@ public class ConnectorManager implements PropertiesListener {
 		this.setConfigChanged(true);
 	}
 	
+	/**
+	 * Gets the available connector services.
+	 * @return the available connector services
+	 */
+	public HashMap<String, ConnectorService> getAvailableConnectorServices() {
+		if (availableConnectorServices==null) {
+			availableConnectorServices = new HashMap<>();
+			List<ConnectorService> services = ServiceFinder.findServices(ConnectorService.class);
+			for (ConnectorService service : services) {
+				availableConnectorServices.put(service.getProtocolName(), service);
+			}
+		}
+		return availableConnectorServices;
+	}
 	
+	/**
+	 * Gets the connector service for the specified protocol.
+	 * @param protocolName the protocol name
+	 * @return the connector service
+	 */
+	public ConnectorService getConnectorServiceForProtocol(String protocolName) {
+		return this.getAvailableConnectorServices().get(protocolName);
+	}
 	
 }

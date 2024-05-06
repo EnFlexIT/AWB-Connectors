@@ -8,7 +8,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
 import org.agentgui.gui.swing.MainWindowExtension;
-
 import agentgui.core.application.Application;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -35,12 +34,12 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 		switch (this.getIntegrationType()) {
 		case APPLICATION:
 			// --- Tool bar and tray icon menu ------------
-			this.addToolbarComponent(this.getToolbarButton(), null, null);
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), null, null);
+			this.addToolbarComponent(this.getToolbarButton(), 8, SeparatorPosition.NoSeparator);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), null, null);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
 			break;
 		case NONE:
 			// --- Nothing to do here ---------------------
