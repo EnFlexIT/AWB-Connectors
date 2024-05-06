@@ -6,14 +6,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
-
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import agentgui.core.application.Application;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -25,7 +20,6 @@ import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import javax.swing.JToolBar;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 
 /**
  * The main panel for the {@link ConnectorManager}'s configuration UI.
@@ -36,19 +30,14 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private static final long serialVersionUID = 3162788243111915591L;
 	
 	private static final String ICON_SAVE = "Save.png";
-	private static final String ICON_LOAD = "Load.png";
 	private static final String ICON_ADD = "ListPlus.png";
 	private static final String ICON_REMOVE = "ListMinus.png";
 	private static final String ICON_START = "Start.png";
 	private static final String ICON_STOP = "Stop.png";
 	private static final String ICON_RESTART = "Restart.png";
 	
-	private static final String FILE_SUFFIX_XML = "xml";
-	private static final String FILE_SUFFIX_JSON = "json";
-	
 	private JToolBar mainToolBar;
 	private JButton jButtonSave;
-	private JButton jButtonLoad;
 	private JButton jButtonAdd;
 	private JButton jButtonRemove;
 	private JButton jButtonStart;
@@ -64,7 +53,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private ConnectorCreationPanel createConnectionPanel;
 	private ConnectorConfigurationPanel manageConnectionPanel;
 	
-	private JFileChooser fileChooser;
 	private AbstractConnector selectedConnector;
 	
 	/**
@@ -89,7 +77,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			mainToolBar = new JToolBar();
 			mainToolBar.setFloatable(false);
 			mainToolBar.add(getJButtonSave());
-			mainToolBar.add(getJButtonLoad());
 			mainToolBar.addSeparator();
 			mainToolBar.add(getJButtonAdd());
 			mainToolBar.add(getJButtonRemove());
@@ -107,14 +94,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			jButtonSave.addActionListener(this);
 		}
 		return jButtonSave;
-	}
-
-	private JButton getJButtonLoad() {
-		if (jButtonLoad == null) {
-			jButtonLoad = new JButton(BundleHelper.getImageIcon(ICON_LOAD));
-			jButtonLoad.addActionListener(this);
-		}
-		return jButtonLoad;
 	}
 
 	private JButton getJButtonAdd() {
@@ -227,7 +206,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			subSplitPane.setDividerSize(0);
 			subSplitPane.setDividerLocation(0);
 			subSplitPane.setLeftComponent(getCreateConnectionPanel());
-			subSplitPane.setRightComponent(getManageConnectionPanel());
+			subSplitPane.setRightComponent(getConfigurationPanel());
 		}
 		return subSplitPane;
 	}
@@ -239,40 +218,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return createConnectionPanel;
 	}
 
-	private ConnectorConfigurationPanel getManageConnectionPanel() {
+	private ConnectorConfigurationPanel getConfigurationPanel() {
 		if (manageConnectionPanel == null) {
 			manageConnectionPanel = new ConnectorConfigurationPanel();
 		}
 		return manageConnectionPanel;
-	}
-
-	private JFileChooser getFileChooser() {
-		if (fileChooser==null) {
-			fileChooser = new JFileChooser();
-			fileChooser.addChoosableFileFilter(this.getFileFilterJSON());
-			fileChooser.addChoosableFileFilter(this.getFileFilterXML());
-			fileChooser.setAcceptAllFileFilterUsed(false);
-			fileChooser.setCurrentDirectory(Application.getGlobalInfo().getLastSelectedFolder());
-		}
-		return fileChooser;
-	}
-
-	/**
-	 * Gets the file filter for XML files.
-	 * @return the file filter XML
-	 */
-	private FileNameExtensionFilter getFileFilterXML() {
-		FileNameExtensionFilter	fileFilterXML = new FileNameExtensionFilter("XML files", FILE_SUFFIX_XML);
-		return fileFilterXML;
-	}
-
-	/**
-	 * Gets the file filter for JSON files.
-	 * @return the file filter JSON
-	 */
-	private FileNameExtensionFilter getFileFilterJSON() {
-		FileNameExtensionFilter	fileFilterJSON = new FileNameExtensionFilter("JSON files", FILE_SUFFIX_JSON);
-		return fileFilterJSON;
 	}
 
 	/* (non-Javadoc)
@@ -308,7 +258,13 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (lse.getSource()==this.getConnectorsList()) {
 			
 			if (this.selectedConnector!=null) {
-				//TODO check for unsaved changes, ask user to save or discard 
+				if (this.getConfigurationPanel().isChanged()==true) {
+					String userMessage = "Your current configuration has pending changes! Apply before switching?";
+					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					if (userReply==JOptionPane.YES_OPTION) {
+						this.getConfigurationPanel().appylChanges();
+					}
+				}
 			}
 			
 			String selectedConnectorName = this.getConnectorsList().getSelectedValue();
@@ -317,7 +273,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			} else {
 				this.selectedConnector = null;
 			}
-			this.getManageConnectionPanel().setConnector(this.selectedConnector);
+			this.getConfigurationPanel().setConnector(this.selectedConnector);
 			this.updateButtonState();
 		}
 	}
@@ -330,19 +286,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getJButtonSave()) {
-			int result = this.getFileChooser().showSaveDialog(this);
-			if (result==JFileChooser.APPROVE_OPTION) {
-				File jsonFile = this.getFileChooser().getSelectedFile();
-				ConnectorManager.getInstance().storeConfigurationToJSON(jsonFile);
-				Application.getGlobalInfo().setLastSelectedFolder(jsonFile.getParentFile());
-			}
-		} else if (ae.getSource()==this.getJButtonLoad()){
-			int result = this.getFileChooser().showOpenDialog(this);
-			if (result==JFileChooser.APPROVE_OPTION) {
-				File jsonFile = this.getFileChooser().getSelectedFile();
-				ConnectorManager.getInstance().loadConfigurationFromJSON(jsonFile);
-				Application.getGlobalInfo().setLastSelectedFolder(jsonFile.getParentFile());
-			}
+			ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
 		} else if (ae.getSource()==this.getJButtonAdd()) {
 			this.showCreatePanel();
 		} else if (ae.getSource()==this.getJButtonRemove()) {
@@ -424,4 +368,5 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			}
 		}
 	}
+	
 }

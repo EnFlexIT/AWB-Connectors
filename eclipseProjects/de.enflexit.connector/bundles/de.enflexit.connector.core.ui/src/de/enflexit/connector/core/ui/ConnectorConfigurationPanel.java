@@ -2,6 +2,7 @@ package de.enflexit.connector.core.ui;
 
 import javax.swing.JPanel;
 
+import de.enflexit.common.SerialClone;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
@@ -52,6 +53,8 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private JSeparator separator;
 	private JButton jButtonDiscard;
 	private JButton jButtonApply;
+	
+	private boolean isChanged;
 	
 	/**
 	 * Instantiates a new manage connection panel.
@@ -191,7 +194,10 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		this.connector = connector;
 		if (connector!=null) {
 			this.pauseListener = true;
-			this.getConnectionPropertiesPanel().setProperties(connector.getConnectorProperties());
+			AbstractConnectorProperties propsClone = SerialClone.clone(connector.getConnectorProperties());
+			propsClone.addPropertiesListener(this);
+			this.getConnectionPropertiesPanel().setProperties(propsClone);
+			this.setChanged(false);
 			StartOn startOn = StartOn.valueOf(connector.getConnectorProperties().getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_START_ON));
 			this.getJComboBoxStartOn().setSelectedItem(startOn);
 			this.getJButtonTest().setEnabled(true);
@@ -207,7 +213,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 */
 	@Override
 	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
-		// TODO Auto-generated method stub
+		this.setChanged(true);
 	}
 
 	/* (non-Javadoc)
@@ -222,9 +228,9 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		} else if (ae.getSource()==this.getJButtonTest()) {
 			this.testConnection();
 		} else if (ae.getSource()==this.getJButtonApply()) {
-			//TODO apply changes
+			this.appylChanges();
 		} else if (ae.getSource()==this.getJButtonDiscard()) {
-			//TODO discard changes
+			this.discardChanges();
 		}
 	}
 	
@@ -282,4 +288,41 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		}
 		return jButtonDiscard;
 	}
+
+	/**
+	 * Checks if the current configuration has unapplied changes.
+	 * @return true, if is changed
+	 */
+	public boolean isChanged() {
+		return isChanged;
+	}
+
+	/**
+	 * Sets the changed state for the current configuration.
+	 * @param hasUnsavedChanges the new changed
+	 */
+	public void setChanged(boolean hasUnsavedChanges) {
+		this.isChanged = hasUnsavedChanges;
+		this.getJButtonApply().setEnabled(hasUnsavedChanges);
+		this.getJButtonDiscard().setEnabled(hasUnsavedChanges);
+	}
+	
+	protected void appylChanges() {
+		// --- Write the changed properties to the connector ------------------
+		this.connector.getConnectorProperties().clear();
+		this.connector.getConnectorProperties().addAll(this.getConnectionPropertiesPanel().getProperties());
+		this.setChanged(false);
+	}
+	
+	protected void discardChanges() {
+		int userResponse = JOptionPane.showConfirmDialog(this, "This will discard your changes! Are you sure?", "Discard changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+		if (userResponse==JOptionPane.YES_OPTION) {
+			// --- Replace with the original properties from the connector ----
+			AbstractConnectorProperties panelProperties = (AbstractConnectorProperties) this.getConnectionPropertiesPanel().getProperties();
+			panelProperties.clear();
+			panelProperties.addAll(this.connector.getConnectorProperties());
+			this.setChanged(false);
+		}
+	}
+	
 }
