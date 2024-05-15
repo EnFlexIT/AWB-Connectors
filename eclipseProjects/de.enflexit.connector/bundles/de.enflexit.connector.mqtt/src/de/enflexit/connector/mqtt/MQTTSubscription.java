@@ -2,6 +2,9 @@ package de.enflexit.connector.mqtt;
 
 import java.util.ArrayList;
 
+import com.hivemq.client.mqtt.datatypes.MqttTopic;
+import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
+
 /**
  * This class collects the MQTT subscriptions for a specific topic.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
@@ -9,6 +12,8 @@ import java.util.ArrayList;
 public class MQTTSubscription {
 	private String topic;
 	private ArrayList<MQTTSubscriber> subscribers;
+	
+	private MqttTopicFilter topicFilter;
 
 	protected synchronized ArrayList<MQTTSubscriber> getSubscribers() {
 		if (subscribers==null) {
@@ -51,7 +56,34 @@ public class MQTTSubscription {
 		if (this.getSubscribers().contains(subscriber)==true) {
 			this.getSubscribers().remove(subscriber);
 		}
-		
 	}
 	
+	/**
+	 * Checks if the provided topic string matches this subscription's topic.
+	 * @param topicString the topic string
+	 * @return true, if successful
+	 */
+	public boolean matchesTopic(String topicString) {
+		return this.matchesTopic(MqttTopic.of(topicString));
+	}
+	
+	/**
+	 * Checks if the provided topic matches this subscription's topic.
+	 * @param topic the topic
+	 * @return true, if successful
+	 */
+	public boolean matchesTopic(MqttTopic topic) {
+		return this.getTopicFilter().matches(topic);
+	}
+	
+	/**
+	 * Gets the topic filter.
+	 * @return the topic filter
+	 */
+	private MqttTopicFilter getTopicFilter() {
+		if (topicFilter==null) {
+			topicFilter = MqttTopicFilter.of(this.getTopic());
+		}
+		return topicFilter;
+	}
 }

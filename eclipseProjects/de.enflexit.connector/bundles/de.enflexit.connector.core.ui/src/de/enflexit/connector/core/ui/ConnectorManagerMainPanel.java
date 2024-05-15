@@ -183,6 +183,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			connectorsList = new JList<String>();
 			connectorsList.setModel(this.getConnectorsListModel());
 			connectorsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			connectorsList.setCellRenderer(new ConnectorsListCellRenderer());
 			connectorsList.addListSelectionListener(this);
 		}
 		return connectorsList;

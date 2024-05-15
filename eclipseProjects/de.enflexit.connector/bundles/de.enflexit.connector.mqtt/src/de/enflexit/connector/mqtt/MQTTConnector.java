@@ -275,8 +275,8 @@ public class MQTTConnector extends AbstractConnector {
 		 */
 		@Override
 		public void accept(Mqtt3Publish message) {
-			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
-			if (messageWrapper.getMessageTopic().equals(this.subscription.getTopic())) {
+			if (this.subscription.matchesTopic(message.getTopic())) {
+				MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
 				for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
 					listener.handleMessage(messageWrapper);
 				}
@@ -306,8 +306,8 @@ public class MQTTConnector extends AbstractConnector {
 		 */
 		@Override
 		public void accept(Mqtt5Publish message) {
-			MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
-			if (messageWrapper.getMessageTopic().equals(this.subscription.getTopic())) {
+			if (this.subscription.matchesTopic(message.getTopic())) {
+				MQTTMessageWrapper messageWrapper = new MQTTMessageWrapper(message);
 				for (MQTTSubscriber listener : this.subscription.getSubscribers()) {
 					listener.handleMessage(messageWrapper);
 				}
