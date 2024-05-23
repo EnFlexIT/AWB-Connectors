@@ -144,12 +144,16 @@ public class MQTTConnector extends AbstractConnector {
 		
 	}
 	
+	/**
+	 * Gets the default configuration.
+	 * @return the default configuration
+	 */
 	public static MQTTConnectorConfiguration getDefaultConfiguration() {
-		MQTTConnectorConfiguration defaultConfiguratin = new MQTTConnectorConfiguration();
-		defaultConfiguratin.setUrlOrIP("localhost");
-		defaultConfiguratin.setPort(1883);
-		defaultConfiguratin.setMqttVersion(MqttVersion.MQTT_3_1_1);
-		return defaultConfiguratin;
+		MQTTConnectorConfiguration defaultConfiguration = new MQTTConnectorConfiguration();
+		defaultConfiguration.setUrlOrIP("localhost");
+		defaultConfiguration.setPort(1883);
+		defaultConfiguration.setMqttVersion(MqttVersion.MQTT_3_1_1);
+		return defaultConfiguration;
 	}
 	
 	private HashMap<String, MQTTSubscription> getActiveSubscriptions() {
@@ -201,7 +205,7 @@ public class MQTTConnector extends AbstractConnector {
 	}
 	
 	/**
-	 * Unsubscribe from the specified topic.
+	 * Unsubscribes a single subscriber from the specified topic.
 	 * @param topic the topic
 	 */
 	public void unsubscribe(String topic, MQTTSubscriber subscriber) {
@@ -221,6 +225,10 @@ public class MQTTConnector extends AbstractConnector {
 		}
 	}
 	
+	/**
+	 * Stops the subscription to the specified topic.
+	 * @param topic the topic
+	 */
 	private void stopSubscription(String topic) {
 		switch (this.getMqttConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
@@ -234,19 +242,31 @@ public class MQTTConnector extends AbstractConnector {
 		}
 	}
 	
-	private MQTTConnectorConfiguration getMqttConfiguration() {
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#getConnectorConfiguration()
+	 */
+	@Override
+	public AbstractConnectorConfiguration getConnectorConfiguration() {
 		if (configuration==null) {
 			configuration = MQTTConnectorConfiguration.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
 		}
 		return configuration;
 	}
 	
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.AbstractConnector#getConnectorConfiguration()
+	/**
+	 * Gets the connector configuration, already cast to the correct type.
+	 * @return the mqtt configuration
 	 */
-	@Override
-	public AbstractConnectorConfiguration getConnectorConfiguration() {
-		return this.getMqttConfiguration();
+	private MQTTConnectorConfiguration getMqttConfiguration() {
+		return (MQTTConnectorConfiguration) this.getConnectorConfiguration();
+	}
+	
+	/**
+	 * Sets the connector configuration.
+	 * @param configuration the new configuration
+	 */
+	public void setConnectorConfiguration(MQTTConnectorConfiguration configuration) {
+		this.configuration = configuration;
 	}
 	
 	

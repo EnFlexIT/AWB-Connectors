@@ -138,7 +138,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		gbc_jButtonApply.gridy = 4;
 		add(getJButtonApply(), gbc_jButtonApply);
 		GridBagConstraints gbc_jButtonDiscard = new GridBagConstraints();
-		gbc_jButtonDiscard.insets = new Insets(5, 5, 10, 0);
+		gbc_jButtonDiscard.insets = new Insets(5, 5, 10, 10);
 		gbc_jButtonDiscard.gridx = 4;
 		gbc_jButtonDiscard.gridy = 4;
 		add(getJButtonDiscard(), gbc_jButtonDiscard);

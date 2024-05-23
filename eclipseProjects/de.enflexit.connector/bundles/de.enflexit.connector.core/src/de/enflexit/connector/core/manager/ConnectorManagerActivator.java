@@ -9,14 +9,26 @@ import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
 
 public class ConnectorManagerActivator implements BundleActivator, ApplicationListener {
 
+	/* (non-Javadoc)
+	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
+	 */
 	@Override
 	public void start(BundleContext context) throws Exception {
+		System.out.println("Connector manager bundle started!");
 		Application.addApplicationListener(this);
 	}
+	
+	/* (non-Javadoc)
+	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+	 */
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		Application.removeApplicationListener(this);
 	}
+	
+	/* (non-Javadoc)
+	 * @see agentgui.core.application.ApplicationListener#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
+	 */
 	@Override
 	public void onApplicationEvent(ApplicationEvent ae) {
 		switch(ae.getApplicationEvent()) {
