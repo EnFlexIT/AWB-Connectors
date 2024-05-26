@@ -17,7 +17,7 @@ public class RemoteControlActivator implements BundleActivator {
 	@Override
 	public void start(BundleContext context) throws Exception {
 		
-		System.out.println("MQTT remote control bundle started!");
+//		System.out.println("[" + this.getClass().getSimpleName() + "] MQTT remote control bundle started!");
 		
 		if (this.getRemoteControl().doConnectorCheck()==true) {
 			this.getRemoteControl().subscribeForCommands();

@@ -14,7 +14,7 @@ public class ConnectorManagerActivator implements BundleActivator, ApplicationLi
 	 */
 	@Override
 	public void start(BundleContext context) throws Exception {
-		System.out.println("Connector manager bundle started!");
+//		System.out.println("[" + this.getClass().getSimpleName() + "] Connector manager bundle started!");
 		Application.addApplicationListener(this);
 	}
 	

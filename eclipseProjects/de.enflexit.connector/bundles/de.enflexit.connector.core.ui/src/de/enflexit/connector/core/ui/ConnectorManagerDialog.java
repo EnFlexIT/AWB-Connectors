@@ -19,7 +19,6 @@ import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
 import de.enflexit.common.swing.WindowSizeAndPostionController;
 import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
-import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * A dialog to configure connectors.
@@ -58,26 +57,33 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 		this.registerEscapeKeyStroke();
 		this.addSizeAndPositionsListener();
 		
-		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		
 		Application.addApplicationListener(this);
 		
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
+				
+				boolean doClose = true;
+				ConnectorConfigurationPanel configPanel = ConnectorManagerDialog.this.getMainPanel().getConfigurationPanel();
 
-				if (ConnectorManager.getInstance().isConfigChanged()==true
-						) {
-					String userMessage = "Your configuration has unsaved changes! Store before closing?";
-					int userReply = JOptionPane.showConfirmDialog(ConnectorManagerDialog.this, userMessage, "Save changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				// --- Check for pending changes, ask the user how to handle --  
+				if (configPanel.hasPendingChanges()==true) {
+					String userMessage = "Your current configuration has pending changes! Apply before closing?";
+					int userReply = JOptionPane.showConfirmDialog(ConnectorManagerDialog.this, userMessage, "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
 					
 					if (userReply==JOptionPane.YES_OPTION) {
-						ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
+						configPanel.applyChanges();
+					} else if (userReply==JOptionPane.CANCEL_OPTION) {
+						doClose = false;
 					}
 				}
 				
-				ConnectorManagerDialog.this.setVisible(false);
-				ConnectorManagerDialog.this.dispose();
+				if (doClose==true) {
+					ConnectorManagerDialog.this.setVisible(false);
+					ConnectorManagerDialog.this.dispose();
+				}
 			}
 		});
 		

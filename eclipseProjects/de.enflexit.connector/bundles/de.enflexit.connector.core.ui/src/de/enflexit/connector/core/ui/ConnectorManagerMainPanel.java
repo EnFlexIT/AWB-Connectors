@@ -32,7 +32,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	
 	private static final long serialVersionUID = 3162788243111915591L;
 	
-	private static final String ICON_SAVE = "Save.png";
 	private static final String ICON_ADD = "ListPlus.png";
 	private static final String ICON_REMOVE = "ListMinus.png";
 	private static final String ICON_START = "Start.png";
@@ -40,7 +39,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private static final String ICON_RESTART = "Restart.png";
 	
 	private JToolBar mainToolBar;
-	private JButton jButtonSave;
 	private JButton jButtonAdd;
 	private JButton jButtonRemove;
 	private JButton jButtonStart;
@@ -78,8 +76,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (mainToolBar == null) {
 			mainToolBar = new JToolBar();
 			mainToolBar.setFloatable(false);
-			mainToolBar.add(getJButtonSave());
-			mainToolBar.addSeparator();
 			mainToolBar.add(getJButtonAdd());
 			mainToolBar.add(getJButtonRemove());
 			mainToolBar.addSeparator();
@@ -88,14 +84,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			mainToolBar.add(getJButtonRestart());
 		}
 		return mainToolBar;
-	}
-
-	private JButton getJButtonSave() {
-		if (jButtonSave == null) {
-			jButtonSave = new JButton(BundleHelper.getImageIcon(ICON_SAVE));
-			jButtonSave.addActionListener(this);
-		}
-		return jButtonSave;
 	}
 
 	private JButton getJButtonAdd() {
@@ -211,7 +199,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return createConnectionPanel;
 	}
 
-	private ConnectorConfigurationPanel getConfigurationPanel() {
+	protected ConnectorConfigurationPanel getConfigurationPanel() {
 		if (manageConnectionPanel == null) {
 			manageConnectionPanel = new ConnectorConfigurationPanel();
 		}
@@ -251,11 +239,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (lse.getSource()==this.getConnectorsList()) {
 			
 			if (this.selectedConnector!=null) {
-				if (this.getConfigurationPanel().isChanged()==true) {
+				if (this.getConfigurationPanel().hasPendingChanges()==true) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (userReply==JOptionPane.YES_OPTION) {
-						this.getConfigurationPanel().appylChanges();
+						this.getConfigurationPanel().applyChanges();
 					}
 				}
 			}
@@ -278,9 +266,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
-		if (ae.getSource()==this.getJButtonSave()) {
-			ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
-		} else if (ae.getSource()==this.getJButtonAdd()) {
+		if (ae.getSource()==this.getJButtonAdd()) {
 			this.showCreatePanel();
 		} else if (ae.getSource()==this.getJButtonRemove()) {
 			this.deleteConnection();
@@ -362,6 +348,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			if (answer==JOptionPane.YES_OPTION) {
 				String connectorName = this.selectedConnector.getConnectorProperties().getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_NAME);
 				ConnectorManager.getInstance().removeConnector(connectorName);
+				ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
 			}
 		}
 	}

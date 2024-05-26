@@ -11,6 +11,7 @@ import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
 import de.enflexit.connector.core.ConnectorService;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 import java.awt.GridBagLayout;
 import javax.swing.JLabel;
@@ -27,6 +28,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JSeparator;
+import java.awt.Color;
 
 
 /**
@@ -36,9 +38,6 @@ import javax.swing.JSeparator;
 public class ConnectorConfigurationPanel extends JPanel implements ActionListener, PropertiesListener{
 	
 	private static final long serialVersionUID = -1435935216371131219L;
-	
-	private static final String ICON_APPLY = "Apply.png";
-	private static final String ICON_CANCEL = "Cancel.png";
 	
 	private JLabel jLabelManageConnection;
 	private JButton jButtonTest;
@@ -243,7 +242,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		} else if (ae.getSource()==this.getJButtonTest()) {
 			this.testConnection();
 		} else if (ae.getSource()==this.getJButtonApply()) {
-			this.appylChanges();
+			this.applyChanges();
 		} else if (ae.getSource()==this.getJButtonDiscard()) {
 			this.discardChanges();
 		}
@@ -287,7 +286,10 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	
 	private JButton getJButtonApply() {
 		if (jButtonApply == null) {
-			jButtonApply = new JButton(BundleHelper.getImageIcon(ICON_APPLY));
+			jButtonApply = new JButton();
+			jButtonApply.setForeground(new Color(0, 153, 0));
+			jButtonApply.setFont(new Font("Dialog", Font.BOLD, 12));
+			jButtonApply.setText("Apply");
 			jButtonApply.setToolTipText("Apply changes");
 			jButtonApply.setEnabled(false);
 			jButtonApply.addActionListener(this);
@@ -296,7 +298,10 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	}
 	private JButton getJButtonDiscard() {
 		if (jButtonDiscard == null) {
-			jButtonDiscard = new JButton(BundleHelper.getImageIcon(ICON_CANCEL));
+			jButtonDiscard = new JButton();
+			jButtonDiscard.setForeground(new Color(153, 0, 0));
+			jButtonDiscard.setFont(new Font("Dialog", Font.BOLD, 12));
+			jButtonDiscard.setText("Discard");
 			jButtonDiscard.setToolTipText("Discard changes");
 			jButtonDiscard.setEnabled(false);
 			jButtonDiscard.addActionListener(this);
@@ -308,7 +313,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Checks if the current configuration has unapplied changes.
 	 * @return true, if is changed
 	 */
-	public boolean isChanged() {
+	public boolean hasPendingChanges() {
 		return isChanged;
 	}
 
@@ -322,13 +327,29 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		this.getJButtonDiscard().setEnabled(hasUnsavedChanges);
 	}
 	
-	protected void appylChanges() {
+	/**
+	 * Apples all changes to the current connector configuration.
+	 */
+	protected void applyChanges() {
 		// --- Write the changed properties to the connector ------------------
 		this.connector.getConnectorProperties().clear();
 		this.connector.getConnectorProperties().addAll(this.getConnectionPropertiesPanel().getProperties());
+		ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
 		this.setChanged(false);
+		
+		if (this.connector.isConnected()==true) {
+			String message = "The connection you modified is currently active! Reconnect now to apply the changes immediately?";
+			int userResponse = JOptionPane.showConfirmDialog(this, message, "Reconnect now?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+			if (userResponse==JOptionPane.YES_OPTION) {
+				this.connector.disconnect();
+				this.connector.connect();
+			}
+		}
 	}
 	
+	/**
+	 * Discards all changes to the current connector configuration.
+	 */
 	protected void discardChanges() {
 		int userResponse = JOptionPane.showConfirmDialog(this, "This will discard your changes! Are you sure?", "Discard changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (userResponse==JOptionPane.YES_OPTION) {
