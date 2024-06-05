@@ -5,31 +5,7 @@
 		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 			<repository location="https://p2.enflex.it/awb/latest/"/>
 			<unit id="org.agentgui.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.awb.ws.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.awb.ws.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.awb.ws.restapi.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.awb.ws.restapi.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.common.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.common.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.ea.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.ea.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.eom.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.eom.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.eom.optimization.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.eom.optimization.feature.source.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.optimization.feature.feature.group" version="0.0.0"/>
-			<unit id="de.enflexit.optimization.feature.source.feature.group" version="0.0.0"/>
 			<unit id="org.agentgui.feature.source.feature.group" version="0.0.0"/>
-		</location>
-		<location includeDependencyDepth="infinite" includeDependencyScopes="compile,runtime" includeSource="true" missingManifest="generate" type="Maven">
-			<dependencies>
-				<dependency>
-					<groupId>com.hivemq</groupId>
-					<artifactId>hivemq-mqtt-client</artifactId>
-					<version>1.3.3</version>
-					<type>jar</type>
-				</dependency>
-			</dependencies>
 		</location>
 	</locations>
 </target>
