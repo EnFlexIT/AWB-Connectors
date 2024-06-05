@@ -9,8 +9,8 @@ Export-Package: de.enflexit.connector.examples.mqtt,
 Require-Bundle: de.enflexit.common,
  org.agentgui.core,
  de.enflexit.connector.core,
- de.enflexit.jade,
- de.enflexit.connector.mqtt
+ de.enflexit.connector.mqtt,
+ org.agentgui.lib.jade
 Automatic-Module-Name: de.enflexit.connector.examples.mqtt
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-11
