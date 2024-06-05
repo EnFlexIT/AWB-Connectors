@@ -8,11 +8,11 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<tycho-version>4.0.7</tycho-version>
+		<tycho-version>2.7.5</tycho-version>
 		<tycho-extras-version>${tycho-version}</tycho-extras-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		
-		<target-platform-version>1.0.0-SNAPSHOT</target-platform-version>
+		<target-platform-version>2.4.2-SNAPSHOT</target-platform-version>
 		
 		<url.repository.snapshotDir>/connector/snapshots/</url.repository.snapshotDir>
 		<url.repository.snapshotDomain>https://p2.enflex.it</url.repository.snapshotDomain>
