@@ -4,7 +4,7 @@ requires.1.name = naming.bundle.fragment
 requires.1.range = 1.0.0
 
 units.1.id = naming.bundle.fragment
-units.1.version = 1.0.0
+units.1.version = 1.3.3
 units.1.singleton = true
 units.1.provides.0.namespace = org.eclipse.equinox.p2.iu
 units.1.provides.0.name = naming.bundle.fragment
