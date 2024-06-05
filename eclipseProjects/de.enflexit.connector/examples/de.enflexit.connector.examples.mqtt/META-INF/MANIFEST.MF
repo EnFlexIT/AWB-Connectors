@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: AWB MQTT - Connector
+Bundle-SymbolicName: de.enflexit.connector.examples.mqtt
+Bundle-Vendor: EnFlex.IT
+Bundle-Version: 1.0.0.qualifier
+Export-Package: de.enflexit.connector.examples.mqtt,
+ de.enflexit.connector.examples.mqtt.classLoadService
+Require-Bundle: de.enflexit.common,
+ org.agentgui.core,
+ de.enflexit.connector.core,
+ de.enflexit.jade,
+ de.enflexit.connector.mqtt
+Automatic-Module-Name: de.enflexit.connector.examples.mqtt
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Service-Component: OSGI-INF/awbClassLoadService.xml
+
