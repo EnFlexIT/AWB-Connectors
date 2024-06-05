@@ -18,9 +18,9 @@
       [Enter License Description here.]
    </license>
 
-   <requires>
-      <import feature="de.enflexit.connector.core.feature" version="1.0.0.qualifier" match="greaterOrEqual"/>
-   </requires>
+   <includes
+         id="de.enflexit.connector.core.feature"
+         version="0.0.0"/>
 
    <plugin
          id="de.enflexit.connector.mqtt"
