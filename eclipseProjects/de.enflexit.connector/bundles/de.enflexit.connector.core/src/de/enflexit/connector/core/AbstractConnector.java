@@ -14,10 +14,18 @@ public abstract class AbstractConnector {
 	
 	private AbstractConnectorProperties connectorProperties;
 	
+	/**
+	 * Gets the connector properties.
+	 * @return the connector properties
+	 */
 	public AbstractConnectorProperties getConnectorProperties() {
 		return connectorProperties;
 	}
 
+	/**
+	 * Sets the connector properties.
+	 * @param connectorProperties the new connector properties
+	 */
 	public void setConnectorProperties(AbstractConnectorProperties connectorProperties) {
 		this.connectorProperties = connectorProperties;
 	}
