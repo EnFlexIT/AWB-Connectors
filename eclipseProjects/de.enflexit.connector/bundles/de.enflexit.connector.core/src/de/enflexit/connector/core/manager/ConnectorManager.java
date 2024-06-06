@@ -110,7 +110,7 @@ public class ConnectorManager implements PropertiesListener {
 			connector.getConnectorProperties().addPropertiesListener(this);
 			PropertyChangeEvent eventAdded = new PropertyChangeEvent(this, CONNECTOR_ADDED, null, connectorName);
 			this.notifyListeners(eventAdded);
-			this.setConfigChanged(true);
+			this.saveConfigurationsToDefaultFile();
 		}
 	}
 	
@@ -136,7 +136,7 @@ public class ConnectorManager implements PropertiesListener {
 		PropertyChangeEvent removedEvent = new PropertyChangeEvent(this, CONNECTOR_REMOVED, connectorName, null);
 		this.notifyListeners(removedEvent);
 		
-		this.setConfigChanged(true);
+		this.saveConfigurationsToDefaultFile();
 		
 		return true;
 	}
