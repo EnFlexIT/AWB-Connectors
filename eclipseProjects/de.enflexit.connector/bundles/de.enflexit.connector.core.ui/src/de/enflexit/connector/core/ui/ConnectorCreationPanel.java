@@ -18,9 +18,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
-
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -140,20 +137,6 @@ public class ConnectorCreationPanel extends JWindow implements ActionListener {
 			public void componentHidden(ComponentEvent e) {
 				System.out.println("Parent panel hidden");
 				ConnectorCreationPanel.this.hidePanel();
-			}
-		});
-		
-		
-		this.addWindowFocusListener(new WindowFocusListener() {
-			@Override
-			public void windowLostFocus(WindowEvent e) {
-				System.out.println("Focus lost");
-				setVisible(false);
-			}
-			@Override
-			public void windowGainedFocus(WindowEvent e) {
-				System.out.println("Focus gained");
-				// --- Nothing to do here ---
 			}
 		});
 		

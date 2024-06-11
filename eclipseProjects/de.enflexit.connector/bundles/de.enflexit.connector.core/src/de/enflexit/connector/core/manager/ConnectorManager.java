@@ -39,6 +39,8 @@ public class ConnectorManager implements PropertiesListener {
 	
 	private HashMap<String, ConnectorService> availableConnectorServices;
 	
+//	private StartOn currentStartOnLevel;
+	
 	private ConnectorManager() {}
 	
 	/**
@@ -252,6 +254,7 @@ public class ConnectorManager implements PropertiesListener {
 	 * @param startOn the start on
 	 */
 	public void startConnectionsWithStartLevel(StartOn startOn) {
+		System.out.println("[" + this.getClass().getName() + "] Starting all connectors with start level " + startOn);
 		for (String connectorName : this.getAvailableConnectors().keySet()) {
 			AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
 			
@@ -347,6 +350,10 @@ public class ConnectorManager implements PropertiesListener {
 	 */
 	public ConnectorService getConnectorServiceForProtocol(String protocolName) {
 		return this.getAvailableConnectorServices().get(protocolName);
+	}
+	
+	public void newConnectorServiceAdded(ConnectorService connectorService) {
+		System.out.println("[" + this.getClass().getSimpleName() + "] A new connector service for " + connectorService.getProtocolName() + " was added");
 	}
 	
 }

@@ -6,16 +6,26 @@ import org.osgi.framework.BundleContext;
 import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
 import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
+import de.enflexit.connector.core.ConnectorService;
+import de.enflexit.connector.core.ConnectorServiceTracker;
 
+/**
+ * This {@link BundleActivator} does some initial tasks for the {@link ConnectorManager}.
+ * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+ */
 public class ConnectorManagerActivator implements BundleActivator, ApplicationListener {
-
+	
 	/* (non-Javadoc)
 	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
 	 */
 	@Override
 	public void start(BundleContext context) throws Exception {
-//		System.out.println("[" + this.getClass().getSimpleName() + "] Connector manager bundle started!");
 		Application.addApplicationListener(this);
+		
+		ConnectorServiceTracker serviceTracker = new ConnectorServiceTracker(context, ConnectorService.class, null);
+		serviceTracker.open();
+		
+		ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);
 	}
 	
 	/* (non-Javadoc)
