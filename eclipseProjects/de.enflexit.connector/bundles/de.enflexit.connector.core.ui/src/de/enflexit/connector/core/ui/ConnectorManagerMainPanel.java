@@ -11,9 +11,9 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import de.enflexit.common.properties.Properties;
 import de.enflexit.common.swing.OwnerDetection;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 import javax.swing.JSplitPane;
@@ -53,7 +53,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private ConnectorCreationPanel createConnectionPanel;
 	private ConnectorConfigurationPanel manageConnectionPanel;
 	
-	private AbstractConnector selectedConnector;
+	private String selectedConnectorName;
 	
 	/**
 	 * Instantiates a new connector manager main panel.
@@ -184,7 +184,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private DefaultListModel<String> getConnectorsListModel() {
 		if (connectorsListModel==null) {
 			connectorsListModel = new DefaultListModel<String>();
-			for (String connectorName : ConnectorManager.getInstance().getConnectorNames()) {
+			for (String connectorName : ConnectorManager.getInstance().getConfiguredConnectorNames()) {
 				connectorsListModel.addElement(connectorName);
 			}
 		}
@@ -238,7 +238,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	public void valueChanged(ListSelectionEvent lse) {
 		if (lse.getSource()==this.getConnectorsList()) {
 			
-			if (this.selectedConnector!=null) {
+			if (this.selectedConnectorName!=null) {
 				if (this.getConfigurationPanel().hasPendingChanges()==true) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
@@ -248,16 +248,22 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				}
 			}
 			
-			String selectedConnectorName = this.getConnectorsList().getSelectedValue();
-			if (selectedConnectorName!=null) {
-				this.selectedConnector = ConnectorManager.getInstance().getConnectorByName(selectedConnectorName);
-			} else {
-				this.selectedConnector = null;
-			}
-			this.getConfigurationPanel().setConnector(this.selectedConnector);
-			this.updateButtonState();
+			String connectorName = this.getConnectorsList().getSelectedValue();
+			this.setSelectedConnector(connectorName);
 		}
 	}
+	
+	private void setSelectedConnector(String connectorName) {
+		this.selectedConnectorName = connectorName;
+		if (connectorName!=null) {
+			Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
+			this.getConfigurationPanel().setConnectorProperties(connectorProperties);
+		} else {
+			this.getConfigurationPanel().setConnectorProperties(null);
+		}
+		this.updateButtonState();
+	}
+	
 	protected void dispose() {
 		ConnectorManager.getInstance().removeListener(this);
 	}
@@ -306,20 +312,29 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	private void updateButtonState() {
-		if (this.selectedConnector==null) {
-			// --- No connector selected ------------------
+		if (this.selectedConnectorName==null) {
+			// --- No connector selected ----------------------------
 			this.getJButtonRemove().setEnabled(false);
 			this.getJButtonStart().setEnabled(false);
 			this.getJButtonStop().setEnabled(false);
 			this.getJButtonRestart().setEnabled(false);
-		} else if (this.selectedConnector.isConnected()==true) {
-			// --- The selected connector is active -------
+			
+		} else if (this.getSelectedConnector()==null) {
+			// --- The selected connector is not available ----------
+			this.getJButtonRemove().setEnabled(true);
+			this.getJButtonStart().setEnabled(false);
+			this.getJButtonStop().setEnabled(false);
+			this.getJButtonRestart().setEnabled(false);
+			
+		} else if (this.getSelectedConnector().isConnected()==true) {
+			// --- The selected connector is connected --------------
 			this.getJButtonRemove().setEnabled(false);
 			this.getJButtonStart().setEnabled(false);
 			this.getJButtonStop().setEnabled(true);
 			this.getJButtonRestart().setEnabled(true);
+			
 		} else {
-			// --- The selected connector is not active ---
+			// --- The selected connector is not connected ----------
 			this.getJButtonRemove().setEnabled(true);
 			this.getJButtonStart().setEnabled(true);
 			this.getJButtonStop().setEnabled(false);
@@ -328,28 +343,48 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	private void startConnection() {
-		boolean success = this.selectedConnector.connect();
-		if (success==false) {
-			JOptionPane.showMessageDialog(this, "Failed to open the connection! Please check your settings.", "Connection failed", JOptionPane.ERROR_MESSAGE);
-		} else {
-			this.updateButtonState();
+		if (this.getSelectedConnector()!=null) {
+			boolean success = this.getSelectedConnector().connect();
+			if (success==false) {
+				JOptionPane.showMessageDialog(this, "Failed to open the connection! Please check your settings.", "Connection failed", JOptionPane.ERROR_MESSAGE);
+			} else {
+				this.updateButtonState();
+			}
 		}
 	}
 	private void stopConnection() {
-		this.selectedConnector.disconnect();
-		this.updateButtonState();
+		if (this.getSelectedConnector()!=null) {
+			this.getSelectedConnector().disconnect();
+			this.updateButtonState();
+		}
 	}
 	
 	private void deleteConnection() {
-		if (this.selectedConnector.isConnected()==true) {
+		
+		if (this.isCurrentlyConnected()==true) {
 			JOptionPane.showMessageDialog(this, "The selected connection is currently active! Please disconnect before deleting.", "Currently connected!", JOptionPane.WARNING_MESSAGE);
 		} else {
 			int answer = JOptionPane.showConfirmDialog(this, "This will delete the selected connection - are you sure?", "Confirm delete", JOptionPane.YES_NO_OPTION);
 			if (answer==JOptionPane.YES_OPTION) {
-				String connectorName = this.selectedConnector.getConnectorProperties().getStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_NAME);
+				String connectorName = this.selectedConnectorName;
 				ConnectorManager.getInstance().removeConnector(connectorName);
-				ConnectorManager.getInstance().saveConfigurationsToDefaultFile();
 			}
+		}
+	}
+	
+	private AbstractConnector getSelectedConnector() {
+		if (this.selectedConnectorName!=null) {
+			return ConnectorManager.getInstance().getConnectorByName(this.selectedConnectorName);
+		} else {
+			return null;
+		}
+	}
+	
+	private boolean isCurrentlyConnected() {
+		if (this.getSelectedConnector()!=null) {
+			return this.getSelectedConnector().isConnected();
+		} else {
+			return false;
 		}
 	}
 	

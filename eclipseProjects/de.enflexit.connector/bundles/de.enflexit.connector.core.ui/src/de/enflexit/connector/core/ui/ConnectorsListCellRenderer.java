@@ -6,7 +6,10 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JList;
+
+import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.AbstractConnectorConfiguration;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
@@ -18,6 +21,7 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 	private static final long serialVersionUID = -6478678792183607533L;
 	private static final String STATE_ICON_CONNECTED = "StatusGreen.png";
 	private static final String STATE_ICON_DISCONNECTED = "StatusRed.png";
+	private static final String STATE_ICON_NOT_AVAILABLE = "StatusGrey.png";
 	
 
 	/* (non-Javadoc)
@@ -27,12 +31,13 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 	public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		
 		String connectorName = (String) value;
-		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
 		
-		String labelString = connectorName + " - " + connector.getProtocolName();
-		
+		Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
+		String labelString = connectorName + " - " + connectorProperties.getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
 		JLabel rendererLabel = (JLabel) super.getListCellRendererComponent(list, labelString, index, isSelected, cellHasFocus);
-		rendererLabel.setIcon(this.getConnectionStateIcon(connector.isConnected()));
+		
+		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
+		rendererLabel.setIcon(this.getConnectionStateIcon(connector));
 		
 		return rendererLabel;
 	}
@@ -42,8 +47,11 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 	 * @param connectionState the connection state
 	 * @return the connection state icon
 	 */
-	private ImageIcon getConnectionStateIcon(boolean connectionState) {
-		if (connectionState==true) {
+	private ImageIcon getConnectionStateIcon(AbstractConnector connector) {
+		
+		if (connector==null) {
+			return BundleHelper.getImageIcon(STATE_ICON_NOT_AVAILABLE);	
+		} else if (connector.isConnected()==true) {
 			return BundleHelper.getImageIcon(STATE_ICON_CONNECTED);
 		} else {
 			return BundleHelper.getImageIcon(STATE_ICON_DISCONNECTED);

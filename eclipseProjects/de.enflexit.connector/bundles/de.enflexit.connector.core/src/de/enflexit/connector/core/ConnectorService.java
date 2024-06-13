@@ -20,9 +20,4 @@ public interface ConnectorService {
 	 */
 	public AbstractConnector getNewConnectorInstance();
 
-	/**
-	 * Gets an initial set of properties, that should specify keys for all required/expected settings, and provide reasonable default values if possible. 
-	 * @return the initial properties
-	 */
-	public AbstractConnectorProperties getInitialProperties();
 }

@@ -12,22 +12,25 @@ import de.enflexit.connector.core.AbstractConnectorConfiguration;
  */
 public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	
-	public static final String PROPERTY_MQTT_VERSION = "Mqtt.version";
-	
 	public enum QosLevel {
 		AtMaxOnce, AtLeastOnce, ExactlyOnce
 	}
 	
-	private static final int MQTT_DEFAULT_PORT = 1883;
+	public static final String PROTOCOL_NAME = "MQTT";
+	
+	public static final String PROPERTY_MQTT_VERSION = "Mqtt.version";
+	public static final String PROPERTY_MQTT_CLIENT_IDENTIFIER = "Mqtt.clientIdentifier";
+	public static final int MQTT_DEFAULT_PORT = 1883;
+	
 
 	private String clientID;
 	private MqttVersion mqttVersion;
 	
-	public static MQTTConnectorConfiguration fromProperties(MqttConnectorProperties properties) {
+	public static MQTTConnectorConfiguration fromProperties(Properties properties) {
 		MQTTConnectorConfiguration config = new MQTTConnectorConfiguration();
-		config.setUrlOrIP(properties.getStringValue(PROPERTY_SERVER_HOST));
-		config.setPort(properties.getIntegerValue(PROPERTY_SERVER_PORT));
-		config.setClientID(properties.getStringValue(MqttConnectorProperties.PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER));
+		config.setUrlOrIP(properties.getStringValue(PROPERTY_KEY_SERVER_HOST));
+		config.setPort(properties.getIntegerValue(PROPERTY_KEY_SERVER_PORT));
+		config.setClientID(properties.getStringValue(PROPERTY_MQTT_CLIENT_IDENTIFIER));
 		config.setMqttVersion(MqttVersion.valueOf(properties.getStringValue(PROPERTY_MQTT_VERSION)));
 		return config;
 	}
@@ -62,15 +65,30 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 		this.mqttVersion = mqttVersion;
 	}
 	
-	@Override
-	public Properties getInitialProperties() {
+	public static Properties getInitialProperties() {
 		Properties properties = new Properties();
-		properties.setStringValue(AbstractConnectorConfiguration.PROPERTY_SERVER_HOST, "localhost");
-		properties.setIntegerValue(AbstractConnectorConfiguration.PROPERTY_SERVER_PORT, MQTT_DEFAULT_PORT);
+		properties.setStringValue(CONNECTOR_PROPERTY_PROTOCOL, PROTOCOL_NAME);
+		properties.setStringValue(PROPERTY_KEY_CONNECTOR_SERVICE_CLASS, MQTTConnectorService.class.getName());
+		properties.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
+		properties.setStringValue(PROPERTY_KEY_SERVER_HOST, "localhost");
+		properties.setIntegerValue(PROPERTY_KEY_SERVER_PORT, MQTT_DEFAULT_PORT);
 		properties.setStringValue(PROPERTY_MQTT_VERSION, MqttVersion.MQTT_5_0.toString());
-		
+		properties.setStringValue(PROPERTY_MQTT_CLIENT_IDENTIFIER, getMyHostName());
 		return properties;
 	}
+	
+	/**
+	 * Gets the local host name, to be used as client identifier.
+	 * @return the my host name
+	 */
+	private static String getMyHostName() {
+		String hostname = System.getenv("COMPUTERNAME"); // On Windows
+	    if (hostname == null || hostname.isEmpty()) {
+	      hostname = System.getenv("HOSTNAME"); // On Unix/Linux
+	    }
+	    return hostname;
+	}
+
 
 	@Override
 	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {

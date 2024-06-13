@@ -8,8 +8,10 @@ import java.awt.Frame;
 
 import javax.swing.JTextField;
 import javax.swing.JWindow;
+
+import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorProperties;
+import de.enflexit.connector.core.AbstractConnectorConfiguration;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -207,7 +209,7 @@ public class ConnectorCreationPanel extends JWindow implements ActionListener {
 	private JButton getJButtonCancel() {
 		if (jButtonCancel == null) {
 			jButtonCancel = new JButton(BundleHelper.getImageIcon(ICON_CANCEL));
-			jButtonApply.setToolTipText("Discard without creating");
+			jButtonCancel.setToolTipText("Discard without creating");
 			jButtonCancel.addActionListener(this);
 		}
 		return jButtonCancel;
@@ -235,7 +237,7 @@ public class ConnectorCreationPanel extends JWindow implements ActionListener {
 		if (connectorName.isBlank()==true) {
 			String errorMessage = "The connector name must not be empty! Please specify a unique name.";
 			this.getJLabelErrorMessage().setText(errorMessage);
-		} else if (ConnectorManager.getInstance().getConnectorByName(connectorName)!=null) {
+		} else if (ConnectorManager.getInstance().getConnectorProperies(connectorName)!=null) {
 			String errorMessage = "A connector with the name " + connectorName + "already exists! Please choose a different name.";
 			this.getJLabelErrorMessage().setText(errorMessage);
 		} else {
@@ -245,8 +247,8 @@ public class ConnectorCreationPanel extends JWindow implements ActionListener {
 			ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
 			if (connectorService!=null) {
 				AbstractConnector newConnector = connectorService.getNewConnectorInstance();
-				AbstractConnectorProperties connectorProperties = connectorService.getInitialProperties();
-				connectorProperties.setStringValue(AbstractConnectorProperties.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
+				Properties connectorProperties = newConnector.getInitialProperties();
+				connectorProperties.setStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
 				newConnector.setConnectorProperties(connectorProperties);
 				ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
 			} else {

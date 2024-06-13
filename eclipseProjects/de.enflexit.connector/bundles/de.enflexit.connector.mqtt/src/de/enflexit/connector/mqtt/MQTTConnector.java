@@ -7,7 +7,6 @@ import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.MqttClientBuilder;
 import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
-import com.hivemq.client.mqtt.MqttVersion;
 import com.hivemq.client.mqtt.exceptions.ConnectionFailedException;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3BlockingClient;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
@@ -18,6 +17,7 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 
+import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorConfiguration;
 
@@ -28,13 +28,11 @@ import de.enflexit.connector.core.AbstractConnectorConfiguration;
  */
 public class MQTTConnector extends AbstractConnector {
 	
-	public static final String PROTOCOL_NAME = "MQTT";
-	
 	private MqttClient client;
 	
-	private MQTTConnectorConfiguration configuration;
-	
 	private HashMap<String, MQTTSubscription> activeSubscriptions;
+	
+	private MQTTConnectorConfiguration connectorConfiguration;
 
 	/**
 	 * Gets the MQTT client instance.
@@ -42,8 +40,8 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	private MqttClient getClient() {
 		if (client==null) {
-			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.getMqttConfiguration().getClientID()).serverHost(this.getMqttConfiguration().getUrlOrIP()).serverPort(this.getMqttConfiguration().getPort());
-			switch(this.getMqttConfiguration().getMqttVersion()) {
+			MqttClientBuilder clientBuilder = MqttClient.builder().identifier(this.getConnectorConfiguration().getClientID()).serverHost(this.getConnectorConfiguration().getUrlOrIP()).serverPort(this.getConnectorConfiguration().getPort());
+			switch(this.getConnectorConfiguration().getMqttVersion()) {
 			case MQTT_3_1_1:
 				client = clientBuilder.useMqttVersion3().build().toBlocking();
 				break;
@@ -61,7 +59,7 @@ public class MQTTConnector extends AbstractConnector {
 	@Override
 	public boolean connect() {
 		try {
-			switch (this.getMqttConfiguration().getMqttVersion()) {
+			switch (this.getConnectorConfiguration().getMqttVersion()) {
 			case MQTT_3_1_1:
 				return this.connectV3();
 			case MQTT_5_0:
@@ -111,7 +109,7 @@ public class MQTTConnector extends AbstractConnector {
 	 * Disconnects from the broker.
 	 */
 	public void disconnect() {
-		switch (this.getMqttConfiguration().getMqttVersion()) {
+		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.disconnect();
@@ -129,7 +127,7 @@ public class MQTTConnector extends AbstractConnector {
 	 * @param messageString the message string
 	 */
 	public void publish(String topic, String messageString) {
-		switch (this.getMqttConfiguration().getMqttVersion()) {
+		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			Mqtt3Publish messageV3 = Mqtt3Publish.builder().topic(topic).payload(messageString.getBytes()).build();
@@ -142,18 +140,6 @@ public class MQTTConnector extends AbstractConnector {
 			break;
 		}
 		
-	}
-	
-	/**
-	 * Gets the default configuration.
-	 * @return the default configuration
-	 */
-	public static MQTTConnectorConfiguration getDefaultConfiguration() {
-		MQTTConnectorConfiguration defaultConfiguration = new MQTTConnectorConfiguration();
-		defaultConfiguration.setUrlOrIP("localhost");
-		defaultConfiguration.setPort(1883);
-		defaultConfiguration.setMqttVersion(MqttVersion.MQTT_3_1_1);
-		return defaultConfiguration;
 	}
 	
 	private HashMap<String, MQTTSubscription> getActiveSubscriptions() {
@@ -187,7 +173,7 @@ public class MQTTConnector extends AbstractConnector {
 	}
 	
 	private void startSubscription(MQTTSubscription subscription) {
-		switch (this.getMqttConfiguration().getMqttVersion()) {
+		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.subscribeWith().topicFilter(subscription.getTopic()).send();
@@ -230,7 +216,7 @@ public class MQTTConnector extends AbstractConnector {
 	 * @param topic the topic
 	 */
 	private void stopSubscription(String topic) {
-		switch (this.getMqttConfiguration().getMqttVersion()) {
+		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
 			clientV3.unsubscribeWith().topicFilter(topic).send();
@@ -240,33 +226,6 @@ public class MQTTConnector extends AbstractConnector {
 			clientV5.unsubscribeWith().topicFilter(topic).send();
 			break;
 		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.AbstractConnector#getConnectorConfiguration()
-	 */
-	@Override
-	public AbstractConnectorConfiguration getConnectorConfiguration() {
-		if (configuration==null) {
-			configuration = MQTTConnectorConfiguration.fromProperties((MqttConnectorProperties) this.getConnectorProperties());
-		}
-		return configuration;
-	}
-	
-	/**
-	 * Gets the connector configuration, already cast to the correct type.
-	 * @return the mqtt configuration
-	 */
-	private MQTTConnectorConfiguration getMqttConfiguration() {
-		return (MQTTConnectorConfiguration) this.getConnectorConfiguration();
-	}
-	
-	/**
-	 * Sets the connector configuration.
-	 * @param configuration the new configuration
-	 */
-	public void setConnectorConfiguration(MQTTConnectorConfiguration configuration) {
-		this.configuration = configuration;
 	}
 	
 	
@@ -341,7 +300,27 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	@Override
 	public String getProtocolName() {
-		return PROTOCOL_NAME;
+		return MQTTConnectorConfiguration.PROTOCOL_NAME;
+	}
+
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#getInitialProperties()
+	 */
+	@Override
+	public Properties getInitialProperties() {
+		return MQTTConnectorConfiguration.getInitialProperties();
+	}
+	
+	@Override
+	public AbstractConnectorConfiguration getConfigurationFromProperties(Properties properties) {
+		return MQTTConnectorConfiguration.fromProperties(properties);
+	}
+
+	public MQTTConnectorConfiguration getConnectorConfiguration() {
+		if (connectorConfiguration==null) {
+			connectorConfiguration = (MQTTConnectorConfiguration) this.getConfigurationFromProperties(this.getConnectorProperties());
+		}
+		return connectorConfiguration;
 	}
 	
 }

@@ -30,9 +30,7 @@ public class ConnectorServiceTracker extends ServiceTracker<ConnectorService, Co
 	@Override
 	public ConnectorService addingService(ServiceReference<ConnectorService> reference) {
 		ConnectorService connectorService = super.addingService(reference);
-		System.out.println("[" + this.getClass().getSimpleName() + "] Detected a newly added service of type " + connectorService.getClass());
-//		ConnectorManager.getInstance().newConnectorServiceAdded(connectorService);
-//		System.out.println("[" + this.getClass().getSimpleName() + "] New connector service added for " + connectorService.getProtocolName());
+		ConnectorManager.getInstance().newConnectorServiceAdded(connectorService);
 		return connectorService;
 	}
 	

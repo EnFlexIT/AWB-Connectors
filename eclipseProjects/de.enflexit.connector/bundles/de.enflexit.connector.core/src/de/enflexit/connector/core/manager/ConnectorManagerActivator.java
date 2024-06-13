@@ -5,7 +5,7 @@ import org.osgi.framework.BundleContext;
 
 import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
-import de.enflexit.connector.core.AbstractConnectorProperties.StartOn;
+import de.enflexit.connector.core.AbstractConnectorConfiguration.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.ConnectorServiceTracker;
 
@@ -43,15 +43,15 @@ public class ConnectorManagerActivator implements BundleActivator, ApplicationLi
 	public void onApplicationEvent(ApplicationEvent ae) {
 		switch(ae.getApplicationEvent()) {
 		case ApplicationEvent.AWB_START:
-			ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.AwbStart);
+			ConnectorManager.getInstance().setCurrentStartOnLevel(StartOn.AwbStart);
 			break;
 		case ApplicationEvent.AWB_STOP:
 			break;
 		case ApplicationEvent.JADE_START:
-			ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.JadeStartup);
+			ConnectorManager.getInstance().setCurrentStartOnLevel(StartOn.JadeStartup);
 			break;
 		case ApplicationEvent.PROJECT_LOADED:
-			ConnectorManager.getInstance().startConnectionsWithStartLevel(StartOn.ProjectLoaded);
+			ConnectorManager.getInstance().setCurrentStartOnLevel(StartOn.ProjectLoaded);
 			break;
 		case ApplicationEvent.PROJECT_CLOSED:
 			break;

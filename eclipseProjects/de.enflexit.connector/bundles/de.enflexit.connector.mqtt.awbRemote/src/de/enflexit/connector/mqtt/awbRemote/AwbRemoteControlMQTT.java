@@ -14,6 +14,7 @@ import de.enflexit.awb.remoteControl.AwbStatusUpdate;
 import de.enflexit.awb.remoteControl.AwbStatusUpdate.AwbState;
 import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.mqtt.MQTTConnector;
+import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
 import de.enflexit.connector.mqtt.MQTTMessageWrapper;
 import de.enflexit.connector.mqtt.MQTTSubscriber;
 
@@ -47,10 +48,10 @@ public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, A
 	 */
 	public boolean doConnectorCheck() {
 		if (this.getMqttConnector()==null) {
-			System.err.println("[" + this.getClass().getSimpleName() + "] No configured connector found for protocol " + MQTTConnector.PROTOCOL_NAME + " and host " + this.brokerHost);
+			System.err.println("[" + this.getClass().getSimpleName() + "] No configured connector found for protocol " + MQTTConnectorConfiguration.PROTOCOL_NAME + " and host " + this.brokerHost);
 			return false;
 		} else if (this.getMqttConnector().isConnected()==false) {
-			System.err.println("[" + this.getClass().getSimpleName() + "] A connector for protocol " + MQTTConnector.PROTOCOL_NAME + " and host " + this.brokerHost + " was found, but is not connected. Please check your settings!");
+			System.err.println("[" + this.getClass().getSimpleName() + "] A connector for protocol " + MQTTConnectorConfiguration.PROTOCOL_NAME + " and host " + this.brokerHost + " was found, but is not connected. Please check your settings!");
 			return false;
 		}
 		
@@ -66,7 +67,7 @@ public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, A
 
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(brokerHost, MQTTConnector.PROTOCOL_NAME);
+			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(brokerHost, MQTTConnectorConfiguration.PROTOCOL_NAME);
 		}
 		return mqttConnector;
 	}

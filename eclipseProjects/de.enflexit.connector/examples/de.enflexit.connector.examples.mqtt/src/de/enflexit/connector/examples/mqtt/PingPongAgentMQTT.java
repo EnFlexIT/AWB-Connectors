@@ -2,6 +2,7 @@ package de.enflexit.connector.examples.mqtt;
 
 import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.mqtt.MQTTConnector;
+import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
 import de.enflexit.connector.mqtt.MQTTMessageWrapper;
 import de.enflexit.connector.mqtt.MQTTSubscriber;
 import jade.core.Agent;
@@ -85,7 +86,7 @@ public class PingPongAgentMQTT extends Agent implements MQTTSubscriber {
 	
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol("localhost", MQTTConnector.PROTOCOL_NAME);
+			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol("localhost", MQTTConnectorConfiguration.PROTOCOL_NAME);
 		}
 		return mqttConnector;
 	}

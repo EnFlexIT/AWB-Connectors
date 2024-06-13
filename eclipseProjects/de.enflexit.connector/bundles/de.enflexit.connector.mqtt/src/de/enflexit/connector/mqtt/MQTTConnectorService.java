@@ -1,7 +1,6 @@
 package de.enflexit.connector.mqtt;
 
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorProperties;
 import de.enflexit.connector.core.ConnectorService;
 
 public class MQTTConnectorService implements ConnectorService {
@@ -22,16 +21,6 @@ public class MQTTConnectorService implements ConnectorService {
 	@Override
 	public AbstractConnector getNewConnectorInstance() {
 		return new MQTTConnector();
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.core.ConnectorService#getInitialProperties()
-	 */
-	@Override
-	public AbstractConnectorProperties getInitialProperties() {
-		MqttConnectorProperties properties = new MqttConnectorProperties();
-		properties.populateWithDefaultValues();
-		return properties;
 	}
 	
 }
