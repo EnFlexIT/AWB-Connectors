@@ -204,7 +204,7 @@ public class ConnectorManager {
 		for (String connectorName : this.getConfiguredConnectors().keySet()) {
 			AbstractConnector connectorInstance = this.instantiateConnector(connectorName);
 			if (connectorInstance!=null) {
-				this.addNewConnector(connectorName, connectorInstance);
+				this.getAvailableConnectors().put(connectorName, connectorInstance);
 			}
 		}
 		
