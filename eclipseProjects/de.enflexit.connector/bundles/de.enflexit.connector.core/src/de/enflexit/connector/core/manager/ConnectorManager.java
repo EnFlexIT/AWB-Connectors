@@ -219,14 +219,14 @@ public class ConnectorManager {
 		AbstractConnector connectorInstance = null;
 		Properties connectorProperties = this.getConfiguredConnectors().get(connectorName);
 		if (connectorProperties!=null) {
-			String serviceClassName = connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_SERVICE_CLASS);
-			ConnectorService service = this.getServiceImplementation(serviceClassName);
+			String protocolName = connectorProperties.getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
+			ConnectorService service = this.getConnectorServiceForProtocol(protocolName);
 			if (service != null) {
 				connectorInstance = service.getNewConnectorInstance();
 				connectorInstance.setConnectorProperties(connectorProperties);
 				this.getAvailableConnectors().put(connectorName, connectorInstance);
 			} else {
-				this.debugPrint("No ConnectorService implementation found for " + serviceClassName);
+				this.debugPrint("No ConnectorService implementation found for " + protocolName);
 			}
 		} else {
 			this.debugPrint("No configuration found for connector name " + connectorName);
@@ -236,14 +236,14 @@ public class ConnectorManager {
 	}
 	
 	/**
-	 * Gets the {@link ConnectorService} implementation with the specified class name.
-	 * @param serviceClassName the service class name
-	 * @return the service implementation
+	 * Gets the connector service for the specified protocol.
+	 * @param protocol the protocol
+	 * @return the connector service, null if not found
 	 */
-	private ConnectorService getServiceImplementation(String serviceClassName) {
+	public ConnectorService getConnectorServiceForProtocol(String protocol) {
 		List<ConnectorService> services = ServiceFinder.findServices(ConnectorService.class);
 		for (ConnectorService service : services) {
-			if (service.getClass().getName().equals(serviceClassName)) {
+			if (service.getProtocolName().equals(protocol)) {
 				return service;
 			}
 		}
@@ -318,15 +318,6 @@ public class ConnectorManager {
 			}
 		}
 		return availableConnectorServices;
-	}
-	
-	/**
-	 * Gets the connector service for the specified protocol.
-	 * @param protocolName the protocol name
-	 * @return the connector service
-	 */
-	public ConnectorService getConnectorServiceForProtocol(String protocolName) {
-		return this.getAvailableConnectorServices().get(protocolName);
 	}
 	
 	public void newConnectorServiceAdded(ConnectorService connectorService) {

@@ -350,6 +350,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			} else {
 				this.updateButtonState();
 			}
+		} else {
+			JOptionPane.showMessageDialog(this, "Failed to instantiate the connector! Is there a connector service for the cnfigured protocol?", "Not available", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	private void stopConnection() {

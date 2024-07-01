@@ -3,7 +3,6 @@ package de.enflexit.connector.core.ui;
 import javax.swing.JPanel;
 
 import de.enflexit.common.SerialClone;
-import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
@@ -23,8 +22,6 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
-
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -254,8 +251,8 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Tests the selected connection.
 	 */
 	private void testConnection() {
-		String serviceClassName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_SERVICE_CLASS);
-		ConnectorService connectorService = this.getServiceImplementation(serviceClassName);
+		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
+		ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
 		if (connectorService!=null) {
 			AbstractConnector testConnector = connectorService.getNewConnectorInstance();
 			testConnector.setConnectorProperties(this.getConnectionPropertiesPanel().getProperties());
@@ -266,24 +263,10 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 				JOptionPane.showMessageDialog(this, "Connection test failed, please check your settings!", "Connection failed!", JOptionPane.ERROR_MESSAGE);
 			}
 		} else {
-			System.err.println("[" + this.getClass().getSimpleName() + "] The connector service implementation " + serviceClassName + " could not be found!");
+			System.err.println("[" + this.getClass().getSimpleName() + "] No connector service implementation for the protocol " + protocolName + " could not be found!");
+			JOptionPane.showMessageDialog(this, "No conector service found for the configured protocol " + protocolName + "!", "Not available!", JOptionPane.ERROR_MESSAGE);
 		}
 		
-	}
-	
-	/**
-	 * Gets the {@link ConnectorService} implementation with the provided class name.
-	 * @param serviceClassName the service class name
-	 * @return the service implementation
-	 */
-	private ConnectorService getServiceImplementation(String serviceClassName) {
-		List<ConnectorService> services = ServiceFinder.findServices(ConnectorService.class);
-		for (ConnectorService service : services) {
-			if (service.getClass().getName().equals(serviceClassName)) {
-				return service;
-			}
-		}
-		return null;
 	}
 	
 	private JButton getJButtonApply() {

@@ -17,7 +17,6 @@ public abstract class AbstractConnectorConfiguration implements PropertiesListen
 	}
 	
 	public static final String CONNECTOR_PROPERTY_PROTOCOL = "Connector.protocol";
-	public static final String PROPERTY_KEY_CONNECTOR_SERVICE_CLASS = "Connector.serviceClass";
 	public static final String PROPERTY_KEY_CONNECTOR_NAME = "Connector.name";
 	public static final String PROPERTY_KEY_CONNECTOR_START_ON = "Connector.startOn";
 	public static final String PROPERTY_KEY_SERVER_HOST = "Server.host" ;

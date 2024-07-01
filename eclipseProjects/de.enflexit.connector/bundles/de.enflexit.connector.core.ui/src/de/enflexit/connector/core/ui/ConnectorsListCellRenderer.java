@@ -38,6 +38,7 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 		
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
 		rendererLabel.setIcon(this.getConnectionStateIcon(connector));
+		rendererLabel.setToolTipText(labelString + this.getConnectorStateSuffix(connector));
 		
 		return rendererLabel;
 	}
@@ -55,6 +56,16 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 			return BundleHelper.getImageIcon(STATE_ICON_CONNECTED);
 		} else {
 			return BundleHelper.getImageIcon(STATE_ICON_DISCONNECTED);
+		}
+	}
+	
+	private String getConnectorStateSuffix(AbstractConnector connector) {
+		if (connector==null) {
+			return " - not available";
+		} else if (connector.isConnected()==true) {
+			return " - connected";
+		} else {
+			return " - not connected";
 		}
 	}
 
