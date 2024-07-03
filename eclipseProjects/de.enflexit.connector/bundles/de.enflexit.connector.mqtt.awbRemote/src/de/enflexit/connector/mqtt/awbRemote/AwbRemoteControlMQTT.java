@@ -5,11 +5,8 @@ import java.beans.PropertyChangeListener;
 
 import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
-import agentgui.core.jade.Platform.SystemAgent;
 import agentgui.core.jade.PlatformStateInformation.PlatformState;
-import agentgui.simulationService.agents.LoadExecutionAgent;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
-import de.enflexit.awb.remoteControl.AwbSimulationSettings;
 import de.enflexit.awb.remoteControl.AwbStatusUpdate;
 import de.enflexit.awb.remoteControl.AwbStatusUpdate.AwbState;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -22,13 +19,15 @@ import de.enflexit.connector.mqtt.MQTTSubscriber;
  * This implementation of {@link AwbRemoteControl} allows to control an AWB instance via MQTT. 
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, ApplicationListener, PropertyChangeListener {
+public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber, ApplicationListener, PropertyChangeListener {
 	
 	private static final String MQTT_TOPIC_REMOTE_COMMANDS = "awbControl";
 	private static final String MQTT_TOPIC_STATUS_UPDATES = "awbStatus";
 	
 	private static final String COMMAND_START_MAS = "StartMAS";
 	private static final String COMMAND_STOP_MAS = "StopMAS";
+	private static final String COMMAND_LOAD_PROJECT = "LoadProject";
+	private static final String COMMAND_SELECT_SETUP = "SelectSetup";
 	
 	private String brokerHost = "localhost";
 
@@ -73,67 +72,11 @@ public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, A
 	}
 	
 
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#loadProject(java.lang.String)
-	 */
-	@Override
-	public boolean loadProject(String projectName) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#selectSetup(java.lang.String)
-	 */
-	@Override
-	public boolean selectSetup(String setupName) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#configureSimulation(de.enflexit.awb.remoteControl.AwbSimulationSettings)
-	 */
-	@Override
-	public boolean configureSimulation(AwbSimulationSettings simulationSettings) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#startMultiAgentSystem()
-	 */
-	@Override
-	public boolean startMultiAgentSystem() {
-		Object[] startWith = new Object[1];
-		startWith[0] = LoadExecutionAgent.BASE_ACTION_Start;
-		Application.getJadePlatform().startSystemAgent(SystemAgent.SimStarter, null, startWith, true);
-		Application.getMainWindow().setEnableSimStart(false);
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#stopMultiAgentSystem()
-	 */
-	@Override
-	public boolean stopMultiAgentSystem() {
-		Application.getJadePlatform().stop(true);
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#discreteSimulationNextStep()
-	 */
-	@Override
-	public void discreteSimulationNextStep() {
-		// TODO Auto-generated method stub
-
-	}
 	
-	/* (non-Javadoc)
-	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#sendStatusUpdate(de.enflexit.awb.remoteControl.AwbStatusUpdate)
+	/**
+	 * Publishes a status update to the corresponding MQTT topic.
+	 * @param statusUpdate the status update
 	 */
-	@Override
 	public void sendStatusUpdate(AwbStatusUpdate statusUpdate) {
 		if (this.getMqttConnector()!=null && this.getMqttConnector().isConnected()==true) {
 			String messageContent = statusUpdate.toJsonString();
@@ -146,12 +89,29 @@ public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, A
 	 */
 	@Override
 	public void handleMessage(MQTTMessageWrapper messageWrapper) {
-		String command = messageWrapper.getPayloadString();
+		String messageString = messageWrapper.getPayloadString();
+		String[] stringParts = messageString.split(";");
+		String command = stringParts[0];
+		String param = (stringParts.length>1) ? stringParts[1] : null;
 		if (command.equals(COMMAND_START_MAS)) {
 			this.startMultiAgentSystem();
 		} else if (command.equals(COMMAND_STOP_MAS)) {
 			this.stopMultiAgentSystem();
-		} else {
+		} else if (command.equals(COMMAND_LOAD_PROJECT)) {
+			if (param!=null) {
+				this.loadProject(param);
+			} else {
+				System.err.println("[" + this.getClass().getSimpleName() + "] Unable to load project, no project name passed!");
+			}
+		} else if (command.equals(COMMAND_SELECT_SETUP)) {
+			if (param!=null) {
+				this.selectSetup(param);
+			} else {
+				System.err.println("[" + this.getClass().getSimpleName() + "] Unable to select setup, no project name passed!");
+			}
+		}
+		
+		else {
 			System.out.println("[" + this.getClass().getSimpleName() + "] Received command " + command + " - unknown or not implemented yet");
 		}
 	}
@@ -177,6 +137,7 @@ public class AwbRemoteControlMQTT implements AwbRemoteControl, MQTTSubscriber, A
 	 */
 	@Override
 	public void onApplicationEvent(ApplicationEvent ae) {
+		super.onApplicationEvent(ae);
 //		System.out.println("[" + this.getClass().getSimpleName() + "] Received application event " + ae.getApplicationEvent());
 		if (ae.getApplicationEvent()==ApplicationEvent.PROJECT_LOADED) {
 			AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
