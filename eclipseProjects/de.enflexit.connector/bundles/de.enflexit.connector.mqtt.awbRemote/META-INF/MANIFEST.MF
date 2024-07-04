@@ -5,6 +5,7 @@ Bundle-SymbolicName: de.enflexit.connector.mqtt.awbRemote
 Bundle-Vendor: EnFlex.IT
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: de.enflexit.awb.remoteControl,
+ de.enflexit.common,
  de.enflexit.connector.core,
  de.enflexit.connector.mqtt,
  org.agentgui.core,

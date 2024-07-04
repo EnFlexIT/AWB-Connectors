@@ -1,11 +1,6 @@
 package de.enflexit.connector.mqtt.awbRemote;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import agentgui.core.application.Application;
-import agentgui.core.application.ApplicationListener;
-import agentgui.core.jade.PlatformStateInformation.PlatformState;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
 import de.enflexit.awb.remoteControl.AwbStatusUpdate;
 import de.enflexit.awb.remoteControl.AwbStatusUpdate.AwbState;
@@ -19,7 +14,7 @@ import de.enflexit.connector.mqtt.MQTTSubscriber;
  * This implementation of {@link AwbRemoteControl} allows to control an AWB instance via MQTT. 
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber, ApplicationListener, PropertyChangeListener {
+public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber {
 	
 	private static final String MQTT_TOPIC_REMOTE_COMMANDS = "awbControl";
 	private static final String MQTT_TOPIC_STATUS_UPDATES = "awbStatus";
@@ -70,8 +65,6 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		return mqttConnector;
 	}
-	
-
 	
 	/**
 	 * Publishes a status update to the corresponding MQTT topic.
@@ -132,33 +125,38 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		this.getMqttConnector().unsubscribe(MQTT_TOPIC_REMOTE_COMMANDS, this);
 	}
 
+	
+
 	/* (non-Javadoc)
-	 * @see agentgui.core.application.ApplicationListener#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
+	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#projectLoaded(java.lang.String)
 	 */
 	@Override
-	public void onApplicationEvent(ApplicationEvent ae) {
-		super.onApplicationEvent(ae);
-//		System.out.println("[" + this.getClass().getSimpleName() + "] Received application event " + ae.getApplicationEvent());
-		if (ae.getApplicationEvent()==ApplicationEvent.PROJECT_LOADED) {
-			AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
-			statusUpdate.setAwbState(AwbState.PROJECT_READY);
-			statusUpdate.setStateDetails(Application.getProjectFocused().getProjectName());
-			this.sendStatusUpdate(statusUpdate);
-		}
+	public void projectLoaded(String projectName) {
+		AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
+		statusUpdate.setAwbState(AwbState.PROJECT_LOADED);
+		statusUpdate.setStateDetails(projectName);
+		this.sendStatusUpdate(statusUpdate);
 	}
 
+	/* (non-Javadoc)
+	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#setupReady(java.lang.String)
+	 */
 	@Override
-	public void propertyChange(PropertyChangeEvent pce) {
-//		System.out.println("[" + this.getClass().getSimpleName() + "] Received property change event " + pce.getPropertyName());
-		if (pce.getPropertyName().equals("PlatformState")) {
-			PlatformState newState = (PlatformState) pce.getNewValue();
-			if (newState==PlatformState.RunningMAS) {
-				AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
-				statusUpdate.setAwbState(AwbState.SIMULATION_READY);
-				this.sendStatusUpdate(statusUpdate);
-			}
-		}
+	public void setupReady(String setupName) {
+		AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
+		statusUpdate.setAwbState(AwbState.SETUP_READY);
+		statusUpdate.setStateDetails(setupName);
+		this.sendStatusUpdate(statusUpdate);
 	}
 
-
+	/* (non-Javadoc)
+	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#simulationReady()
+	 */
+	@Override
+	public void simulationReady() {
+		AwbStatusUpdate statusUpdate = new AwbStatusUpdate();
+		statusUpdate.setAwbState(AwbState.SIMULATION_READY);
+		this.sendStatusUpdate(statusUpdate);
+	}
+		
 }
