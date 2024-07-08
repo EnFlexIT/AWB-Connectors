@@ -16,8 +16,8 @@ public abstract class AbstractConnectorConfiguration implements PropertiesListen
 		ManualStart;
 	}
 	
-	public static final String CONNECTOR_PROPERTY_PROTOCOL = "Connector.protocol";
 	public static final String PROPERTY_KEY_CONNECTOR_NAME = "Connector.name";
+	public static final String PROPERTY_KEY__CONNECTOR_PROTOCOL = "Connector.protocol";
 	public static final String PROPERTY_KEY_CONNECTOR_START_ON = "Connector.startOn";
 	public static final String PROPERTY_KEY_SERVER_HOST = "Server.host" ;
 	public static final String PROPERTY_KEY_SERVER_PORT = "Server.port";

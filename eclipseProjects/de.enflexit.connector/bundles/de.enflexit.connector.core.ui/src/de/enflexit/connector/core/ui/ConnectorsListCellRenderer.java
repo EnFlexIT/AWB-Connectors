@@ -33,7 +33,7 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 		String connectorName = (String) value;
 		
 		Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
-		String labelString = connectorName + " - " + connectorProperties.getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
+		String labelString = connectorName + " - " + connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 		JLabel rendererLabel = (JLabel) super.getListCellRendererComponent(list, labelString, index, isSelected, cellHasFocus);
 		
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);

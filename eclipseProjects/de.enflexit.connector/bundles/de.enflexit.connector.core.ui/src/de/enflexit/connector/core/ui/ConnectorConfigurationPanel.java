@@ -251,7 +251,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Tests the selected connection.
 	 */
 	private void testConnection() {
-		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
+		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 		ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
 		if (connectorService!=null) {
 			AbstractConnector testConnector = connectorService.getNewConnectorInstance();

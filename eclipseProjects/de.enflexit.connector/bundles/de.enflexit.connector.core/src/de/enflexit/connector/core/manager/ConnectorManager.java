@@ -219,7 +219,7 @@ public class ConnectorManager {
 		AbstractConnector connectorInstance = null;
 		Properties connectorProperties = this.getConfiguredConnectors().get(connectorName);
 		if (connectorProperties!=null) {
-			String protocolName = connectorProperties.getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL);
+			String protocolName = connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 			ConnectorService service = this.getConnectorServiceForProtocol(protocolName);
 			if (service != null) {
 				connectorInstance = service.getNewConnectorInstance();
@@ -382,7 +382,7 @@ public class ConnectorManager {
 	private ArrayList<Properties> getConnectorsByProtocol(String protocolName){
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
 		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
-			if (connectorProperties.getStringValue(AbstractConnectorConfiguration.CONNECTOR_PROPERTY_PROTOCOL).equals(protocolName)) {
+			if (connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
 				foundConnectors.add(connectorProperties);
 			}
 		}
