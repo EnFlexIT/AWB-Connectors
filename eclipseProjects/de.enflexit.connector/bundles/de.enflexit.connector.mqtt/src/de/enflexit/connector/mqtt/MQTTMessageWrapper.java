@@ -11,14 +11,26 @@ public class MQTTMessageWrapper {
 	private Mqtt3Publish mqtt3message;
 	private Mqtt5Publish mqtt5message;
 	
+	/**
+	 * Instantiates a new MQTT message wrapper for a MQTT3 message.
+	 * @param mqtt3message the mqtt 3 message
+	 */
 	public MQTTMessageWrapper(Mqtt3Publish mqtt3message) {
 		this.mqtt3message = mqtt3message;
 	}
 
+	/**
+	 * Instantiates a new MQTT message wrapper for a MQTT5 message.
+	 * @param mqtt5message the mqtt 5 message
+	 */
 	public MQTTMessageWrapper(Mqtt5Publish mqtt5message) {
 		this.mqtt5message = mqtt5message;
 	}
 	
+	/**
+	 * Gets the message topic.
+	 * @return the message topic
+	 */
 	public String getMessageTopic() {
 		String topicString = "";
 		if (this.mqtt3message!=null) {

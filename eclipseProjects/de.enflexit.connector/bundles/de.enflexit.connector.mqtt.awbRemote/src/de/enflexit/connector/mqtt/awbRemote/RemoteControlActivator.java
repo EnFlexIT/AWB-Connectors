@@ -22,7 +22,7 @@ public class RemoteControlActivator implements BundleActivator {
 		if (this.getRemoteControl().doConnectorCheck()==true) {
 			this.getRemoteControl().subscribeForCommands();
 			System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector available, listenning for commands.");
-			this.getRemoteControl().sendReadyStatus();
+			this.getRemoteControl().sendAwbReady();
 			
 		} else {
 			System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector not available!");

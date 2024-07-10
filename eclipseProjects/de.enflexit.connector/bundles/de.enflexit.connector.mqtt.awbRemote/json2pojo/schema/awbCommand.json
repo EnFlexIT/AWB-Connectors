@@ -1,0 +1,36 @@
+{
+	"title": "AwbRemoteCommand",
+	"description": "A remote command, that can be sent to the AWB using an AwbRemoteControl implementation",
+	"type": "object",
+	"properties": {
+		"command": {
+			"type": "string",
+			"enum": ["StartMas", "StopMas", "LoadProject", "SelectSetup", "ConfigureSimulation", "NextStep"],
+			"description": "One from a set of valid remote control commands"
+		},
+		"parameter": {
+			"description": "Allows to specify a single string parameter for simple commands",
+			"type": "string"
+		},
+		"parameterList": {
+			"description": "Allows to specify a number of named parameters for more complex commands",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"paramName": {
+						"type":  "string",
+						"enum": ["SimulationStartTime", "SimulationEndTime", "SimulationStepLength"],
+						"description": "The parameter name, must be one from a set of known names."
+					},					 
+					"paramValue": {
+						"type": "string",
+						"description": "The parameter value, must match what is expected for this parameter"
+					}
+				}
+			}
+			
+		}
+	},
+	"required": "command"
+}

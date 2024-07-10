@@ -1,0 +1,17 @@
+{
+	"title": "AwbNotification",
+	"description": "A status update that is sent from the controlled AWB to the controlling instance",
+	"type": "object",
+	"properties": {
+		"awbState": {
+			"type": "string",
+			"enum": ["AwbReady", "ProjectLoaded", "SetupLoaded", "ConfigurationSet", "MasStarted", "SimulationStepDone", "SimulationFinished", "MasStopped", "CommandFailed", "CommandOutOfSequence"],
+			"description": "The state to notify the controlling entity about."
+		},
+		"stateDetails": {
+			"description": "Optional further details about the state.",
+			"type": "string"
+		}
+	},
+	"required": "state"
+}

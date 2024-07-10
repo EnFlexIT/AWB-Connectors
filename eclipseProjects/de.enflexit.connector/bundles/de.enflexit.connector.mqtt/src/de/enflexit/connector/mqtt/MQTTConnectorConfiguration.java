@@ -18,7 +18,7 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	
 	public enum AuthMode{
 		//TODO extend
-		SIMPLE
+		NONE, SIMPLE
 	}
 	
 	public static final String PROTOCOL_NAME = "MQTT";
@@ -93,7 +93,7 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	 * Gets a set of default properties for new connections.
 	 * @return the initial properties
 	 */
-	public static Properties getInitialProperties() {
+	public static Properties getDefaultProperties() {
 		Properties properties = new Properties();
 		properties.setStringValue(PROPERTY_KEY__CONNECTOR_PROTOCOL, PROTOCOL_NAME);
 		properties.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
@@ -101,7 +101,7 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 		properties.setIntegerValue(PROPERTY_KEY_SERVER_PORT, DEFAULT_MQTT_PORT);
 		properties.setStringValue(PROPERTY_KEY_MQTT_VERSION, MqttVersion.MQTT_5_0.toString());
 		properties.setStringValue(PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER, getMyHostName());
-		properties.setStringValue(PROPERTY_KEY_MQTT_AUTH_MODE, AuthMode.SIMPLE.toString());
+		properties.setStringValue(PROPERTY_KEY_MQTT_AUTH_MODE, AuthMode.NONE.toString());
 		return properties;
 	}
 	
@@ -118,31 +118,58 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	}
 	
 
+	/* (non-Javadoc)
+	 * @see de.enflexit.common.properties.PropertiesListener#onPropertiesEvent(de.enflexit.common.properties.PropertiesEvent)
+	 */
 	@Override
 	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
 		System.out.println("[" + this.getClass().getSimpleName() + "] Received properties event");
 	}
 
+	/**
+	 * Gets the auth mode.
+	 * @return the auth mode
+	 */
 	public AuthMode getAuthMode() {
 		return authMode;
 	}
 
+	/**
+	 * Sets the auth mode.
+	 * @param authMode the new auth mode
+	 */
 	public void setAuthMode(AuthMode authMode) {
 		this.authMode = authMode;
 	}
 
+	/**
+	 * Gets the username.
+	 * @return the username
+	 */
 	public String getUsername() {
 		return username;
 	}
 
+	/**
+	 * Sets the username.
+	 * @param username the new username
+	 */
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
+	/**
+	 * Gets the password.
+	 * @return the password
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * Sets the password.
+	 * @param password the new password
+	 */
 	public void setPassword(String password) {
 		this.password = password;
 	}

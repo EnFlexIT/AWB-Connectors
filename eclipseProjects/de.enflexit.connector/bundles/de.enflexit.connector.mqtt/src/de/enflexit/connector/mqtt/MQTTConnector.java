@@ -258,15 +258,17 @@ public class MQTTConnector extends AbstractConnector {
 	 * @param topic the topic
 	 */
 	private void stopSubscription(String topic) {
-		switch (this.getConnectorConfiguration().getMqttVersion()) {
-		case MQTT_3_1_1:
-			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
-			clientV3.unsubscribeWith().topicFilter(topic).send();
-			break;
-		case MQTT_5_0:
-			Mqtt5BlockingClient clientV5 = (Mqtt5BlockingClient) this.getClient();
-			clientV5.unsubscribeWith().topicFilter(topic).send();
-			break;
+		if (this.isConnected()==true) {
+			switch (this.getConnectorConfiguration().getMqttVersion()) {
+			case MQTT_3_1_1:
+				Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
+				clientV3.unsubscribeWith().topicFilter(topic).send();
+				break;
+			case MQTT_5_0:
+				Mqtt5BlockingClient clientV5 = (Mqtt5BlockingClient) this.getClient();
+				clientV5.unsubscribeWith().topicFilter(topic).send();
+				break;
+			}
 		}
 	}
 	
@@ -350,7 +352,7 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	@Override
 	public Properties getInitialProperties() {
-		return MQTTConnectorConfiguration.getInitialProperties();
+		return MQTTConnectorConfiguration.getDefaultProperties();
 	}
 	
 	/* (non-Javadoc)
