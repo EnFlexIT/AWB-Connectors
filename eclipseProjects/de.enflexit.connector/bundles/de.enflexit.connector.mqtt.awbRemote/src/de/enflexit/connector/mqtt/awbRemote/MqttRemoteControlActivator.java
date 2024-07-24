@@ -3,11 +3,14 @@ package de.enflexit.connector.mqtt.awbRemote;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import agentgui.core.application.Application;
+import de.enflexit.awbRemote.jsonCommand.AwbNotification.AwbState;
+
 /**
  * This activator class starts and stops the MQTT remote control.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class RemoteControlActivator implements BundleActivator {
+public class MqttRemoteControlActivator implements BundleActivator {
 	
 	AwbRemoteControlMQTT remoteControl;
 
@@ -16,16 +19,17 @@ public class RemoteControlActivator implements BundleActivator {
 	 */
 	@Override
 	public void start(BundleContext context) throws Exception {
-		
-//		System.out.println("[" + this.getClass().getSimpleName() + "] MQTT remote control bundle started!");
-		
-		if (this.getRemoteControl().doConnectorCheck()==true) {
-			this.getRemoteControl().subscribeForCommands();
-			System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector available, listenning for commands.");
-			this.getRemoteControl().sendAwbReady();
-			
-		} else {
-			System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector not available!");
+
+		// --- Only activate the remote control when the current application is hosting the main container of a JADE platform.
+		if (Application.isRemoteContainerApplication()==false) { 
+			if (this.getRemoteControl().doConnectorCheck()==true) {
+				this.getRemoteControl().subscribeForCommands();
+				System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector available, listenning for commands.");
+				this.getRemoteControl().sendAwbStateNotification(AwbState.AWB_READY);
+				
+			} else {
+				System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector not available!");
+			}
 		}
 	}
 

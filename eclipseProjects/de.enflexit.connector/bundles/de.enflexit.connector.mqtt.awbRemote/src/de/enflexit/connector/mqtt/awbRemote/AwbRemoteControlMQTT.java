@@ -7,11 +7,12 @@ import com.google.gson.JsonSyntaxException;
 
 import agentgui.core.application.Application;
 import agentgui.core.config.GlobalInfo;
+import agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
 import de.enflexit.awb.remoteControl.AwbSimulationSettings;
+import de.enflexit.awb.remoteControl.AwbState;
 import de.enflexit.awbRemote.jsonCommand.AwbCommand;
 import de.enflexit.awbRemote.jsonCommand.AwbNotification;
-import de.enflexit.awbRemote.jsonCommand.AwbNotification.AwbState;
 import de.enflexit.awbRemote.jsonCommand.Parameter;
 import de.enflexit.awbRemote.jsonCommand.Parameter.ParamName;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -30,6 +31,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	private static final String MQTT_TOPIC_STATUS_UPDATES = "awbStatus";
 	
 	private String brokerHost = "localhost";
+	private boolean controlSteps = true;
 
 	private MQTTConnector mqttConnector;
 	
@@ -37,12 +39,16 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	
 	private Gson gson;
 	
+	private DiscreteSimulationStepConcroller stepController;
+	
 	/**
 	 * Instantiates a new AWB remote control MQTT.
 	 */
 	public AwbRemoteControlMQTT() {
 		Application.addApplicationListener(this);
-		Application.getJadePlatform().addPropertyChangeListener(this);
+		if (this.controlSteps==true) {
+			this.getStepController();	// Initialize the step controller
+		}
 	}
 
 	/**
@@ -68,6 +74,10 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		this.getMqttConnector().subscribe(MQTT_TOPIC_REMOTE_COMMANDS, this);
 	}
 
+	/**
+	 * Gets the mqtt connector.
+	 * @return the mqtt connector
+	 */
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
 			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(brokerHost, MQTTConnectorConfiguration.PROTOCOL_NAME);
@@ -131,14 +141,14 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 				
 				this.configureSimulation(simSettings);
 				
-				this.sendConfigurationSet();
+				this.sendAwbStateNotification(AwbNotification.AwbState.CONFIGURATION_SET);
 				
 				break;
 			case START_MAS:
 				this.startMultiAgentSystem();
 				break;
 			case NEXT_STEP:
-				// --- Not implemented yet!!!
+				this.getStepController().stepSimulation();
 				break;
 			case STOP_MAS:
 				this.stopMultiAgentSystem();
@@ -157,62 +167,9 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		this.getMqttConnector().unsubscribe(MQTT_TOPIC_REMOTE_COMMANDS, this);
 	}
 	
-	/**
-	 * Sends a status update that AWB is ready to receive MQTT commands.
-	 */
-	protected void sendAwbReady() {
+	protected void sendAwbStateNotification(AwbNotification.AwbState awbState) {
 		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.AWB_READY);
-		this.sendStatusUpdate(notification);
-	}
-
-	/**
-	 * Sends a status update that a project was loaded.
-	 * @param projectName the project name
-	 */
-	private void sendProjectLoaded(String projectName) {
-		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.PROJECT_LOADED);
-		notification.setStateDetails(projectName);
-		this.sendStatusUpdate(notification);
-	}
-
-	/**
-	 * Sends a status update that a setup was selected.
-	 *
-	 * @param setupName the setup name
-	 */
-	private void sendSetupReady(String setupName) {
-		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.SETUP_LOADED);
-		notification.setStateDetails(setupName);
-		this.sendStatusUpdate(notification);
-	}
-	
-	/**
-	 * Sends a status update that the simulation is ready.
-	 */
-	private void sendConfigurationSet() {
-		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.CONFIGURATION_SET);
-		this.sendStatusUpdate(notification);
-	}
-
-	/**
-	 * Sends a status update that the simulation is ready.
-	 */
-	private void sendMasStarted() {
-		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.MAS_STARTED);
-		this.sendStatusUpdate(notification);
-	}
-	
-	/**
-	 * Sends a status update that the simulation is ready.
-	 */
-	private void sendMasStopped() {
-		AwbNotification notification = new AwbNotification();
-		notification.setAwbState(AwbState.MAS_STOPPED);
+		notification.setAwbState(awbState);
 		this.sendStatusUpdate(notification);
 	}
 
@@ -272,31 +229,72 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#setAwbState(de.enflexit.awb.remoteControl.AwbState)
 	 */
 	@Override
-	public void setAwbState(de.enflexit.awb.remoteControl.AwbState awbState) {
+	public void setAwbState(AwbState awbState) {
 		super.setAwbState(awbState);
-		switch(awbState) {
+		this.sendAwbStateNotification(this.getJsonAwbState(awbState));
+	}
+	
+	/**
+	 * Translates an {@link AwbState} from the remote control base bundle to an 
+	 * {@link de.enflexit.awbRemote.jsonCommand.AwbNotification.AwbState} from 
+	 * the generated JSON classes.
+	 * @param awbState the awb state
+	 * @return the json awb state
+	 */
+	private AwbNotification.AwbState getJsonAwbState(AwbState awbState){
+		switch (awbState) {
 		case AWB_READY:
-			this.sendAwbReady();
-			break;
+			return AwbNotification.AwbState.AWB_READY;
 		case PROJECT_LOADED:
-			this.sendProjectLoaded(Application.getProjectFocused().getProjectName());
-			break;
+			return AwbNotification.AwbState.PROJECT_LOADED;
 		case SETUP_READY:
-			this.sendSetupReady(Application.getProjectFocused().getSimulationSetupCurrent());
-			break;
+			return AwbNotification.AwbState.SETUP_LOADED;
 		case MAS_STARTED:
-			this.sendMasStarted();
-			break;
+			return AwbNotification.AwbState.MAS_STARTED;
 		case SIMULATION_STEP_DONE:
-			// --- Not implemented yet --------------------
-			break;
+			return AwbNotification.AwbState.SIMULATION_STEP_DONE;
 		case SIMULATION_FINISHED:
-			// --- Not implemented yet --------------------
-			break;
+			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
-			this.sendMasStopped();
-			break;
+			return AwbNotification.AwbState.MAS_STOPPED;
+		default:
+			return null;
 		}
+	}
+	
+	/**
+	 * Gets the {@link DiscreteSimulationStepConcroller} for this remote control instance.
+	 * @return the step controller
+	 */
+	private DiscreteSimulationStepConcroller getStepController() {
+		if (stepController==null) {
+			stepController = new DiscreteSimulationStepConcroller();
+		}
+		return stepController;
+	}
+	
+	/**
+	 * Inner class for handling discrete simulation steps.
+	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+	 */
+	private class DiscreteSimulationStepConcroller extends AbstractDiscreteSimulationStepController{
+
+		/* (non-Javadoc)
+		 * @see agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController#onSimulationStepDone()
+		 */
+		@Override
+		public void onSimulationStepDone() {
+			AwbRemoteControlMQTT.this.sendAwbStateNotification(AwbNotification.AwbState.SIMULATION_STEP_DONE);
+		}
+
+		/* (non-Javadoc)
+		 * @see agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController#waitForNextSimulationStepInvocation()
+		 */
+		@Override
+		public boolean waitForNextSimulationStepInvocation() {
+			return true;
+		}
+		
 	}
 		
 }
