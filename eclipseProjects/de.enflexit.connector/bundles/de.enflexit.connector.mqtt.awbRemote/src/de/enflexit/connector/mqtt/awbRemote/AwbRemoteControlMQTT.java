@@ -262,7 +262,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		case MAS_STARTED:
 			return AwbNotification.AwbState.MAS_STARTED;
 		case SIMULATION_STEP_DONE:
-			return AwbNotification.AwbState.SIMULATION_STEP_DONE;
+			return AwbNotification.AwbState.READY_FOR_NEXT_STEP;
 		case SIMULATION_FINISHED:
 			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
@@ -331,7 +331,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		 */
 		@Override
 		public void onSimulationStepDone() {
-			AwbRemoteControlMQTT.this.sendAwbStateNotification(AwbNotification.AwbState.SIMULATION_STEP_DONE);
+			AwbRemoteControlMQTT.this.sendAwbStateNotification(AwbNotification.AwbState.READY_FOR_NEXT_STEP);
 		}
 	
 		/* (non-Javadoc)

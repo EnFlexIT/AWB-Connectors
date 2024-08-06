@@ -130,7 +130,7 @@ public class AwbNotification {
         SETUP_LOADED("SetupLoaded"),
         CONFIGURATION_SET("ConfigurationSet"),
         MAS_STARTED("MasStarted"),
-        SIMULATION_STEP_DONE("SimulationStepDone"),
+        READY_FOR_NEXT_STEP("ReadyForNextStep"),
         SIMULATION_FINISHED("SimulationFinished"),
         MAS_STOPPED("MasStopped"),
         COMMAND_FAILED("CommandFailed"),
