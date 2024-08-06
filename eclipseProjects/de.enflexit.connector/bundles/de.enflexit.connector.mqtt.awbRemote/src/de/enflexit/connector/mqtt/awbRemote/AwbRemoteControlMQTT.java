@@ -15,6 +15,7 @@ import de.enflexit.awbRemote.jsonCommand.AwbCommand;
 import de.enflexit.awbRemote.jsonCommand.AwbNotification;
 import de.enflexit.awbRemote.jsonCommand.Parameter;
 import de.enflexit.awbRemote.jsonCommand.Parameter.ParamName;
+import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.mqtt.MQTTConnector;
 import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
@@ -27,11 +28,15 @@ import de.enflexit.connector.mqtt.MQTTSubscriber;
  */
 public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber {
 	
-	private static final String MQTT_TOPIC_REMOTE_COMMANDS = "awbControl";
-	private static final String MQTT_TOPIC_STATUS_UPDATES = "awbStatus";
+	public static final String PROPERTY_KEY_BROKER_HOST = "mqtt.remoteControl.brokerHost";
+	public static final String PROPERTY_KEY_COMMAND_TOPIC = "mqtt.remoteControl.commandTopic";
+	public static final String PROPERTY_KEY_STATUS_TOPIC = "mqtt.remoteControl.statusTopic";
+	public static final String PROPERTY_KEY_CONTROL_STEPS = "mqtt.remoteControl.controlSteps";
 	
-	private String brokerHost = "localhost";
-	private boolean controlSteps = true;
+	private static final String DEFAULT_TOPIC_REMOTE_COMMANDS = "awbControl";
+	private static final String DEFAULT_TOPIC_STATUS_UPDATES = "awbStatus";
+	private static final String DEFAULT_BROKER_HOST = "localhost";
+	private static final boolean DEFAULT_CONTROL_STEPS = true;
 
 	private MQTTConnector mqttConnector;
 	
@@ -41,12 +46,17 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	
 	private DiscreteSimulationStepConcroller stepController;
 	
+	private String statusTopic;
+	private String commandTopic;
+	private String brokerHost;
+	private Boolean controlSteps;
+	
 	/**
 	 * Instantiates a new AWB remote control MQTT.
 	 */
 	public AwbRemoteControlMQTT() {
 		Application.addApplicationListener(this);
-		if (this.controlSteps==true) {
+		if (this.isControlSteps()==true) {
 			this.getStepController();	// Initialize the step controller
 		}
 	}
@@ -71,7 +81,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 * Subscribes for the MQTT channel for AWB remote commands.
 	 */
 	public void subscribeForCommands() {
-		this.getMqttConnector().subscribe(MQTT_TOPIC_REMOTE_COMMANDS, this);
+		this.getMqttConnector().subscribe(this.getCommandTopic(), this);
 	}
 
 	/**
@@ -80,7 +90,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 */
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(brokerHost, MQTTConnectorConfiguration.PROTOCOL_NAME);
+			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(this.getBrokerHost(), MQTTConnectorConfiguration.PROTOCOL_NAME);
 		}
 		return mqttConnector;
 	}
@@ -92,7 +102,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	public void sendStatusUpdate(AwbNotification notification) {
 		if (this.getMqttConnector()!=null && this.getMqttConnector().isConnected()==true) {
 			String messageContent = this.getGson().toJson(notification);
-			this.getMqttConnector().publish(MQTT_TOPIC_STATUS_UPDATES, messageContent);
+			this.getMqttConnector().publish(this.getStatusTopic(), messageContent);
 		}
 	}
 
@@ -164,7 +174,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 * Unsubscribes from the remote commands topic.
 	 */
 	protected void unsubscribeFromCommands() {
-		this.getMqttConnector().unsubscribe(MQTT_TOPIC_REMOTE_COMMANDS, this);
+		this.getMqttConnector().unsubscribe(this.getCommandTopic(), this);
 	}
 	
 	protected void sendAwbStateNotification(AwbNotification.AwbState awbState) {
@@ -273,12 +283,49 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		return stepController;
 	}
 	
+	private String getCommandTopic() {
+		if (commandTopic==null) {
+			Properties projectProperties = Application.getProjectFocused().getProperties();
+			String topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
+			commandTopic = (topicFromProperties!=null) ? topicFromProperties : DEFAULT_TOPIC_REMOTE_COMMANDS;
+		}
+		return commandTopic;
+	}
+	
+	private String getStatusTopic() {
+		if (statusTopic==null) {
+			Properties projectProperties = Application.getProjectFocused().getProperties();
+			String topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
+			statusTopic = (topicFromProperties!=null) ? topicFromProperties : DEFAULT_TOPIC_STATUS_UPDATES;
+		}
+		return statusTopic;
+	}
+
+	private boolean isControlSteps() {
+		if (controlSteps==null) {
+			Properties projectProperties = Application.getProjectFocused().getProperties();
+			Boolean boolFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
+			controlSteps = (boolFromProperties!=null) ? boolFromProperties : DEFAULT_CONTROL_STEPS; 
+		}
+		return controlSteps;
+	}
+
+
+	private String getBrokerHost() {
+		if (brokerHost==null) {
+			Properties projectProperties = Application.getProjectFocused().getProperties();
+			String hostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
+			brokerHost = (hostFromProperties!=null) ? hostFromProperties : DEFAULT_BROKER_HOST;
+		}
+		return brokerHost;
+	}
+
 	/**
 	 * Inner class for handling discrete simulation steps.
 	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
 	 */
 	private class DiscreteSimulationStepConcroller extends AbstractDiscreteSimulationStepController{
-
+	
 		/* (non-Javadoc)
 		 * @see agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController#onSimulationStepDone()
 		 */
@@ -286,7 +333,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		public void onSimulationStepDone() {
 			AwbRemoteControlMQTT.this.sendAwbStateNotification(AwbNotification.AwbState.SIMULATION_STEP_DONE);
 		}
-
+	
 		/* (non-Javadoc)
 		 * @see agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController#waitForNextSimulationStepInvocation()
 		 */
@@ -296,5 +343,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		
 	}
+	
+	
 		
 }
