@@ -7,6 +7,7 @@ import com.google.gson.JsonSyntaxException;
 
 import agentgui.core.application.Application;
 import agentgui.core.config.GlobalInfo;
+import agentgui.core.project.Project;
 import agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
 import de.enflexit.awb.remoteControl.AwbSimulationSettings;
@@ -180,6 +181,11 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	protected void sendAwbStateNotification(AwbNotification.AwbState awbState) {
 		AwbNotification notification = new AwbNotification();
 		notification.setAwbState(awbState);
+		if (awbState==AwbNotification.AwbState.PROJECT_LOADED) {
+			notification.setStateDetails(Application.getProjectFocused().getProjectName());
+		} else if (awbState == AwbNotification.AwbState.SETUP_LOADED) {
+			notification.setStateDetails(Application.getProjectFocused().getSimulationSetupCurrent());
+		}
 		this.sendStatusUpdate(notification);
 	}
 
@@ -193,7 +199,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		try {
 			command = this.getGson().fromJson(jsonString, AwbCommand.class);
 		} catch (JsonSyntaxException jse) {
-			System.err.println("[" + this.getClass().getSimpleName() + "] Could not get AwbCommand from Json string!");
+			System.err.println("[" + this.getClass().getSimpleName() + "] Could not get AwbCommand from Json string: " + jsonString);
 //			jse.printStackTrace();
 		}
 		return command;
@@ -260,13 +266,13 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		case SETUP_READY:
 			return AwbNotification.AwbState.SETUP_LOADED;
 		case MAS_STARTED:
-			return AwbNotification.AwbState.MAS_STARTED;
+			return AwbNotification.AwbState.JADE_STARTED;
 		case SIMULATION_STEP_DONE:
 			return AwbNotification.AwbState.READY_FOR_NEXT_STEP;
 		case SIMULATION_FINISHED:
 			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
-			return AwbNotification.AwbState.MAS_STOPPED;
+			return AwbNotification.AwbState.JADE_STOPPED;
 		default:
 			return null;
 		}
@@ -285,8 +291,12 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	
 	private String getCommandTopic() {
 		if (commandTopic==null) {
-			Properties projectProperties = Application.getProjectFocused().getProperties();
-			String topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
+			String topicFromProperties = null;
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				Properties projectProperties = Application.getProjectFocused().getProperties();
+				topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
+			}
 			commandTopic = (topicFromProperties!=null) ? topicFromProperties : DEFAULT_TOPIC_REMOTE_COMMANDS;
 		}
 		return commandTopic;
@@ -294,8 +304,12 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	
 	private String getStatusTopic() {
 		if (statusTopic==null) {
-			Properties projectProperties = Application.getProjectFocused().getProperties();
-			String topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
+			String topicFromProperties = null;
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				Properties projectProperties = Application.getProjectFocused().getProperties();
+				topicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
+			}
 			statusTopic = (topicFromProperties!=null) ? topicFromProperties : DEFAULT_TOPIC_STATUS_UPDATES;
 		}
 		return statusTopic;
@@ -303,8 +317,12 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 
 	private boolean isControlSteps() {
 		if (controlSteps==null) {
-			Properties projectProperties = Application.getProjectFocused().getProperties();
-			Boolean boolFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
+			Boolean boolFromProperties = null;
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				Properties projectProperties = Application.getProjectFocused().getProperties();
+				boolFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
+			}
 			controlSteps = (boolFromProperties!=null) ? boolFromProperties : DEFAULT_CONTROL_STEPS; 
 		}
 		return controlSteps;
@@ -313,11 +331,64 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 
 	private String getBrokerHost() {
 		if (brokerHost==null) {
-			Properties projectProperties = Application.getProjectFocused().getProperties();
-			String hostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
+			String hostFromProperties  = null;
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				Properties projectProperties = Application.getProjectFocused().getProperties();
+				hostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
+			}
 			brokerHost = (hostFromProperties!=null) ? hostFromProperties : DEFAULT_BROKER_HOST;
 		}
 		return brokerHost;
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
+	 */
+	@Override
+	public void onApplicationEvent(ApplicationEvent ae) {
+		if (ae.getApplicationEvent()==ApplicationEvent.PROJECT_FOCUSED) {
+			this.applyRemoteControlSettingsFromProject();
+		}
+		super.onApplicationEvent(ae);
+	}
+	
+	private void applyRemoteControlSettingsFromProject() {
+		boolean changed = false;
+		
+		// --- Check if remote control settings are specified in the project properties -----------
+		Project projectFocused = Application.getProjectFocused();
+		if (projectFocused!=null) {
+			Properties projectProperties = Application.getProjectFocused().getProperties();
+			String brokerHostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
+			if (brokerHostFromProperties!=null) {
+				this.brokerHost = brokerHostFromProperties;
+				changed = true;
+			}
+			String commandsTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
+			if (commandsTopicFromProperties!=null) {
+				this.commandTopic = commandsTopicFromProperties;
+				changed = true;
+			}
+			String statusTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
+			if (statusTopicFromProperties!=null) {
+				this.statusTopic = statusTopicFromProperties;
+				changed = true;
+			}
+			Boolean controlStepsFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
+			if (controlStepsFromProperties!=null) {
+				this.controlSteps = controlStepsFromProperties;
+				changed = true;
+			}
+			
+			// --- If project settings have been applied, dispose the old connector instance
+			if (changed==true) {
+				if (this.getMqttConnector().isConnected()==true) {
+					this.getMqttConnector().disconnect();
+				}
+				this.mqttConnector = null;
+			}
+		}
 	}
 
 	/**
@@ -343,7 +414,6 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		
 	}
-	
 	
 		
 }
