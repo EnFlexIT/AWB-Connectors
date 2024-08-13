@@ -354,40 +354,33 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	}
 	
 	private void applyRemoteControlSettingsFromProject() {
-		boolean changed = false;
 		
 		// --- Check if remote control settings are specified in the project properties -----------
 		Project projectFocused = Application.getProjectFocused();
 		if (projectFocused!=null) {
 			Properties projectProperties = Application.getProjectFocused().getProperties();
 			String brokerHostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
-			if (brokerHostFromProperties!=null) {
+			if (brokerHostFromProperties!=null && brokerHostFromProperties.equals(this.brokerHost)==false) {
 				this.brokerHost = brokerHostFromProperties;
-				changed = true;
+				this.getMqttConnector().getConnectorConfiguration().setUrlOrIP(brokerHostFromProperties);
+				if (this.getMqttConnector().isConnected()==true) {
+					this.getMqttConnector().disconnect();
+					this.getMqttConnector().connect();
+				}
 			}
 			String commandsTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
 			if (commandsTopicFromProperties!=null) {
 				this.commandTopic = commandsTopicFromProperties;
-				changed = true;
 			}
 			String statusTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
 			if (statusTopicFromProperties!=null) {
 				this.statusTopic = statusTopicFromProperties;
-				changed = true;
 			}
 			Boolean controlStepsFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
 			if (controlStepsFromProperties!=null) {
 				this.controlSteps = controlStepsFromProperties;
-				changed = true;
 			}
 			
-			// --- If project settings have been applied, dispose the old connector instance
-			if (changed==true) {
-				if (this.getMqttConnector().isConnected()==true) {
-					this.getMqttConnector().disconnect();
-				}
-				this.mqttConnector = null;
-			}
 		}
 	}
 
