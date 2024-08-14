@@ -162,7 +162,7 @@ public class AwbCommand {
         STOP_SIMULATION("StopSimulation"),
         LOAD_PROJECT("LoadProject"),
         SELECT_SETUP("SelectSetup"),
-        CONFIGURE_TIME("ConfigureTime"),
+        SET_TIME_CONFIGURATION("SetTimeConfiguration"),
         NEXT_STEP("NextStep");
         private final String value;
         private final static Map<String, AwbCommand.Command> CONSTANTS = new HashMap<String, AwbCommand.Command>();

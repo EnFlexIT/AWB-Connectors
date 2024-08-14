@@ -4,7 +4,6 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import agentgui.core.application.Application;
-import de.enflexit.awbRemote.jsonCommand.AwbNotification.AwbState;
 
 /**
  * This activator class starts and stops the MQTT remote control.
@@ -24,9 +23,6 @@ public class MqttRemoteControlActivator implements BundleActivator {
 		if (Application.isRemoteContainerApplication()==false) { 
 			if (this.getRemoteControl().doConnectorCheck()==true) {
 				this.getRemoteControl().subscribeForCommands();
-				System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector available, listenning for commands.");
-				this.getRemoteControl().sendAwbStateNotification(AwbState.AWB_READY);
-				
 			} else {
 				System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector not available!");
 			}

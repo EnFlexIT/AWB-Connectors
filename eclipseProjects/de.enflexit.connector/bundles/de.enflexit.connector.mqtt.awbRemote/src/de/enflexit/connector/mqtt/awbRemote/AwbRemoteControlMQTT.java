@@ -134,7 +134,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to select setup, no setup name passed!");
 				}
 				break;
-			case CONFIGURE_TIME:
+			case SET_TIME_CONFIGURATION:
 				
 				AwbSimulationSettings simSettings = new AwbSimulationSettings();
 				
@@ -152,7 +152,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 				
 				this.configureSimulation(simSettings);
 				
-				this.sendAwbStateNotification(AwbNotification.AwbState.CONFIGURATION_SET);
+				this.sendAwbStateNotification(AwbNotification.AwbState.TIME_CONFIGURATION_SET);
 				
 				break;
 			case START_SIMULATION:
@@ -266,13 +266,13 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		case SETUP_READY:
 			return AwbNotification.AwbState.SETUP_LOADED;
 		case MAS_STARTED:
-			return AwbNotification.AwbState.JADE_STARTED;
+			return AwbNotification.AwbState.SIMULATION_STARTED;
 		case SIMULATION_STEP_DONE:
 			return AwbNotification.AwbState.READY_FOR_NEXT_STEP;
 		case SIMULATION_FINISHED:
 			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
-			return AwbNotification.AwbState.JADE_STOPPED;
+			return AwbNotification.AwbState.SIMULATION_STOPPED;
 		default:
 			return null;
 		}

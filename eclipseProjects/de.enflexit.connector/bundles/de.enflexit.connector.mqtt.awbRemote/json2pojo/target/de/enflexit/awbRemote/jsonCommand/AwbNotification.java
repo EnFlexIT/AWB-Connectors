@@ -128,11 +128,11 @@ public class AwbNotification {
         AWB_READY("AwbReady"),
         PROJECT_LOADED("ProjectLoaded"),
         SETUP_LOADED("SetupLoaded"),
-        CONFIGURATION_SET("ConfigurationSet"),
-        JADE_STARTED("JadeStarted"),
+        TIME_CONFIGURATION_SET("TimeConfigurationSet"),
+        SIMULATION_STARTED("SimulationStarted"),
         READY_FOR_NEXT_STEP("ReadyForNextStep"),
         SIMULATION_FINISHED("SimulationFinished"),
-        JADE_STOPPED("JadeStopped"),
+        SIMULATION_STOPPED("SimulationStopped"),
         COMMAND_FAILED("CommandFailed"),
         COMMAND_OUT_OF_SEQUENCE("CommandOutOfSequence");
         private final String value;

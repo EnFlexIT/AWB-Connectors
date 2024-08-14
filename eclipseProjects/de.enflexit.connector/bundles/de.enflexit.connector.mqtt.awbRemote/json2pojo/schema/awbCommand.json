@@ -5,7 +5,7 @@
 	"properties": {
 		"command": {
 			"type": "string",
-			"enum": ["StartSimulation", "StopSimulation", "LoadProject", "SelectSetup", "ConfigureTime", "NextStep"],
+			"enum": ["StartSimulation", "StopSimulation", "LoadProject", "SelectSetup", "SetTimeConfiguration", "NextStep"],
 			"description": "One from a set of valid remote control commands"
 		},
 		"parameter": {
