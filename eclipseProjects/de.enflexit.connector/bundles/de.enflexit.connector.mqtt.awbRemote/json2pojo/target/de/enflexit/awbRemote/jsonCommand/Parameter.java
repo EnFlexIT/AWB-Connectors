@@ -4,18 +4,9 @@ package de.enflexit.awbRemote.jsonCommand;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.processing.Generated;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "paramName",
-    "paramValue"
-})
 @Generated("jsonschema2pojo")
 public class Parameter {
 
@@ -23,22 +14,21 @@ public class Parameter {
      * The parameter name, must be one from a set of known names.
      * 
      */
-    @JsonProperty("paramName")
-    @JsonPropertyDescription("The parameter name, must be one from a set of known names.")
+    @SerializedName("paramName")
+    @Expose
     private Parameter.ParamName paramName;
     /**
      * The parameter value, must match what is expected for this parameter
      * 
      */
-    @JsonProperty("paramValue")
-    @JsonPropertyDescription("The parameter value, must match what is expected for this parameter")
+    @SerializedName("paramValue")
+    @Expose
     private String paramValue;
 
     /**
      * The parameter name, must be one from a set of known names.
      * 
      */
-    @JsonProperty("paramName")
     public Parameter.ParamName getParamName() {
         return paramName;
     }
@@ -47,7 +37,6 @@ public class Parameter {
      * The parameter name, must be one from a set of known names.
      * 
      */
-    @JsonProperty("paramName")
     public void setParamName(Parameter.ParamName paramName) {
         this.paramName = paramName;
     }
@@ -56,7 +45,6 @@ public class Parameter {
      * The parameter value, must match what is expected for this parameter
      * 
      */
-    @JsonProperty("paramValue")
     public String getParamValue() {
         return paramValue;
     }
@@ -65,7 +53,6 @@ public class Parameter {
      * The parameter value, must match what is expected for this parameter
      * 
      */
-    @JsonProperty("paramValue")
     public void setParamValue(String paramValue) {
         this.paramValue = paramValue;
     }
@@ -118,8 +105,11 @@ public class Parameter {
     @Generated("jsonschema2pojo")
     public enum ParamName {
 
+        @SerializedName("SimulationStartTime")
         SIMULATION_START_TIME("SimulationStartTime"),
+        @SerializedName("SimulationEndTime")
         SIMULATION_END_TIME("SimulationEndTime"),
+        @SerializedName("SimulationStepLength")
         SIMULATION_STEP_LENGTH("SimulationStepLength");
         private final String value;
         private final static Map<String, Parameter.ParamName> CONSTANTS = new HashMap<String, Parameter.ParamName>();
@@ -139,12 +129,10 @@ public class Parameter {
             return this.value;
         }
 
-        @JsonValue
         public String value() {
             return this.value;
         }
 
-        @JsonCreator
         public static Parameter.ParamName fromValue(String value) {
             Parameter.ParamName constant = CONSTANTS.get(value);
             if (constant == null) {

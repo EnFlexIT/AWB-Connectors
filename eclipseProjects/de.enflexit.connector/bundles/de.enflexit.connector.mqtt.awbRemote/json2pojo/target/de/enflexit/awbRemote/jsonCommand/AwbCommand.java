@@ -6,12 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.processing.Generated;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 
 /**
@@ -20,12 +16,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * A remote command, that can be sent to the AWB using an AwbRemoteControl implementation
  * 
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "command",
-    "parameter",
-    "parameterList"
-})
 @Generated("jsonschema2pojo")
 public class AwbCommand {
 
@@ -33,29 +23,28 @@ public class AwbCommand {
      * One from a set of valid remote control commands
      * 
      */
-    @JsonProperty("command")
-    @JsonPropertyDescription("One from a set of valid remote control commands")
+    @SerializedName("command")
+    @Expose
     private AwbCommand.Command command;
     /**
      * Allows to specify a single string parameter for simple commands
      * 
      */
-    @JsonProperty("parameter")
-    @JsonPropertyDescription("Allows to specify a single string parameter for simple commands")
+    @SerializedName("parameter")
+    @Expose
     private String parameter;
     /**
      * Allows to specify a number of named parameters for more complex commands
      * 
      */
-    @JsonProperty("parameterList")
-    @JsonPropertyDescription("Allows to specify a number of named parameters for more complex commands")
+    @SerializedName("parameterList")
+    @Expose
     private List<Parameter> parameterList = new ArrayList<Parameter>();
 
     /**
      * One from a set of valid remote control commands
      * 
      */
-    @JsonProperty("command")
     public AwbCommand.Command getCommand() {
         return command;
     }
@@ -64,7 +53,6 @@ public class AwbCommand {
      * One from a set of valid remote control commands
      * 
      */
-    @JsonProperty("command")
     public void setCommand(AwbCommand.Command command) {
         this.command = command;
     }
@@ -73,7 +61,6 @@ public class AwbCommand {
      * Allows to specify a single string parameter for simple commands
      * 
      */
-    @JsonProperty("parameter")
     public String getParameter() {
         return parameter;
     }
@@ -82,7 +69,6 @@ public class AwbCommand {
      * Allows to specify a single string parameter for simple commands
      * 
      */
-    @JsonProperty("parameter")
     public void setParameter(String parameter) {
         this.parameter = parameter;
     }
@@ -91,7 +77,6 @@ public class AwbCommand {
      * Allows to specify a number of named parameters for more complex commands
      * 
      */
-    @JsonProperty("parameterList")
     public List<Parameter> getParameterList() {
         return parameterList;
     }
@@ -100,7 +85,6 @@ public class AwbCommand {
      * Allows to specify a number of named parameters for more complex commands
      * 
      */
-    @JsonProperty("parameterList")
     public void setParameterList(List<Parameter> parameterList) {
         this.parameterList = parameterList;
     }
@@ -158,11 +142,17 @@ public class AwbCommand {
     @Generated("jsonschema2pojo")
     public enum Command {
 
+        @SerializedName("StartSimulation")
         START_SIMULATION("StartSimulation"),
+        @SerializedName("StopSimulation")
         STOP_SIMULATION("StopSimulation"),
+        @SerializedName("LoadProject")
         LOAD_PROJECT("LoadProject"),
+        @SerializedName("SelectSetup")
         SELECT_SETUP("SelectSetup"),
+        @SerializedName("SetTimeConfiguration")
         SET_TIME_CONFIGURATION("SetTimeConfiguration"),
+        @SerializedName("NextStep")
         NEXT_STEP("NextStep");
         private final String value;
         private final static Map<String, AwbCommand.Command> CONSTANTS = new HashMap<String, AwbCommand.Command>();
@@ -182,12 +172,10 @@ public class AwbCommand {
             return this.value;
         }
 
-        @JsonValue
         public String value() {
             return this.value;
         }
 
-        @JsonCreator
         public static AwbCommand.Command fromValue(String value) {
             AwbCommand.Command constant = CONSTANTS.get(value);
             if (constant == null) {

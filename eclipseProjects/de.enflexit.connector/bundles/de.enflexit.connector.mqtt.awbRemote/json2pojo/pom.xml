@@ -15,6 +15,7 @@
                     <sourceDirectory>${basedir}/schema</sourceDirectory>
                     <outputDirectory>${basedir}/target</outputDirectory>
                     <targetPackage>de.enflexit.awbRemote.jsonCommand</targetPackage>
+                    <annotationStyle>gson</annotationStyle>
                     <includeAdditionalProperties>false</includeAdditionalProperties>
                 </configuration>
                 <executions>

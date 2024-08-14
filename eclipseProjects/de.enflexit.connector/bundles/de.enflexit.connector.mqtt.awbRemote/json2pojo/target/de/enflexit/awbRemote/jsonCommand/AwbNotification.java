@@ -4,12 +4,8 @@ package de.enflexit.awbRemote.jsonCommand;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.processing.Generated;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 
 /**
@@ -18,11 +14,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * A status update that is sent from the controlled AWB to the controlling instance
  * 
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "awbState",
-    "stateDetails"
-})
 @Generated("jsonschema2pojo")
 public class AwbNotification {
 
@@ -30,22 +21,21 @@ public class AwbNotification {
      * The state to notify the controlling entity about.
      * 
      */
-    @JsonProperty("awbState")
-    @JsonPropertyDescription("The state to notify the controlling entity about.")
+    @SerializedName("awbState")
+    @Expose
     private AwbNotification.AwbState awbState;
     /**
      * Optional further details about the state.
      * 
      */
-    @JsonProperty("stateDetails")
-    @JsonPropertyDescription("Optional further details about the state.")
+    @SerializedName("stateDetails")
+    @Expose
     private String stateDetails;
 
     /**
      * The state to notify the controlling entity about.
      * 
      */
-    @JsonProperty("awbState")
     public AwbNotification.AwbState getAwbState() {
         return awbState;
     }
@@ -54,7 +44,6 @@ public class AwbNotification {
      * The state to notify the controlling entity about.
      * 
      */
-    @JsonProperty("awbState")
     public void setAwbState(AwbNotification.AwbState awbState) {
         this.awbState = awbState;
     }
@@ -63,7 +52,6 @@ public class AwbNotification {
      * Optional further details about the state.
      * 
      */
-    @JsonProperty("stateDetails")
     public String getStateDetails() {
         return stateDetails;
     }
@@ -72,7 +60,6 @@ public class AwbNotification {
      * Optional further details about the state.
      * 
      */
-    @JsonProperty("stateDetails")
     public void setStateDetails(String stateDetails) {
         this.stateDetails = stateDetails;
     }
@@ -125,15 +112,25 @@ public class AwbNotification {
     @Generated("jsonschema2pojo")
     public enum AwbState {
 
+        @SerializedName("AwbReady")
         AWB_READY("AwbReady"),
+        @SerializedName("ProjectLoaded")
         PROJECT_LOADED("ProjectLoaded"),
+        @SerializedName("SetupLoaded")
         SETUP_LOADED("SetupLoaded"),
+        @SerializedName("TimeConfigurationSet")
         TIME_CONFIGURATION_SET("TimeConfigurationSet"),
+        @SerializedName("SimulationStarted")
         SIMULATION_STARTED("SimulationStarted"),
+        @SerializedName("ReadyForNextStep")
         READY_FOR_NEXT_STEP("ReadyForNextStep"),
+        @SerializedName("SimulationFinished")
         SIMULATION_FINISHED("SimulationFinished"),
+        @SerializedName("SimulationStopped")
         SIMULATION_STOPPED("SimulationStopped"),
+        @SerializedName("CommandFailed")
         COMMAND_FAILED("CommandFailed"),
+        @SerializedName("CommandOutOfSequence")
         COMMAND_OUT_OF_SEQUENCE("CommandOutOfSequence");
         private final String value;
         private final static Map<String, AwbNotification.AwbState> CONSTANTS = new HashMap<String, AwbNotification.AwbState>();
@@ -153,12 +150,10 @@ public class AwbNotification {
             return this.value;
         }
 
-        @JsonValue
         public String value() {
             return this.value;
         }
 
-        @JsonCreator
         public static AwbNotification.AwbState fromValue(String value) {
             AwbNotification.AwbState constant = CONSTANTS.get(value);
             if (constant == null) {
