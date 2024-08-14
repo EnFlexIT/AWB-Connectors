@@ -296,12 +296,8 @@ public class ConnectorManager {
 	 */
 	private File getDefaultConfigFile() {
 		File configFile = null;
-		String propertiesFolder = Application.getGlobalInfo().getPathProperty(true);
-		if (propertiesFolder!=null && propertiesFolder.isBlank()==false) {
-			Path propertiesPath = new File(propertiesFolder).toPath();
-			configFile = propertiesPath.resolve(DEFAULT_CONFIG_FILE_NAME).toFile();
-		}
-		
+		Path propertiesPath = Application.getGlobalInfo().getPathProperty(true);
+		configFile = propertiesPath.resolve(DEFAULT_CONFIG_FILE_NAME).toFile();
 		return configFile;
 	}
 

@@ -5,8 +5,8 @@ Bundle-SymbolicName: de.enflexit.connector.core
 Bundle-Version: 1.0.0.qualifier
 Export-Package: de.enflexit.connector.core,
  de.enflexit.connector.core.manager
-Import-Package: javax.xml.bind,
- javax.xml.bind.annotation
+Import-Package: jakarta.xml.bind,
+ jakarta.xml.bind.annotation
 Require-Bundle: com.google.gson,
  de.enflexit.common,
  org.agentgui.core,
