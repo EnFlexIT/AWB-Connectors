@@ -134,7 +134,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to select setup, no setup name passed!");
 				}
 				break;
-			case CONFIGURE_SIMULATION:
+			case CONFIGURE_TIME:
 				
 				AwbSimulationSettings simSettings = new AwbSimulationSettings();
 				
@@ -155,13 +155,13 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 				this.sendAwbStateNotification(AwbNotification.AwbState.CONFIGURATION_SET);
 				
 				break;
-			case START_MAS:
+			case START_SIMULATION:
 				this.startMultiAgentSystem();
 				break;
 			case NEXT_STEP:
 				this.getStepController().stepSimulation();
 				break;
-			case STOP_MAS:
+			case STOP_SIMULATION:
 				this.stopMultiAgentSystem();
 				break;
 			}

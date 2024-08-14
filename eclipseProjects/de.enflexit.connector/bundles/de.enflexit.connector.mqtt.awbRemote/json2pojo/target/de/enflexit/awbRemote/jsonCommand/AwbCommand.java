@@ -158,11 +158,11 @@ public class AwbCommand {
     @Generated("jsonschema2pojo")
     public enum Command {
 
-        START_MAS("StartMas"),
-        STOP_MAS("StopMas"),
+        START_SIMULATION("StartSimulation"),
+        STOP_SIMULATION("StopSimulation"),
         LOAD_PROJECT("LoadProject"),
         SELECT_SETUP("SelectSetup"),
-        CONFIGURE_SIMULATION("ConfigureSimulation"),
+        CONFIGURE_TIME("ConfigureTime"),
         NEXT_STEP("NextStep");
         private final String value;
         private final static Map<String, AwbCommand.Command> CONSTANTS = new HashMap<String, AwbCommand.Command>();
