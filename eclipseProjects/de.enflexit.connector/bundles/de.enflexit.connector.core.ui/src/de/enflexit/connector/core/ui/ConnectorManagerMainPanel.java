@@ -258,6 +258,17 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (connectorName!=null) {
 			Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
 			this.getConfigurationPanel().setConnectorProperties(connectorProperties);
+			
+			AbstractConnector connectorInstance = ConnectorManager.getInstance().getConnectorByName(connectorName);
+			if (connectorInstance!=null) {
+				// --- If the connector instance is available, use the UI component defined there for configuration
+				this.getMainSplitPane().setRightComponent(connectorInstance.getConfigurationUIComponent(this.getConfigurationPanel()));
+			} else {
+				// --- If not, e.g. because the corresponding service is not available, use the default panel.
+				this.getMainSplitPane().setRightComponent(this.getConfigurationPanel());
+			}
+			
+			
 		} else {
 			this.getConfigurationPanel().setConnectorProperties(null);
 		}

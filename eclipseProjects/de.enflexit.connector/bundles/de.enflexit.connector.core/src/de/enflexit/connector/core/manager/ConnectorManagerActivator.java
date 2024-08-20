@@ -5,7 +5,7 @@ import org.osgi.framework.BundleContext;
 
 import agentgui.core.application.Application;
 import agentgui.core.application.ApplicationListener;
-import de.enflexit.connector.core.AbstractConnectorConfiguration.StartOn;
+import de.enflexit.connector.core.AbstractConnector.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.ConnectorServiceTracker;
 

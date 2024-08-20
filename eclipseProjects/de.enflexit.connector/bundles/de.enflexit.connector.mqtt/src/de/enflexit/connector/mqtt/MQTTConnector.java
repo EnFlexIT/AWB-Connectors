@@ -358,7 +358,6 @@ public class MQTTConnector extends AbstractConnector {
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#getConfigurationFromProperties(de.enflexit.common.properties.Properties)
 	 */
-	@Override
 	public AbstractConnectorConfiguration getConfigurationFromProperties(Properties properties) {
 		return MQTTConnectorConfiguration.fromProperties(properties);
 	}
@@ -366,7 +365,6 @@ public class MQTTConnector extends AbstractConnector {
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#getConnectorConfiguration()
 	 */
-	@Override
 	public MQTTConnectorConfiguration getConnectorConfiguration() {
 		if (connectorConfiguration==null) {
 			connectorConfiguration = (MQTTConnectorConfiguration) this.getConfigurationFromProperties(this.getConnectorProperties());

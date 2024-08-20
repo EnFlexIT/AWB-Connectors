@@ -9,7 +9,6 @@ import javax.swing.JList;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorConfiguration;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
@@ -33,7 +32,7 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 		String connectorName = (String) value;
 		
 		Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
-		String labelString = connectorName + " - " + connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+		String labelString = connectorName + " - " + connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 		JLabel rendererLabel = (JLabel) super.getListCellRendererComponent(list, labelString, index, isSelected, cellHasFocus);
 		
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);

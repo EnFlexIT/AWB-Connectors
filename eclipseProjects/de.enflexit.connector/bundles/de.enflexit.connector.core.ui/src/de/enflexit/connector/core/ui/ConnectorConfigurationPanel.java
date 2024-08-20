@@ -8,8 +8,7 @@ import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
 import de.enflexit.common.properties.PropertiesPanel;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorConfiguration;
-import de.enflexit.connector.core.AbstractConnectorConfiguration.StartOn;
+import de.enflexit.connector.core.AbstractConnector.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -207,10 +206,10 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 			this.pauseListener = true;
 			Properties propsClone = SerialClone.clone(connectorProperties);
 			propsClone.addPropertiesListener(this);
-			this.getJLabelProtocolName().setText(connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME));
+			this.getJLabelProtocolName().setText(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME));
 			this.getConnectionPropertiesPanel().setProperties(propsClone);
 			this.setChanged(false);
-			StartOn startOn = StartOn.valueOf(connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_START_ON));
+			StartOn startOn = StartOn.valueOf(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON));
 			this.getJComboBoxStartOn().setSelectedItem(startOn);
 			this.getJButtonTest().setEnabled(true);
 			this.pauseListener = false;
@@ -236,7 +235,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getJComboBoxStartOn()) {
 			if (this.pauseListener==false ) {
-				this.getConnectionPropertiesPanel().getProperties().setValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
+				this.getConnectionPropertiesPanel().getProperties().setValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
 			}
 		} else if (ae.getSource()==this.getJButtonTest()) {
 			this.testConnection();
@@ -251,7 +250,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Tests the selected connection.
 	 */
 	private void testConnection() {
-		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 		ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
 		if (connectorService!=null) {
 			AbstractConnector testConnector = connectorService.getNewConnectorInstance();
@@ -319,7 +318,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		// --- Write the changed properties to the connector ------------------
 		
 		this.connectorProperties = this.getConnectionPropertiesPanel().getProperties();
-		ConnectorManager.getInstance().updateConnectorProperties(this.connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME), this.connectorProperties);
+		ConnectorManager.getInstance().updateConnectorProperties(this.connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME), this.connectorProperties);
 		this.setChanged(false);
 		
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(this.getSelectedConnectorName());
@@ -362,7 +361,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	
 	private String getSelectedConnectorName() {
 		if (this.connectorProperties!=null) {
-			return this.connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME);
+			return this.connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 		} else {
 			return null;
 		}

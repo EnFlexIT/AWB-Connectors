@@ -4,6 +4,7 @@ import com.hivemq.client.mqtt.MqttVersion;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.properties.PropertiesEvent;
+import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnectorConfiguration;
 
 /**
@@ -41,8 +42,8 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	
 	public static MQTTConnectorConfiguration fromProperties(Properties properties) {
 		MQTTConnectorConfiguration config = new MQTTConnectorConfiguration();
-		config.setUrlOrIP(properties.getStringValue(PROPERTY_KEY_SERVER_HOST));
-		config.setPort(properties.getIntegerValue(PROPERTY_KEY_SERVER_PORT));
+		config.setUrlOrIP(properties.getStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST));
+		config.setPort(properties.getIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT));
 		config.setClientID(properties.getStringValue(PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER));
 		String mqttVersionString = properties.getStringValue(PROPERTY_KEY_MQTT_VERSION);
 		if (mqttVersionString!=null) {
@@ -95,10 +96,10 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	 */
 	public static Properties getDefaultProperties() {
 		Properties properties = new Properties();
-		properties.setStringValue(PROPERTY_KEY__CONNECTOR_PROTOCOL, PROTOCOL_NAME);
-		properties.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
-		properties.setStringValue(PROPERTY_KEY_SERVER_HOST, "localhost");
-		properties.setIntegerValue(PROPERTY_KEY_SERVER_PORT, DEFAULT_MQTT_PORT);
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL, PROTOCOL_NAME);
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, AbstractConnector.StartOn.ManualStart.toString());
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST, "localhost");
+		properties.setIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT, DEFAULT_MQTT_PORT);
 		properties.setStringValue(PROPERTY_KEY_MQTT_VERSION, MqttVersion.MQTT_5_0.toString());
 		properties.setStringValue(PROPERTY_KEY_MQTT_CLIENT_IDENTIFIER, getMyHostName());
 		properties.setStringValue(PROPERTY_KEY_MQTT_AUTH_MODE, AuthMode.NONE.toString());

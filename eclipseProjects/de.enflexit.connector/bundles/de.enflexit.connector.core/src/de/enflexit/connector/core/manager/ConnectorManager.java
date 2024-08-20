@@ -12,8 +12,7 @@ import agentgui.core.application.Application;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorConfiguration;
-import de.enflexit.connector.core.AbstractConnectorConfiguration.StartOn;
+import de.enflexit.connector.core.AbstractConnector.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 
 /**
@@ -93,7 +92,7 @@ public class ConnectorManager {
 	 */
 	public AbstractConnector getConnectorByHostAndProtocol(String host, String protocol) {
 		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
-			if (connector.getProtocolName().equals(protocol) && connector.getConnectorConfiguration().getUrlOrIP().equals(host)) {
+			if (connector.getProtocolName().equals(protocol) && connector.getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST).equals(host)) {
 				return connector;
 			}
 		}
@@ -219,7 +218,7 @@ public class ConnectorManager {
 		AbstractConnector connectorInstance = null;
 		Properties connectorProperties = this.getConfiguredConnectors().get(connectorName);
 		if (connectorProperties!=null) {
-			String protocolName = connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+			String protocolName = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
 			ConnectorService service = this.getConnectorServiceForProtocol(protocolName);
 			if (service != null) {
 				connectorInstance = service.getNewConnectorInstance();
@@ -328,10 +327,10 @@ public class ConnectorManager {
 		ArrayList<Properties> connectorsForProtocol = this.getConnectorsByProtocol(connectorService.getProtocolName());
 		for (Properties connProperties : connectorsForProtocol) {
 			
-			String conectorName = connProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME);
+			String conectorName = connProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 			AbstractConnector connector = this.instantiateConnector(conectorName);
 			
-			StartOn startOn = StartOn.valueOf(connProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_START_ON));
+			StartOn startOn = StartOn.valueOf(connProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON));
 			if (startOn.ordinal()<=this.currentStartOnLevel.ordinal()) {
 				if (this.debug==true) {
 					this.debugPrint("Starting connector " + conectorName + " with start level " + startOn);
@@ -382,7 +381,7 @@ public class ConnectorManager {
 	private ArrayList<Properties> getConnectorsByProtocol(String protocolName){
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
 		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
-			if (connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
+			if (connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
 				foundConnectors.add(connectorProperties);
 			}
 		}

@@ -11,7 +11,6 @@ import javax.swing.JWindow;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorConfiguration;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -248,7 +247,7 @@ public class ConnectorCreationPanel extends JWindow implements ActionListener {
 			if (connectorService!=null) {
 				AbstractConnector newConnector = connectorService.getNewConnectorInstance();
 				Properties connectorProperties = newConnector.getInitialProperties();
-				connectorProperties.setStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
+				connectorProperties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
 				newConnector.setConnectorProperties(connectorProperties);
 				ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
 			} else {
