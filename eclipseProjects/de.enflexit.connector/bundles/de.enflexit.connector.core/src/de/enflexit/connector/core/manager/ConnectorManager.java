@@ -324,7 +324,7 @@ public class ConnectorManager {
 		this.debugPrint("A new connector service for " + connectorService.getProtocolName() + " was added.");
 		this.debugPrint("Current startlevel is " + this.currentStartOnLevel);
 		
-		ArrayList<Properties> connectorsForProtocol = this.getConnectorsByProtocol(connectorService.getProtocolName());
+		ArrayList<Properties> connectorsForProtocol = this.getConnectorPropertiesByProtocol(connectorService.getProtocolName());
 		for (Properties connProperties : connectorsForProtocol) {
 			
 			String conectorName = connProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
@@ -378,7 +378,7 @@ public class ConnectorManager {
 	 * @param protocolName the protocol name
 	 * @return the connectors by protocol
 	 */
-	private ArrayList<Properties> getConnectorsByProtocol(String protocolName){
+	private ArrayList<Properties> getConnectorPropertiesByProtocol(String protocolName){
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
 		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
 			if (connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
@@ -386,6 +386,22 @@ public class ConnectorManager {
 			}
 		}
 		return foundConnectors;
+	}
+	
+	/**
+	 * Gets all available connectors for the specified protocol.
+	 * @param protocolName the protocol name
+	 * @return the connectors by protocol
+	 */
+	public ArrayList<AbstractConnector> getConnectorsByProtocol(String protocolName){
+		ArrayList<AbstractConnector> connectorsList = new ArrayList<>();
+		
+		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
+			if (connector.getProtocolName().equals(protocolName)) {
+				connectorsList.add(connector);
+			}
+		}
+		return connectorsList;
 	}
 
 	/**

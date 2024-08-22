@@ -99,9 +99,6 @@ public abstract class AbstractConnector {
 	 */
 	public abstract Properties getInitialProperties();
 	
-//	public abstract AbstractConnectorConfiguration getConfigurationFromProperties(Properties properties);
-//
-//	public abstract AbstractConnectorConfiguration getConnectorConfiguration();
 	
 	/**
 	 * Gets the configuration UI component. This default implementation just returns the base panel for editing 

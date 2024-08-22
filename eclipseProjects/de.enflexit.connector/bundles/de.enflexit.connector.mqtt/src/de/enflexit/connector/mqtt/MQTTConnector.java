@@ -38,7 +38,7 @@ public class MQTTConnector extends AbstractConnector {
 	private HashMap<String, MQTTSubscription> activeSubscriptions;
 	
 	private MQTTConnectorConfiguration connectorConfiguration;
-
+	
 	/**
 	 * Gets the MQTT client instance.
 	 * @return the client
@@ -76,19 +76,22 @@ public class MQTTConnector extends AbstractConnector {
 	 */
 	@Override
 	public boolean connect() {
+		
+		boolean success = false;
 		try {
 			switch (this.getConnectorConfiguration().getMqttVersion()) {
 			case MQTT_3_1_1:
-				return this.connectV3();
+				success = this.connectV3();
 			case MQTT_5_0:
-				return this.connectV5();
+				success = this.connectV5();
 			default:
 				return false;
 			}
 		} catch (ConnectionFailedException cfe) {
 			System.err.println("[" + this.getClass().getSimpleName() + "] Connection failed: " + cfe.getMessage() + " (Exception)");
-			return false;
 		}
+		
+		return success;
 		
 	}
 	
@@ -161,6 +164,7 @@ public class MQTTConnector extends AbstractConnector {
 			clientV5.disconnect();
 			break;
 		}
+		
 	}
 	
 	/**
@@ -214,6 +218,10 @@ public class MQTTConnector extends AbstractConnector {
 		
 	}
 	
+	/**
+	 * Starts a subscription to the configured broker.
+	 * @param subscription the subscription
+	 */
 	private void startSubscription(MQTTSubscription subscription) {
 		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
