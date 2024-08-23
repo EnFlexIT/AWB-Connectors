@@ -381,7 +381,8 @@ public class ConnectorManager {
 	private ArrayList<Properties> getConnectorsByProtocol(String protocolName){
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
 		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
-			if (connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
+			String protocol = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+			if (protocol!=null && protocol.equals(protocolName)) {
 				foundConnectors.add(connectorProperties);
 			}
 		}

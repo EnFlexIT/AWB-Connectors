@@ -23,6 +23,7 @@ import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import javax.swing.JToolBar;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 
 /**
  * The main panel for the {@link ConnectorManager}'s configuration UI.
@@ -262,7 +263,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			AbstractConnector connectorInstance = ConnectorManager.getInstance().getConnectorByName(connectorName);
 			if (connectorInstance!=null) {
 				// --- If the connector instance is available, use the UI component defined there for configuration
-				this.getMainSplitPane().setRightComponent(connectorInstance.getConfigurationUIComponent(this.getConfigurationPanel()));
+				JComponent connectorUI = connectorInstance.getConfigurationUIComponent(this.getConfigurationPanel());
+				if (connectorUI==null) {
+					connectorUI = this.getConfigurationPanel();
+				} 
+				this.getMainSplitPane().setRightComponent(connectorUI);
 			} else {
 				// --- If not, e.g. because the corresponding service is not available, use the default panel.
 				this.getMainSplitPane().setRightComponent(this.getConfigurationPanel());
