@@ -8,9 +8,9 @@ import javax.swing.JTree;
 import javax.swing.ToolTipManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
-import de.enflexit.connector.opcua.OpcUABrowserModel;
 import de.enflexit.connector.opcua.OpcUaConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener;
 
@@ -24,7 +24,7 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	private static final long serialVersionUID = -4990198119008390049L;
 	
 	private OpcUaConnector opcUaConnector;
-	private OpcUABrowserModel opcUaBrowserModel;
+	private OpcUABrowserTreeModel opcUaBrowserModel;
 	
 	private JTree jTreeOpcUaNodes;
 	
@@ -41,9 +41,9 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 * Returns the OPC UA browser model of the current connector.
 	 * @return the opc UA browser model
 	 */
-	private OpcUABrowserModel getOpcUABrowserModel() {
+	private OpcUABrowserTreeModel getOpcUaBrowserModel() {
 		if (opcUaBrowserModel==null) {
-			opcUaBrowserModel = new OpcUABrowserModel(this.opcUaConnector);
+			opcUaBrowserModel = new OpcUABrowserTreeModel(this.opcUaConnector);
 		}
 		return opcUaBrowserModel;
 	}
@@ -53,13 +53,13 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 */
 	private JTree getJTreeOpcUaNodes() {
 		if (jTreeOpcUaNodes==null) {
-			jTreeOpcUaNodes = new JTree(this.getOpcUABrowserModel());
+			jTreeOpcUaNodes = new JTree(this.getOpcUaBrowserModel());
 			jTreeOpcUaNodes.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 			jTreeOpcUaNodes.addTreeSelectionListener(this);
 			jTreeOpcUaNodes.addKeyListener(this);
 			//jTreeOpcUaNodes.addMouseListener(this.getMouseAdapter());
 
-			//this.setCellRenderer(this.getGroupTreeCellRenderer());
+			jTreeOpcUaNodes.setCellRenderer(new OpcUaBrowserTreeCellRenderer());
 			ToolTipManager.sharedInstance().registerComponent(this);
 
 		}
@@ -73,8 +73,9 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	@Override
 	public void valueChanged(TreeSelectionEvent tsEvt) {
 		
-		// TODO Auto-generated method stub
-		
+		DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) this.getJTreeOpcUaNodes().getLastSelectedPathComponent();
+		if (selectedNode==null) return;
+		this.getOpcUaBrowserModel().browseNode(selectedNode, true, selectedNode.getLevel() + 1);
 	}
 	
 	
@@ -113,7 +114,7 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 */
 	@Override
 	public void onConnection() {
-		this.getOpcUABrowserModel().reBuildTreeModel();
+		this.getOpcUaBrowserModel().buildTreeModel(2);
 		this.getJTreeOpcUaNodes().setEnabled(true);
 	}
 	/* (non-Javadoc)
@@ -121,15 +122,8 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 */
 	@Override
 	public void onDisconnection() {
+		this.getOpcUaBrowserModel().clearTreeModel();
 		this.getJTreeOpcUaNodes().setEnabled(false);
-	}
-	/* (non-Javadoc)
-	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionActive()
-	 */
-	@Override
-	public void onSessionActive() {
-		this.getJTreeOpcUaNodes().setEnabled(true);
-		
 	}
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionInactive()
@@ -137,6 +131,14 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	@Override
 	public void onSessionInactive() {
 		this.getJTreeOpcUaNodes().setEnabled(false);
+		
+	}
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionActive()
+	 */
+	@Override
+	public void onSessionActive() {
+		this.getJTreeOpcUaNodes().setEnabled(true);
 		
 	}
 	

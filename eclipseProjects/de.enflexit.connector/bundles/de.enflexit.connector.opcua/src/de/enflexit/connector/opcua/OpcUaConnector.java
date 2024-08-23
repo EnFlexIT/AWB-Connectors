@@ -208,6 +208,7 @@ public class OpcUaConnector extends AbstractConnector {
 			Stack.releaseSharedResources();
 			this.opcUaClient = null;
 			this.opcUaClientActive = false;
+			this.informListener(Event.Disconnect);
 		}
 	}
 	
