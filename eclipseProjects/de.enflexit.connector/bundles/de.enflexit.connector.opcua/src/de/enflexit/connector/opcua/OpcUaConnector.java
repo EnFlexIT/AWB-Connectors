@@ -124,6 +124,13 @@ public class OpcUaConnector extends AbstractConnector {
 		}
 		return configPanel;
 	}
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.AbstractConnector#disposeUI()
+	 */
+	@Override
+	public void disposeUI() {
+		this.configPanel = null;
+	}
 	
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#connect()

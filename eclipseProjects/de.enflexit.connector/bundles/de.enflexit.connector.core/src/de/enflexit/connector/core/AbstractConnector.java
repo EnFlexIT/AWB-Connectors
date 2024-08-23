@@ -99,20 +99,23 @@ public abstract class AbstractConnector {
 	 */
 	public abstract Properties getInitialProperties();
 	
-//	public abstract AbstractConnectorConfiguration getConfigurationFromProperties(Properties properties);
-//
-//	public abstract AbstractConnectorConfiguration getConnectorConfiguration();
 	
 	/**
 	 * Gets the configuration UI component. This default implementation just returns the base panel for editing 
 	 * connector properties. Override this method if you want to provide a custom configuration UI component for 
 	 * your connector implementation.
 	 * 
-	 * @param baseConfigPanel the base config panel
+	 * @param baseConfigPanel the base configuration panel
 	 * @return the configuration UI component
 	 */
 	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
 		return baseConfigPanel;
 	}
+	
+	/**
+	 * Overwrite to dispose the UI (if any).
+	 */
+	public void disposeUI() { }
+	
 	
 }
