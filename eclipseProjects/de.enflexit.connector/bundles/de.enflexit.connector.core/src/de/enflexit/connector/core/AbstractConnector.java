@@ -105,11 +105,17 @@ public abstract class AbstractConnector {
 	 * connector properties. Override this method if you want to provide a custom configuration UI component for 
 	 * your connector implementation.
 	 * 
-	 * @param baseConfigPanel the base config panel
+	 * @param baseConfigPanel the base configuration panel
 	 * @return the configuration UI component
 	 */
 	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
 		return baseConfigPanel;
 	}
+	
+	/**
+	 * Overwrite to dispose the UI (if any).
+	 */
+	public void disposeUI() { }
+	
 	
 }
