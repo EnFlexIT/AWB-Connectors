@@ -1,10 +1,14 @@
 package de.enflexit.connector.core.ui;
 
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.ListSelectionModel;
@@ -14,11 +18,13 @@ import javax.swing.event.ListSelectionListener;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.swing.OwnerDetection;
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import javax.swing.JToolBar;
@@ -45,6 +51,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JButton jButtonStart;
 	private JButton jButtonStop;
 	private JButton jButtonRestart;
+	
+	private JPopupMenu jPopupMenuNewConnection;
 	
 	private JSplitPane mainSplitPane;
 	private JScrollPane jScrollPane;
@@ -91,7 +99,16 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (jButtonAdd == null) {
 			jButtonAdd = new JButton(BundleHelper.getImageIcon(ICON_ADD));
 			jButtonAdd.setToolTipText("Add a new connector");
-			jButtonAdd.addActionListener(this);
+			jButtonAdd.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					ConnectorManagerMainPanel.this.showJPopupMenuAddNewConnection();
+				}
+				@Override
+				public void mousePressed(MouseEvent e) {
+					ConnectorManagerMainPanel.this.showJPopupMenuAddNewConnection();
+				}
+			});
 		}
 		return jButtonAdd;
 	}
@@ -134,6 +151,23 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			jButtonRestart.addActionListener(this);
 		}
 		return jButtonRestart;
+	}
+	
+	private void showJPopupMenuAddNewConnection() {
+		this.getjPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
+	}
+	
+	private JPopupMenu getjPopupMenuNewConnection() {
+		if (jPopupMenuNewConnection==null) {
+			jPopupMenuNewConnection = new JPopupMenu();
+			
+			for (ConnectorService connectorService : ConnectorManager.getInstance().getAvailableConnectorServices().values()) {
+				JMenuItem connectorItem = new JMenuItem(connectorService.getProtocolName());
+				connectorItem.addActionListener(this);
+			}
+			
+		}
+		return jPopupMenuNewConnection;
 	}
 
 	/**
@@ -289,7 +323,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getJButtonAdd()) {
-			this.showCreatePanel();
+			this.getjPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
 		} else if (ae.getSource()==this.getJButtonRemove()) {
 			this.deleteConnection();
 		} else if (ae.getSource()==this.getJButtonStart()) {
