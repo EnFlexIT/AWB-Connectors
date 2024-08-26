@@ -82,8 +82,10 @@ public class MQTTConnector extends AbstractConnector {
 			switch (this.getConnectorConfiguration().getMqttVersion()) {
 			case MQTT_3_1_1:
 				success = this.connectV3();
+				break;
 			case MQTT_5_0:
 				success = this.connectV5();
+				break;
 			default:
 				return false;
 			}

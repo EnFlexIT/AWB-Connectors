@@ -53,7 +53,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private JLabel jLabelProtocol;
 	private JLabel jLabelProtocolName;
 	
-	private Properties connectorProperties;
+	private Properties originalProperties;
 	
 	/**
 	 * Instantiates a new manage connection panel.
@@ -182,6 +182,9 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private PropertiesPanel getConnectionPropertiesPanel() {
 		if (connectionPropertiesPanel == null) {
 			connectionPropertiesPanel = new PropertiesPanel();
+			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
+			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON);
+			connectionPropertiesPanel.addRequiredProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 		}
 		return connectionPropertiesPanel;
 	}
@@ -201,12 +204,12 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * @param connector the new connector
 	 */
 	public void setConnectorProperties(Properties connectorProperties) {
-		this.connectorProperties = connectorProperties;
+		this.originalProperties = connectorProperties;
 		if (connectorProperties!=null) {
 			this.pauseListener = true;
 			Properties propsClone = SerialClone.clone(connectorProperties);
 			propsClone.addPropertiesListener(this);
-			this.getJLabelProtocolName().setText(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME));
+			this.getJLabelProtocolName().setText(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL));
 			this.getConnectionPropertiesPanel().setProperties(propsClone);
 			this.setChanged(false);
 			StartOn startOn = StartOn.valueOf(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON));
@@ -250,7 +253,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Tests the selected connection.
 	 */
 	private void testConnection() {
-		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+		String protocolName = this.getConnectionPropertiesPanel().getProperties().getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
 		ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
 		if (connectorService!=null) {
 			AbstractConnector testConnector = connectorService.getNewConnectorInstance();
@@ -265,7 +268,6 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 			System.err.println("[" + this.getClass().getSimpleName() + "] No connector service implementation for the protocol " + protocolName + " could not be found!");
 			JOptionPane.showMessageDialog(this, "No conector service found for the configured protocol " + protocolName + "!", "Not available!", JOptionPane.ERROR_MESSAGE);
 		}
-		
 	}
 	
 	private JButton getJButtonApply() {
@@ -317,8 +319,8 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	protected void applyChanges() {
 		// --- Write the changed properties to the connector ------------------
 		
-		this.connectorProperties = this.getConnectionPropertiesPanel().getProperties();
-		ConnectorManager.getInstance().updateConnectorProperties(this.connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME), this.connectorProperties);
+		Properties editedProperties = this.getConnectionPropertiesPanel().getProperties();
+		ConnectorManager.getInstance().updateConnectorProperties(this.originalProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME), editedProperties);
 		this.setChanged(false);
 		
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(this.getSelectedConnectorName());
@@ -339,7 +341,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 		int userResponse = JOptionPane.showConfirmDialog(this, "This will discard your changes! Are you sure?", "Discard changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (userResponse==JOptionPane.YES_OPTION) {
 			// --- Replace with the original properties from the connector ----
-			this.getConnectionPropertiesPanel().setProperties(this.connectorProperties);
+			this.getConnectionPropertiesPanel().setProperties(this.originalProperties);
 			this.setChanged(false);
 		}
 	}
@@ -360,8 +362,8 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	}
 	
 	private String getSelectedConnectorName() {
-		if (this.connectorProperties!=null) {
-			return this.connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
+		if (this.originalProperties!=null) {
+			return this.originalProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 		} else {
 			return null;
 		}

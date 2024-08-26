@@ -96,7 +96,7 @@ public class MQTTConnectorConfiguration extends AbstractConnectorConfiguration {
 	 */
 	public static Properties getDefaultProperties() {
 		Properties properties = new Properties();
-		properties.setStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL, PROTOCOL_NAME);
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL, PROTOCOL_NAME);
 		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, AbstractConnector.StartOn.ManualStart.toString());
 		properties.setStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST, "localhost");
 		properties.setIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT, DEFAULT_MQTT_PORT);

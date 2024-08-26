@@ -218,7 +218,7 @@ public class ConnectorManager {
 		AbstractConnector connectorInstance = null;
 		Properties connectorProperties = this.getConfiguredConnectors().get(connectorName);
 		if (connectorProperties!=null) {
-			String protocolName = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+			String protocolName = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
 			ConnectorService service = this.getConnectorServiceForProtocol(protocolName);
 			if (service != null) {
 				connectorInstance = service.getNewConnectorInstance();
@@ -369,7 +369,17 @@ public class ConnectorManager {
 	 * @param newProperties the new properties
 	 */
 	public void updateConnectorProperties(String connectorName, Properties newProperties) {
-		this.getConfiguredConnectors().put(connectorName, newProperties);
+		String newConnectorName = newProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
+		this.getConfiguredConnectors().put(newConnectorName, newProperties);
+		if (newConnectorName.equals(connectorName)==false) {
+			AbstractConnector connectorInstance = this.getAvailableConnectors().remove(connectorName);
+			if (connectorInstance!=null) {
+				this.getAvailableConnectors().put(newConnectorName, connectorInstance);
+			}
+			this.getConfiguredConnectors().remove(connectorName);
+			PropertyChangeEvent connectorRenamedEvent = new PropertyChangeEvent(this, CONNECTOR_RENAMED, connectorName, newConnectorName);
+			this.notifyListeners(connectorRenamedEvent);
+		}
 		this.saveConfigurationsToDefaultFile();
 	}
 	
@@ -381,7 +391,7 @@ public class ConnectorManager {
 	private ArrayList<Properties> getConnectorPropertiesByProtocol(String protocolName){
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
 		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
-			String protocol = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY__CONNECTOR_PROTOCOL);
+			String protocol = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
 			if (protocol!=null && protocol.equals(protocolName)) {
 				foundConnectors.add(connectorProperties);
 			}

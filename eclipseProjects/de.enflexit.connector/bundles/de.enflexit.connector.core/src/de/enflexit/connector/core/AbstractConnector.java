@@ -12,7 +12,7 @@ import de.enflexit.connector.core.manager.ConnectorManager;
 public abstract class AbstractConnector {
 	
 	public static final String PROPERTY_KEY_CONNECTOR_NAME = "Connector.name";
-	public static final String PROPERTY_KEY__CONNECTOR_PROTOCOL = "Connector.protocol";
+	public static final String PROPERTY_KEY_CONNECTOR_PROTOCOL = "Connector.protocol";
 	public static final String PROPERTY_KEY_CONNECTOR_START_ON = "Connector.startOn";
 	public static final String PROPERTY_KEY_SERVER_HOST = "Server.host" ;
 	public static final String PROPERTY_KEY_SERVER_PORT = "Server.port";
@@ -116,6 +116,5 @@ public abstract class AbstractConnector {
 	 * Overwrite to dispose the UI (if any).
 	 */
 	public void disposeUI() { }
-	
 	
 }

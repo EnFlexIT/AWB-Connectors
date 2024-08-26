@@ -4,19 +4,19 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
 import java.awt.BorderLayout;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.HashMap;
+
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import de.enflexit.common.properties.Properties;
-import de.enflexit.common.swing.OwnerDetection;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -24,8 +24,8 @@ import de.enflexit.connector.core.manager.ConnectorManager;
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JToolBar;
 import javax.swing.JButton;
@@ -59,10 +59,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JList<String> connectorsList;
 	private DefaultListModel<String> connectorsListModel;
 	
-	private ConnectorCreationPanel createConnectionPanel;
 	private ConnectorConfigurationPanel manageConnectionPanel;
 	
 	private String selectedConnectorName;
+	
+	private boolean skipPendingChangesQuestion = false;
 	
 	/**
 	 * Instantiates a new connector manager main panel.
@@ -161,9 +162,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (jPopupMenuNewConnection==null) {
 			jPopupMenuNewConnection = new JPopupMenu();
 			
-			for (ConnectorService connectorService : ConnectorManager.getInstance().getAvailableConnectorServices().values()) {
-				JMenuItem connectorItem = new JMenuItem(connectorService.getProtocolName());
-				connectorItem.addActionListener(this);
+			HashMap<String, ConnectorService> availableServices = ConnectorManager.getInstance().getAvailableConnectorServices();
+			for (ConnectorService connectorService : availableServices.values()) {
+				CreateConnectorAction action = new CreateConnectorAction(connectorService);
+				jPopupMenuNewConnection.add(action);
 			}
 			
 		}
@@ -226,14 +228,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return connectorsListModel;
 	}
 	
-	private ConnectorCreationPanel getCreateConnectionPanel() {
-		if (createConnectionPanel == null) {
-			Frame owner = OwnerDetection.getOwnerFrameForComponent(this);
-			createConnectionPanel = new ConnectorCreationPanel(owner, this);
-		}
-		return createConnectionPanel;
-	}
-
 	protected ConnectorConfigurationPanel getConfigurationPanel() {
 		if (manageConnectionPanel == null) {
 			manageConnectionPanel = new ConnectorConfigurationPanel();
@@ -263,6 +257,22 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					this.getConnectorsListModel().remove(elementIndex);
 				}
 				
+			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_RENAMED)) {
+				this.skipPendingChangesQuestion = true;
+				String oldName = (String) evt.getOldValue();
+				String newName = (String) evt.getNewValue();
+				int elementIndex = this.getIndexOfListElement(oldName);
+				if (elementIndex>-1) {
+					this.getConnectorsList().clearSelection();
+					this.getConnectorsListModel().remove(elementIndex);
+					if (elementIndex<this.getConnectorsListModel().getSize()) {
+						this.getConnectorsListModel().add(elementIndex, newName);
+					} else {
+						this.getConnectorsListModel().addElement(newName);
+					}
+					this.getConnectorsList().setSelectedIndex(elementIndex);
+				}
+				this.skipPendingChangesQuestion = false;
 			}
 		}
 	}
@@ -274,7 +284,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (lse.getSource()==this.getConnectorsList()) {
 			
 			if (this.selectedConnectorName!=null) {
-				if (this.getConfigurationPanel().hasPendingChanges()==true) {
+				if (this.getConfigurationPanel().hasPendingChanges()==true && this.skipPendingChangesQuestion==false) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (userReply==JOptionPane.YES_OPTION) {
@@ -316,6 +326,14 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	
 	protected void dispose() {
 		ConnectorManager.getInstance().removeListener(this);
+		
+		// --- If the connectors provided a custom configuration UI, dispose those too
+		for (String connectorName : ConnectorManager.getInstance().getConfiguredConnectorNames()) {
+			AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
+			if (connector!=null) {
+				connector.disposeUI();
+			}
+		}
 	}
 	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
@@ -350,17 +368,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return -1;
 	}
 
-	private void showCreatePanel() {
-		this.getCreateConnectionPanel();
-		int posX = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getX()).intValue();
-		int posY = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getY()).intValue();
-		int width = this.getConfigurationPanel().getWidth();
-		this.getCreateConnectionPanel().setLocation(posX, posY);
-		this.getCreateConnectionPanel().setSize(width, 135);
-		this.getCreateConnectionPanel().requestFocus();
-		this.getCreateConnectionPanel().setVisible(true);
-	}
-	
 	private void updateButtonState() {
 		if (this.selectedConnectorName==null) {
 			// --- No connector selected ----------------------------
@@ -438,6 +445,84 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else {
 			return false;
 		}
+	}
+	
+	/**
+	 * This action class handles the creation of new connectors.
+	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+	 */
+	private class CreateConnectorAction extends AbstractAction {
+		
+		private static final long serialVersionUID = 1953290624795078546L;
+		
+		private ConnectorService connectorService;
+
+		public CreateConnectorAction(ConnectorService connectorService) {
+			super("New " + connectorService.getProtocolName() + " connection");
+			this.connectorService = connectorService;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+		 */
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+
+			String connectorName = this.askForConnectorName();
+			
+			if (connectorName!=null) {
+				this.createConnector(connectorName);
+			} else {
+				System.out.println("User abort");
+			}
+			
+		}
+		
+		/**
+		 * Asks the user for a connector name, checks if the provided name is valid.
+		 * @return the name provided by the user, null if the user canceled the dialog
+		 */
+		private String askForConnectorName() {
+			String dialogMessage = "Please enter a unique name for the new connection";
+			String connectorName = null;
+			
+			boolean nameValid = false;
+			while (nameValid==false) {
+				connectorName = JOptionPane.showInputDialog(ConnectorManagerMainPanel.this, dialogMessage, "New " + this.connectorService.getProtocolName()  + " connector", JOptionPane.QUESTION_MESSAGE);
+				
+				// --- User abort -------------------------
+				if (connectorName==null) return null;
+				
+				if (connectorName.isBlank()==true) {
+					// --- No name was entered ------------
+					dialogMessage = "The connector  name cannot be empty, please enter a unique name!";
+					
+				} else if (ConnectorManager.getInstance().getConnectorProperies(connectorName)!=null) { 
+					// --- The name is already in use -----
+					dialogMessage = "The name is already in use, please choose a different name!";
+					
+				} else {
+					// --- Name accepted ------------------
+					nameValid=true;
+				}
+			}
+			
+			return connectorName;
+		}
+		
+		/**
+		 * Creates a new connector with the provided  name, and adds it to the {@link ConnectorManager}.
+		 * @param connectorName the connector name
+		 */
+		private void createConnector(String connectorName) {
+			AbstractConnector newConnector = connectorService.getNewConnectorInstance();
+			Properties connectorProperties = newConnector.getInitialProperties();
+			connectorProperties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
+			connectorProperties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL, this.connectorService.getProtocolName());
+			newConnector.setConnectorProperties(connectorProperties);
+			ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
+		}
+		
 	}
 	
 }
