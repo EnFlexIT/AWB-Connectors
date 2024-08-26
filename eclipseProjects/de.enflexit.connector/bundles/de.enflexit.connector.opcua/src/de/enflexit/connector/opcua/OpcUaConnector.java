@@ -50,7 +50,7 @@ public class OpcUaConnector extends AbstractConnector {
 	public Properties getInitialProperties() {
 		
 		Properties initProps = new Properties();
-		initProps.setStringValue(PROPERTY_KEY__CONNECTOR_PROTOCOL, OpcUAConnectorService.CONNECTOR_NAME);
+		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_PROTOCOL, OpcUAConnectorService.CONNECTOR_NAME);
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
 
 		
