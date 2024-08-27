@@ -3,9 +3,11 @@
 <target includeMode="feature" name="de.enflexit.connector.target" sequenceNumber="74">
 	<locations>
 		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-			<repository location="https://p2.enflex.it/awb/latest/"/>
-			<unit id="org.agentgui.feature.feature.group" version="0.0.0"/>
-			<unit id="org.agentgui.feature.source.feature.group" version="0.0.0"/>
+			<repository location="https://p2.enflex.it/awb/snapshots/"/>
+			<unit id="de.enflexit.common.feature.feature.group" version="2.2.0.202408261507"/>
+			<unit id="de.enflexit.common.feature.source.feature.group" version="2.2.0.202408261507"/>
+			<unit id="org.agentgui.feature.feature.group" version="2.4.2.202408261507"/>
+			<unit id="org.agentgui.feature.source.feature.group" version="2.4.2.202408261507"/>
 		</location>
 	</locations>
 </target>

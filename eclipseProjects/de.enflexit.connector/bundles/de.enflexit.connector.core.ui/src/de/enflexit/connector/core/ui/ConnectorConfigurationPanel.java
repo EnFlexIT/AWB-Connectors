@@ -182,9 +182,9 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private PropertiesPanel getConnectionPropertiesPanel() {
 		if (connectionPropertiesPanel == null) {
 			connectionPropertiesPanel = new PropertiesPanel();
-//			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
-//			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON);
-//			connectionPropertiesPanel.addRequiredProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
+			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
+			connectionPropertiesPanel.addReadOnlyProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON);
+			connectionPropertiesPanel.addRequiredProperty(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 		}
 		return connectionPropertiesPanel;
 	}
