@@ -476,8 +476,14 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		if (pce.getSource()==ConnectorManager.getInstance() && pce.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
 			// --- If previously not connected and a new connector is added, try to subscribe -----
 			if (this.connectorCheckFailed==true && this.isConnectorAvailable()==true) {
-				System.out.println("[" + this.getClass().getSimpleName() + "] New connector added, subscribing for commands");
 				this.subscribeForCommands();
+				
+				// --- Send status updates to the new connection --------------
+				this.setAwbState(AwbState.AWB_READY);
+				if (Application.getProjectFocused()!=null) {
+					this.setAwbState(AwbState.PROJECT_LOADED);
+					this.setAwbState(AwbState.SETUP_READY);
+				}
 			}
 		}
 	}
