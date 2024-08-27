@@ -1,5 +1,7 @@
 package de.enflexit.connector.mqtt.awbRemote;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ import de.enflexit.connector.mqtt.MQTTSubscriber;
  * This implementation of {@link AwbRemoteControl} allows to control an AWB instance via MQTT. 
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber {
+public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber, PropertyChangeListener {
 	
 	public static final String PROPERTY_KEY_CONNECTOR_NAME = "mqtt.remoteControl.connectorName";
 	public static final String PROPERTY_KEY_BROKER_HOST = "mqtt.remoteControl.brokerHost";
@@ -54,11 +56,14 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	private String commandTopic;
 	private Boolean controlSteps;
 	
+	private boolean connectorCheckFailed;
+	
 	/**
 	 * Instantiates a new AWB remote control MQTT.
 	 */
 	public AwbRemoteControlMQTT() {
 		Application.addApplicationListener(this);
+		ConnectorManager.getInstance().addListener(this);
 		if (this.isControlSteps()==true) {
 			this.getStepController().enable();	// Initialize the step controller
 		}
@@ -68,13 +73,15 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 * Checks if the MQTT connector is configured and available
 	 * @return true, if successful
 	 */
-	public boolean doConnectorCheck() {
+	public boolean isConnectorAvailable() {
 		if (this.getMqttConnector()==null) {
+			this.connectorCheckFailed = true;
 			System.err.println("[" + this.getClass().getSimpleName() + "] No MQTT connector available!");
 			return false;
+		} else {
+			this.connectorCheckFailed = false;
+			return true;
 		}
-		
-		return true;
 	}
 	
 	/**
@@ -430,15 +437,10 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		MQTTConnector connectorFromProject = this.getConnectorFromProperties(properties);
 		
 		if (connectorFromProject!=null && connectorFromProject!=this.mqttConnector) {
-			System.out.println("[" + this.getClass().getSimpleName() + "] A different connector was configured in the project properties, switching to that one.");
 			this.getMqttConnector().unsubscribe(this.getCommandTopic(), this);
 			this.mqttConnector = connectorFromProject;
 			this.getMqttConnector().subscribe(this.getCommandTopic(), this);
 			this.setAwbState(AwbState.AWB_READY);
-		} else if (connectorFromProject!=null && connectorFromProject==this.mqttConnector) {
-			System.out.println("[" + this.getClass().getSimpleName() + "] A connector was configured in the project properties, but it is already active.");
-		} else {
-			System.out.println("[" + this.getClass().getSimpleName() + "] No connector was configured in the project properties.");
 		}
 	}
 	
@@ -464,6 +466,20 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			return true;
 		}
 		
+	}
+
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+	 */
+	@Override
+	public void propertyChange(PropertyChangeEvent pce) {
+		if (pce.getSource()==ConnectorManager.getInstance() && pce.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
+			// --- If previously not connected and a new connector is added, try to subscribe -----
+			if (this.connectorCheckFailed==true && this.isConnectorAvailable()==true) {
+				System.out.println("[" + this.getClass().getSimpleName() + "] New connector added, subscribing for commands");
+				this.subscribeForCommands();
+			}
+		}
 	}
 	
 	
