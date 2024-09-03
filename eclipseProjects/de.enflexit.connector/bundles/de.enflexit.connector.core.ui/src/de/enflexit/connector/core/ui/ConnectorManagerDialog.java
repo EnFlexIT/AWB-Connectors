@@ -66,15 +66,14 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 			public void windowClosing(WindowEvent e) {
 				
 				boolean doClose = true;
-				ConnectorConfigurationPanel configPanel = ConnectorManagerDialog.this.getMainPanel().getConfigurationPanel();
 
 				// --- Check for pending changes, ask the user how to handle --  
-				if (configPanel.hasPendingChanges()==true) {
+				if (ConnectorManagerDialog.this.getMainPanel().isConfigChanged()==true) {
 					String userMessage = "Your current configuration has pending changes! Apply before closing?";
 					int userReply = JOptionPane.showConfirmDialog(ConnectorManagerDialog.this, userMessage, "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
 					
 					if (userReply==JOptionPane.YES_OPTION) {
-						configPanel.applyChanges();
+						ConnectorManagerDialog.this.getMainPanel().applyChanges();
 					} else if (userReply==JOptionPane.CANCEL_OPTION) {
 						doClose = false;
 					}

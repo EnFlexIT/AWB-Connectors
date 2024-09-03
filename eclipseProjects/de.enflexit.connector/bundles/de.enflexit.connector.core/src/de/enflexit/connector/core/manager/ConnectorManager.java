@@ -319,6 +319,10 @@ public class ConnectorManager {
 		return availableConnectorServices;
 	}
 	
+	/**
+	 * This method is called when a new connector is added.
+	 * @param connectorService the connector service
+	 */
 	public void newConnectorServiceAdded(ConnectorService connectorService) {
 		
 		this.debugPrint("A new connector service for " + connectorService.getProtocolName() + " was added.");

@@ -185,16 +185,28 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			case LOAD_PROJECT:
 				String projectFolder = command.getParameter();
 				if (projectFolder!=null) {
-					this.loadProject(projectFolder);
+					boolean success = this.loadProject(projectFolder);
+					
+					if (success==false) {
+						this.sendFailureUpdate("Failed to load project from " + projectFolder);
+						System.err.println("[" + this.getClass().getSimpleName() + "] Failed to load project from " + projectFolder);
+					}
+					
 				} else {
-					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to load project, no project folder passed!");
+					this.sendFailureUpdate("Missing parameter - LoadProject needs a project folder to load from!");
+					System.err.println("[" + this.getClass().getSimpleName() + "] Missing parameter - LoadProject needs a project folder to load from!");
 				}
 				break;
 			case SELECT_SETUP:
 				String setupName = command.getParameter();
 				if (setupName!=null) {
-					this.selectSetup(setupName);
+					boolean success = this.selectSetup(setupName);
+					if (success==false) {
+						this.sendFailureUpdate("Failed to select simulaiton setup " + setupName);
+						System.err.println("[" + this.getClass().getSimpleName() + "] Failed to select simulaiton setup " + setupName);
+					}
 				} else {
+					this.sendFailureUpdate("Unable to select setup, no setup name passed!");
 					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to select setup, no setup name passed!");
 				}
 				break;
@@ -251,6 +263,13 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			notification.setStateDetails(Application.getProjectFocused().getSimulationSetupCurrent());
 		}
 		this.sendStatusUpdate(notification);
+	}
+	
+	private void sendFailureUpdate(String failureMessage) {
+		AwbNotification failureNotification = new AwbNotification();
+		failureNotification.setAwbState(AwbNotification.AwbState.COMMAND_FAILED);
+		failureNotification.setStateDetails(failureMessage);
+		this.sendStatusUpdate(failureNotification);
 	}
 
 	/**
