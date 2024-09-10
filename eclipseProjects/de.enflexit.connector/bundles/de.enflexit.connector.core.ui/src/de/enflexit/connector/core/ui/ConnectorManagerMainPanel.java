@@ -10,6 +10,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.ListSelectionModel;
@@ -330,7 +331,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (lse.getSource()==this.getConnectorsList()) {
 			
 			if (this.selectedConnectorName!=null) {
-				if (this.getConfigurationPanel().hasPendingChanges()==true && this.skipPendingChangesQuestion==false) {
+				if (this.isConfigChanged()==true && this.skipPendingChangesQuestion==false) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (userReply==JOptionPane.YES_OPTION) {
@@ -480,6 +481,12 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else {
 			JOptionPane.showMessageDialog(this, "Failed to instantiate the connector! Is there a connector service for the cnfigured protocol?", "Not available", JOptionPane.ERROR_MESSAGE);
 		}
+		
+		ArrayList<AbstractConnector> connectors = ConnectorManager.getInstance().getConnectorsByProtocol("MQTT");
+		for (AbstractConnector connector : connectors) {
+			System.out.println(connector.getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME) + " - connected: " + connector.isConnected());
+		}
+		
 	}
 	private void stopConnection() {
 		if (this.getSelectedConnector()!=null) {

@@ -38,7 +38,6 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private boolean pauseListener;
 	private JSeparator separator;
 	
-	private boolean isChanged;
 	private JLabel jLabelProtocol;
 	private JLabel jLabelProtocolName;
 	
@@ -194,22 +193,6 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 				this.getConnectionPropertiesPanel().getProperties().setValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
 			}
 		}
-	}
-	
-	/**
-	 * Checks if the current configuration has unapplied changes.
-	 * @return true, if is changed
-	 */
-	public boolean hasPendingChanges() {
-		return isChanged;
-	}
-
-	/**
-	 * Sets the changed state for the current configuration.
-	 * @param hasUnsavedChanges the new changed
-	 */
-	public void setChanged(boolean hasUnsavedChanges) {
-		this.isChanged = hasUnsavedChanges;
 	}
 	
 	private JLabel getJLabelProtocol() {
