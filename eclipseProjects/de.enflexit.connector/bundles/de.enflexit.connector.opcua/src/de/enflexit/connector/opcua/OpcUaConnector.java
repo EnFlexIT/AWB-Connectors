@@ -118,9 +118,11 @@ public class OpcUaConnector extends AbstractConnector {
 	 * @see de.enflexit.connector.core.AbstractConnector#getConfigurationUIComponent(javax.swing.JPanel)
 	 */
 	@Override
-	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
+	public OpcUAConnectorPanel getConfigurationUIComponent(JPanel baseConfigPanel) {
 		if (configPanel==null) {
 			configPanel = new OpcUAConnectorPanel(this, baseConfigPanel);
+		} else {
+			configPanel.addBaseConfigurationPanel(baseConfigPanel);
 		}
 		return configPanel;
 	}
