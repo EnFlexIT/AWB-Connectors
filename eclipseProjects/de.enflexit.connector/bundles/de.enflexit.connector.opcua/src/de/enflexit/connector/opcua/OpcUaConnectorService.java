@@ -4,11 +4,11 @@ import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.ConnectorService;
 
 /**
- * The Class OpcUAConnectorService.
+ * The Class OpcUaConnectorService.
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUAConnectorService implements ConnectorService {
+public class OpcUaConnectorService implements ConnectorService {
 	
 	public static final String CONNECTOR_NAME = "OPC UA - Client";
 

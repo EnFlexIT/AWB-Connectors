@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.enflexit.connector.opcua.OpcUAConnectorService">
-   <implementation class="de.enflexit.connector.opcua.OpcUAConnectorService"/>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.enflexit.connector.opcua.OpcUaConnectorService">
+   <implementation class="de.enflexit.connector.opcua.OpcUaConnectorService"/>
    <service>
       <provide interface="de.enflexit.connector.core.ConnectorService"/>
    </service>

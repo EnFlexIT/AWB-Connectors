@@ -28,26 +28,28 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import de.enflexit.connector.opcua.OpcUaConnector;
 
 /**
- * The Class OpcUABrowserTreeModel.
+ * The Class OpcUaBrowserTreeModel.
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUABrowserTreeModel extends DefaultTreeModel {
+public class OpcUaBrowserTreeModel extends DefaultTreeModel {
 
 	private static final long serialVersionUID = -597747426437325190L;
 
+	private static final int BUILD_MAX_DEPTH = 10;
+	
 	private OpcUaConnector opcuaConnector;
-	private DefaultMutableTreeNode rootTreeNode;
+	private OpcUaTreeNode rootTreeNode;
 
-	private HashMap<UaNode, DefaultMutableTreeNode> nodeHashMap;
+	private HashMap<UaNode, OpcUaTreeNode> nodeHashMap;
 	
 	/**
-	 * Instantiates a new OpcUABrowserTreeModel.
+	 * Instantiates a new OpcUaBrowserTreeModel.
 	 * @param opcuaConnector the OPCUA connector
 	 */
-	public OpcUABrowserTreeModel(OpcUaConnector opcuaConnector) {
+	public OpcUaBrowserTreeModel(OpcUaConnector opcuaConnector) {
 		super(null, false);
 		this.opcuaConnector = opcuaConnector;
-		this.buildTreeModel(2);
+		this.buildTreeModel(BUILD_MAX_DEPTH);
 	}
 	/**
 	 * Returns the current Milo OpcUaClient.
@@ -71,10 +73,12 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 	 */
 	public void reBuildTreeModel() {
 		this.clearTreeModel();
-		this.buildTreeModel(2);
+		this.buildTreeModel(BUILD_MAX_DEPTH);
 	}
+	
 	/**
 	 * Builds the tree model.
+	 * @param maxDepth the max depth
 	 */
 	public void buildTreeModel(Integer maxDepth) {
 		if (this.getOpcUaClient()!=null) {
@@ -87,11 +91,11 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 	 * Returns the root tree node.
 	 * @return the root tree node
 	 */
-	private DefaultMutableTreeNode getRootTreeNode() {
+	private OpcUaTreeNode getRootTreeNode() {
 		if (rootTreeNode==null && this.getOpcUaClient()!=null) {
 			try {
 				UaNode rootUaNode = this.getOpcUaClient().getAddressSpace().getNode(Identifiers.RootFolder);
-				rootTreeNode = new DefaultMutableTreeNode(rootUaNode);
+				rootTreeNode = new OpcUaTreeNode(rootUaNode);
 				this.remindNodeMapping(rootUaNode, rootTreeNode);
 			} catch (UaException uaEx) {
 				uaEx.printStackTrace();
@@ -100,6 +104,24 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 		return rootTreeNode;
 	}
 	
+	
+	/**
+	 * Browses the specified node in a dedicated thread.
+	 *
+	 * @param parentTreeNode the parent DefaultMutableTreeNode
+	 * @param isBrowseRecursively the indicator to browse recursively or not
+	 * @param maxLevel the max level to search recursively
+	 */
+	public void browseNodeInThread(final DefaultMutableTreeNode parentTreeNode, final boolean isBrowseRecursively, final Integer maxLevel) {
+		
+		UaNode uaNode = (UaNode) parentTreeNode.getUserObject();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				OpcUaBrowserTreeModel.this.browseNode(parentTreeNode, isBrowseRecursively, maxLevel);
+			}
+		}, this.getClass().getSimpleName() + "BrowseNode" + uaNode.getBrowseName().getName()).start();
+	}
 	/**
 	 * Browses the specified node.
 	 *
@@ -109,6 +131,7 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 	 */
 	public void browseNode(DefaultMutableTreeNode parentTreeNode, boolean isBrowseRecursively, Integer maxLevel) {
 
+		if (parentTreeNode.getChildCount()>0) return;
 		if (this.getOpcUaClient()==null) return;
 		
 		// --- Get required information  ----------------------------
@@ -121,8 +144,8 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 			NamespaceTable nsTable = this.getOpcUaClient().getNamespaceTable();
 			
         	// --- Define the base of the browsing action -----------
-        	BrowseDescription browse = new BrowseDescription(parentNodeID, BrowseDirection.Forward, Identifiers.References, true, UInteger.valueOf(NodeClass.Object.getValue() | NodeClass.Variable.getValue()), UInteger.valueOf(BrowseResultMask.All.getValue()));
-            BrowseResult browseResult = this.getOpcUaClient().browse(browse).get();
+        	BrowseDescription browseDesc = new BrowseDescription(parentNodeID, BrowseDirection.Forward, Identifiers.References, true, UInteger.valueOf(NodeClass.Object.getValue() | NodeClass.Variable.getValue()), UInteger.valueOf(BrowseResultMask.All.getValue()));
+            BrowseResult browseResult = this.getOpcUaClient().browse(browseDesc).get();
 
             // --- Get sorted list of ReferenceDescriptions ---------
             List<ReferenceDescription> references = Arrays.asList(browseResult.getReferences());
@@ -153,44 +176,49 @@ public class OpcUABrowserTreeModel extends DefaultTreeModel {
 
                 if (uaNode!=null) {
                 	// --- Check if tree node already exists --------
-                	DefaultMutableTreeNode treeNode = this.getNodeHashMap().get(uaNode);
+                	OpcUaTreeNode treeNode = this.getNodeHashMap().get(uaNode);
                 	if (treeNode==null) {
                 		// --- Create a visual TreeNode -------------
-                		treeNode = new DefaultMutableTreeNode(uaNode);
+                		treeNode = new OpcUaTreeNode(uaNode);
                 		parentTreeNode.add(treeNode);
                 		this.remindNodeMapping(uaNode, treeNode);
+                		
+                		// --- Inform about insert action ----------- 
+                		int[] childIndices = {parentTreeNode.getChildCount()-1};
+                		this.nodesWereInserted(parentTreeNode, childIndices);
+
+                		// --- Recursively browse children ----------
+                		int treeNodeLevel = treeNode.getLevel();
+                		boolean isDoDeeperBrowsing = maxLevel==null ? true : treeNodeLevel < maxLevel;
+                		if (isBrowseRecursively==true && isDoDeeperBrowsing==true) {
+                			this.browseNodeInThread(treeNode, isBrowseRecursively, maxLevel);
+                		}
                 	}
-                	
-                	// --- Recursively browse children --------------
-                	int treeNodeLevel = treeNode.getLevel();
-                	boolean isDoDeeperBrowsing = maxLevel==null ? true : treeNodeLevel < maxLevel;
-                	if (isBrowseRecursively==true && isDoDeeperBrowsing==true) this.browseNode(treeNode, isBrowseRecursively, maxLevel);
                 }
-            }
+            } // end for
             
         } catch (InterruptedException | ExecutionException e) {
         	System.err.println("Browsing nodeId=" + parentNodeID + " failed: " + e.getMessage());
         }
     }
-
 	
 	/**
 	 * Returns the UaNode to DefaultMutableTreeNode HashMap.
 	 * @return the node hash map
 	 */
-	public HashMap<UaNode, DefaultMutableTreeNode> getNodeHashMap() {
+	public HashMap<UaNode, OpcUaTreeNode> getNodeHashMap() {
 		if (nodeHashMap==null) {
 			nodeHashMap = new HashMap<>();
 		}
 		return nodeHashMap;
 	}
 	/**
-	 * Reminds the UaNode to {@link DefaultMutableTreeNode} mapping.
+	 * Reminds the UaNode to {@link OpcUaTreeNode} mapping.
 	 *
 	 * @param uaNode the ua node
 	 * @param treeNode the tree node
 	 */
-	private void remindNodeMapping(UaNode uaNode, DefaultMutableTreeNode treeNode) {
+	private void remindNodeMapping(UaNode uaNode, OpcUaTreeNode treeNode) {
 		if (uaNode!=null && treeNode!=null) {
 			this.getNodeHashMap().put(uaNode, treeNode);
 		}

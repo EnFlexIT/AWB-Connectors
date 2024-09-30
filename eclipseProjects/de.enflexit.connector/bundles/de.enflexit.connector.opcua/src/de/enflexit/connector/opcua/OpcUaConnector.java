@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -17,8 +16,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener.Event;
-import de.enflexit.connector.opcua.ui.OpcUAConnectorPanel;
-
+import de.enflexit.connector.opcua.ui.OpcUaConnectorPanel;
 
 /**
  * The Class OpcUaConnector.
@@ -30,7 +28,7 @@ public class OpcUaConnector extends AbstractConnector {
 	private OpcUaClient opcUaClient;
 	private boolean opcUaClientActive;
 	
-	private OpcUAConnectorPanel configPanel;
+	private OpcUaConnectorPanel configPanel;
 	
 	private List<OpcUaConnectorListener> connectorListener;
 	
@@ -40,7 +38,7 @@ public class OpcUaConnector extends AbstractConnector {
 	 */
 	@Override
 	public String getProtocolName() {
-		return OpcUAConnectorService.CONNECTOR_NAME;
+		return OpcUaConnectorService.CONNECTOR_NAME;
 	}
 	
 	/* (non-Javadoc)
@@ -50,7 +48,7 @@ public class OpcUaConnector extends AbstractConnector {
 	public Properties getInitialProperties() {
 		
 		Properties initProps = new Properties();
-		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_PROTOCOL, OpcUAConnectorService.CONNECTOR_NAME);
+		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_PROTOCOL, OpcUaConnectorService.CONNECTOR_NAME);
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
 
 		
@@ -118,9 +116,9 @@ public class OpcUaConnector extends AbstractConnector {
 	 * @see de.enflexit.connector.core.AbstractConnector#getConfigurationUIComponent(javax.swing.JPanel)
 	 */
 	@Override
-	public OpcUAConnectorPanel getConfigurationUIComponent(JPanel baseConfigPanel) {
+	public OpcUaConnectorPanel getConfigurationUIComponent(JPanel baseConfigPanel) {
 		if (configPanel==null) {
-			configPanel = new OpcUAConnectorPanel(this, baseConfigPanel);
+			configPanel = new OpcUaConnectorPanel(this, baseConfigPanel);
 		} else {
 			configPanel.addBaseConfigurationPanel(baseConfigPanel);
 		}

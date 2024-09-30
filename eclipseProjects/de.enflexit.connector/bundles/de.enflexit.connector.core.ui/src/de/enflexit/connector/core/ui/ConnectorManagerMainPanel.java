@@ -229,7 +229,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			mainSplitPane.setLeftComponent(getJScrollPane());
 			mainSplitPane.setRightComponent(getConfigurationPanel());
 			mainSplitPane.setDividerLocation(250);
-			mainSplitPane.setResizeWeight(0.5);
+			mainSplitPane.setDividerSize(5);
+			mainSplitPane.setResizeWeight(0);
 		}
 		return mainSplitPane;
 	}
@@ -362,11 +363,15 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	private void setPropertiesToEdit(Properties connectorProperties) {
-		// --- Unsubscribe from the property events of the previoulsy selected connection ---------
+		
+		int dividerPos = this.getMainSplitPane().getDividerLocation();
+		
+		// --- Unsubscribe from the property events of the previously selected connection ---------
 		if (this.getConfigurationPanel().getConnectorProperties()!=null) {
 			this.getConfigurationPanel().getConnectorProperties().removePropertiesListener(this);
 		}
 		if (connectorProperties!=null) {
+			
 			Properties workingInstance = SerialClone.clone(connectorProperties);
 			workingInstance.addPropertiesListener(this);
 			this.getConfigurationPanel().setConnectorProperties(workingInstance);
@@ -379,17 +384,22 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					connectorUI = this.getConfigurationPanel();
 				} 
 				this.getMainSplitPane().setRightComponent(connectorUI);
+				
 			} else {
 				// --- If not, e.g. because the corresponding service is not available, use the default panel.
 				this.getMainSplitPane().setRightComponent(this.getConfigurationPanel());
 			}
+			
 		} else {
 			this.getConfigurationPanel().setConnectorProperties(null);
 		}
+		
+		this.getMainSplitPane().setDividerLocation(dividerPos);
 		this.updateButtonState();
 	}
 	
 	protected void dispose() {
+		
 		ConnectorManager.getInstance().removeListener(this);
 		
 		// --- If the connectors provided a custom configuration UI, dispose those too

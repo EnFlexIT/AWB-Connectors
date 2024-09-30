@@ -6,7 +6,7 @@ import de.enflexit.connector.opcua.OpcUaConnector;
 import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
 
-public class OpcUaDataView extends JPanel {
+public class OpcUaView extends JPanel {
 
 	private static final long serialVersionUID = -9117876381830606802L;
 
@@ -19,7 +19,7 @@ public class OpcUaDataView extends JPanel {
 	 *
 	 * @param opcUaConnector the opc ua connector
 	 */
-	public OpcUaDataView(OpcUaConnector opcUaConnector) {
+	public OpcUaView(OpcUaConnector opcUaConnector) {
 		this.opcUaConnector = opcUaConnector;
 		initialize();
 	}
@@ -31,6 +31,9 @@ public class OpcUaDataView extends JPanel {
 	private JSplitPane getJSplitPane() {
 		if (jSplitPane == null) {
 			jSplitPane = new JSplitPane();
+			jSplitPane.setDividerLocation(250);
+			jSplitPane.setDividerSize(5);
+			jSplitPane.setResizeWeight(0);
 			jSplitPane.setLeftComponent(getOpcUaBrowserWidget());
 		}
 		return jSplitPane;

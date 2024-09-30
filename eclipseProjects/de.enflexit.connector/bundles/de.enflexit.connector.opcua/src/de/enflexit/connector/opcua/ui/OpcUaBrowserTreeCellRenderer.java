@@ -10,12 +10,16 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeCellRenderer;
 
+import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.CertificateGroupTypeNode;
+import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.DataTypeSystemTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.FolderTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerCapabilitiesTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerConfigurationTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerDiagnosticsTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerRedundancyTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode;
+import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.SessionsDiagnosticsSummaryTypeNode;
+import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.TrustListTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.VendorServerInfoTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.BaseDataVariableTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.PropertyTypeNode;
@@ -74,53 +78,69 @@ public class OpcUaBrowserTreeCellRenderer implements TreeCellRenderer {
 		return iconHashMap;
 	}
 	
+	/**
+	 * Gets the icon for the specified {@link UaNode}.
+	 *
+	 * @param uaNode the ua node
+	 * @return the icon
+	 */
 	private Icon getIcon(UaNode uaNode) {
 		
 		boolean isDebug = true;
 		
 		// --- As default for everything ----------------
 		String imageFileName = "Folder.png";
-		
-		imageFileName = null;
+		if (isDebug==true) imageFileName = null;
 		
 		String nodeName = uaNode.getBrowseName().getName();
 		String nodeClass = uaNode.getClass().getName();
-
+		
 		// --- Image depending on NodeType ----------------
 		if (uaNode instanceof FolderTypeNode) {
 			imageFileName = "Folder.png";
+		
+		} else if (uaNode instanceof CertificateGroupTypeNode) {
+			imageFileName = "CertificateGroup.png";
 			
 		} else if (uaNode instanceof ServerTypeNode) {
 			imageFileName = "Server.png";
 		} else if (uaNode instanceof ServerDiagnosticsTypeNode) {
 			imageFileName = "ServerDiagnostics.png";
 		} else if (uaNode instanceof ServerCapabilitiesTypeNode) {
-			//imageFileName = "ServerDiagnostics.png"; TODO
+			imageFileName = "ServerDiagnostics.png";
 		} else if (uaNode instanceof ServerConfigurationTypeNode) {
-			//imageFileName = "ServerDiagnostics.png"; TODO
+			imageFileName = "ServerConfiguration.png"; 
 		} else if (uaNode instanceof ServerRedundancyTypeNode) {
-			//imageFileName = "ServerDiagnostics.png"; TODO
+			imageFileName = "ServerRedundancy.png";
 		
 		} else if (uaNode instanceof VendorServerInfoTypeNode) {
-			//imageFileName = "ServerDiagnostics.png"; TODO
+			imageFileName = "ServerInfo.png";
 
 		} else if (uaNode instanceof PropertyTypeNode) {
 			imageFileName = "Property.png";
 		} else if (uaNode instanceof BaseDataVariableTypeNode) {
 			imageFileName = "BaseValue.png";
 			
+		} else if (uaNode instanceof TrustListTypeNode) {
+			imageFileName = "TrustList.png";
+			
+		} else if (uaNode instanceof SessionsDiagnosticsSummaryTypeNode) {
+			imageFileName = "SessionsDiagnostics.png";
+			
 		} else if (uaNode instanceof UaObjectNode) {
-			//imageFileName = "BaseValue.png"; TODO
+			imageFileName = "UaObject.png";
+		} else if (uaNode instanceof DataTypeSystemTypeNode) {
+			imageFileName = "DataTypeSystem.png";
 			
 		} else {
-			if (isDebug==true) {
-				System.out.println(nodeName + " => " + nodeClass);
-			}
+			if (isDebug==true) System.out.println("Not considered in " + this.getClass().getSimpleName() + " yet: " + nodeName + " => " + nodeClass);
 		}
 		
 		// --- Get icon to return ------------------------- 
 		Icon icon = null;
-		if (imageFileName!=null && imageFileName.isBlank()==false) {
+		if (imageFileName==null) {
+			if (isDebug==true) System.out.println("No image defined for " + nodeName + " => " + nodeClass);
+		} else  {
 			icon = this.getIconHashMap().get(imageFileName);
 			if (icon==null) {
 				icon = BundleHelper.getImageIcon(imageFileName);

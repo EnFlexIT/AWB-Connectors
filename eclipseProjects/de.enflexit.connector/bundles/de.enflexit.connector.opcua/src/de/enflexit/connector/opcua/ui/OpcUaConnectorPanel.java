@@ -6,11 +6,11 @@ import javax.swing.JTabbedPane;
 import de.enflexit.connector.opcua.OpcUaConnector;
 
 /**
- * The Class OpcUAConnectorPanel.
+ * The Class OpcUaConnectorPanel.
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUAConnectorPanel extends JTabbedPane {
+public class OpcUaConnectorPanel extends JTabbedPane {
 
 	private static final long serialVersionUID = 8381100221948055055L;
 
@@ -18,7 +18,7 @@ public class OpcUAConnectorPanel extends JTabbedPane {
 	private OpcUaConnector opcUaConnector;
 	
 	private JPanel baseConfigPanel;
-	private OpcUaDataView dataView;
+	private OpcUaView dataView;
 	
 	/**
 	 * Instantiates a new OPC/UA connector / configuration panel.
@@ -26,7 +26,7 @@ public class OpcUAConnectorPanel extends JTabbedPane {
 	 * @param opcUaConnector the current OpcUaConnector
 	 * @param baseConfigPanel the base configuration panel
 	 */
-	public OpcUAConnectorPanel(OpcUaConnector opcUaConnector, JPanel baseConfigPanel) {
+	public OpcUaConnectorPanel(OpcUaConnector opcUaConnector, JPanel baseConfigPanel) {
 		this.opcUaConnector = opcUaConnector;
 		this.baseConfigPanel = baseConfigPanel;
 		this.initialize();
@@ -37,7 +37,7 @@ public class OpcUAConnectorPanel extends JTabbedPane {
 	 */
 	private void initialize() {
 		this.addTab(" Connection Settings ", this.baseConfigPanel);
-		this.addTab(" Data View ", this.getOpcUaDataView());
+		this.addTab(" OPC UA Settings ", this.getOpcUaDataView());
 	}
 	
 	/**
@@ -60,9 +60,9 @@ public class OpcUAConnectorPanel extends JTabbedPane {
 	 * Returns a OPC/UA data view.
 	 * @return the opc ua data view
 	 */
-	public OpcUaDataView getOpcUaDataView() {
+	public OpcUaView getOpcUaDataView() {
 		if (dataView==null) {
-			dataView = new OpcUaDataView(this.opcUaConnector);
+			dataView = new OpcUaView(this.opcUaConnector);
 		}
 		return dataView;
 	}
