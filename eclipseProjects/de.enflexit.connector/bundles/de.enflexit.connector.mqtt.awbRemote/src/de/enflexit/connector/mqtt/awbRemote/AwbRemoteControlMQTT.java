@@ -167,7 +167,8 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	public void sendStatusUpdate(AwbNotification notification) {
 		if (this.getMqttConnector()!=null && this.getMqttConnector().isConnected()==true) {
 			String messageContent = this.getGson().toJson(notification);
-			this.getMqttConnector().publish(this.getStatusTopic(), messageContent);
+			boolean retain = (notification.getAwbState()==AwbNotification.AwbState.AWB_READY || notification.getAwbState()==AwbNotification.AwbState.AWB_TERMINATED);
+			this.getMqttConnector().publish(this.getStatusTopic(), messageContent, retain);
 		}
 	}
 
@@ -202,7 +203,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 				if (setupName!=null) {
 					boolean success = this.selectSetup(setupName);
 					if (success==false) {
-						this.sendFailureUpdate("Failed to select simulaiton setup " + setupName);
+						this.sendFailureUpdate("Failed to select simultation setup " + setupName);
 						System.err.println("[" + this.getClass().getSimpleName() + "] Failed to select simulaiton setup " + setupName);
 					}
 				} else {
@@ -356,6 +357,8 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
 			return AwbNotification.AwbState.SIMULATION_STOPPED;
+		case AWB_TERMINATED:
+			return AwbNotification.AwbState.AWB_TERMINATED;
 		default:
 			return null;
 		}

@@ -131,7 +131,9 @@ public class AwbNotification {
         @SerializedName("CommandFailed")
         COMMAND_FAILED("CommandFailed"),
         @SerializedName("CommandOutOfSequence")
-        COMMAND_OUT_OF_SEQUENCE("CommandOutOfSequence");
+        COMMAND_OUT_OF_SEQUENCE("CommandOutOfSequence"),
+        @SerializedName("AwbTerminated")
+        AWB_TERMINATED("AwbTerminated");
         private final String value;
         private final static Map<String, AwbNotification.AwbState> CONSTANTS = new HashMap<String, AwbNotification.AwbState>();
 

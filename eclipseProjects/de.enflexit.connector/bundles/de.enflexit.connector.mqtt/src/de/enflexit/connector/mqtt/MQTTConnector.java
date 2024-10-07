@@ -170,20 +170,30 @@ public class MQTTConnector extends AbstractConnector {
 	}
 	
 	/**
-	 * Publishes the specified message string to the specified topic.
+	 * Publishes the specified message string to the specified topic. The message is not retained.
 	 * @param topic the topic
 	 * @param messageString the message string
 	 */
 	public void publish(String topic, String messageString) {
+		this.publish(topic, messageString, false);
+	}
+	
+	/**
+	 * Publishes the specified message string to the specified topic. According to the corresponding parameter, the message can be retained.
+	 * @param topic the topic
+	 * @param messageString the message string
+	 * @param isRetain the is retain
+	 */
+	public void publish(String topic, String messageString, boolean isRetain) {
 		switch (this.getConnectorConfiguration().getMqttVersion()) {
 		case MQTT_3_1_1:
 			Mqtt3BlockingClient clientV3 = (Mqtt3BlockingClient) this.getClient();
-			Mqtt3Publish messageV3 = Mqtt3Publish.builder().topic(topic).payload(messageString.getBytes()).build();
+			Mqtt3Publish messageV3 = Mqtt3Publish.builder().topic(topic).payload(messageString.getBytes()).retain(isRetain).build();
 			clientV3.publish(messageV3);
 			break;
 		case MQTT_5_0:
 			Mqtt5BlockingClient clientV5 = (Mqtt5BlockingClient) this.getClient();
-			Mqtt5Publish messageV5 = Mqtt5Publish.builder().topic(topic).payload(messageString.getBytes()).build();
+			Mqtt5Publish messageV5 = Mqtt5Publish.builder().topic(topic).payload(messageString.getBytes()).retain(isRetain).build();
 			clientV5.publish(messageV5);
 			break;
 		}

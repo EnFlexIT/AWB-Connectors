@@ -5,7 +5,7 @@
 	"properties": {
 		"awbState": {
 			"type": "string",
-			"enum": ["AwbReady", "ProjectLoaded", "SetupLoaded", "TimeConfigurationSet", "SimulationStarted", "ReadyForNextStep", "SimulationFinished", "SimulationStopped", "CommandFailed", "CommandOutOfSequence"],
+			"enum": ["AwbReady", "ProjectLoaded", "SetupLoaded", "TimeConfigurationSet", "SimulationStarted", "ReadyForNextStep", "SimulationFinished", "SimulationStopped", "CommandFailed", "CommandOutOfSequence", "AwbTerminated"],
 			"description": "The state to notify the controlling entity about."
 		},
 		"stateDetails": {
