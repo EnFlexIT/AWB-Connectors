@@ -39,9 +39,12 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	public static final String PROPERTY_KEY_COMMAND_TOPIC = "mqtt.remoteControl.commandTopic";
 	public static final String PROPERTY_KEY_STATUS_TOPIC = "mqtt.remoteControl.statusTopic";
 	public static final String PROPERTY_KEY_CONTROL_STEPS = "mqtt.remoteControl.controlSteps";
+	public static final String PROPERTY_KEY_DATE_TIME_FORMAT = "mqtt.remoteControl.dateTimeFormat";
 	
+	private static final String DEFAULT_DATE_TIME_FORMAT = "dd.MM.yyyy HH:mm";
 	private static final String DEFAULT_TOPIC_REMOTE_COMMANDS = "awbControl";
 	private static final String DEFAULT_TOPIC_STATUS_UPDATES = "awbStatus";
+	
 	private static final boolean DEFAULT_CONTROL_STEPS = true;
 
 	private MQTTConnector mqttConnector;
@@ -55,6 +58,8 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	private String statusTopic;
 	private String commandTopic;
 	private Boolean controlSteps;
+	
+	private Properties projectProperties;
 	
 	private boolean connectorCheckFailed;
 	
@@ -310,12 +315,30 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		return null;
 	}
 	
+	/**
+	 * Gets the date time formatter.
+	 * @return the date time formatter
+	 */
 	private DateTimeFormatter getDateTimeFormatter() {
 		if (dateTimeFormatter==null) {
 			Application.getGlobalInfo();
-			dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").withZone(GlobalInfo.getCurrentZoneId());
+			dateTimeFormatter = DateTimeFormatter.ofPattern(this.getDateTimeFormatString()).withZone(GlobalInfo.getCurrentZoneId());
 		}
 		return dateTimeFormatter;
+	}
+	
+	/**
+	 * Gets the date time format string.
+	 * @return the date time format string
+	 */
+	private String getDateTimeFormatString() {
+		if (this.getProjectProperties()!=null) {
+			String formatString = this.getProjectProperties().getStringValue(PROPERTY_KEY_DATE_TIME_FORMAT);
+			if (formatString!=null) {
+				return formatString;
+			}
+		}
+		return DEFAULT_DATE_TIME_FORMAT;
 	}
 	
 	private Gson getGson() {
@@ -399,6 +422,16 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			statusTopic = (topicFromProperties!=null) ? topicFromProperties : DEFAULT_TOPIC_STATUS_UPDATES;
 		}
 		return statusTopic;
+	}
+
+	private Properties getProjectProperties() {
+		if (projectProperties==null) {
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				projectProperties = projectFocused.getProperties();
+			}
+		}
+		return projectProperties;
 	}
 
 	private boolean isControlSteps() {
