@@ -9,7 +9,8 @@ public interface OpcUaConnectorListener {
 		Connect,
 		Disconnect,
 		SessionInactive,
-		SessionActive
+		SessionActive,
+		BrowserUaNodeSelection
 	}
 	
 	
@@ -33,5 +34,11 @@ public interface OpcUaConnectorListener {
 	 * This event will be invoked if the OPC/UA connection gets lost (e.g. a server takes down or network connection gets lost). 
 	 */
 	public void onSessionInactive();
+
+	/**
+	 * Will be invoked on an UaNode selection. Use the {@link OpcUaConnector#getBrowserUaNode()} to determine the 
+	 * currently selected UaNode.
+	 */
+	public void onBrowserUaNodeSelection();
 	
 }

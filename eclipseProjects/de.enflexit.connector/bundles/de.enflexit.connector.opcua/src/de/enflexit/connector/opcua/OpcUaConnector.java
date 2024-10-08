@@ -9,6 +9,7 @@ import javax.swing.JPanel;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
+import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
@@ -25,12 +26,22 @@ import de.enflexit.connector.opcua.ui.OpcUaConnectorPanel;
  */
 public class OpcUaConnector extends AbstractConnector {
 
+//	public static final String PROPERTY_OPC_UA_ = "";
+//	public static final String PROPERTY_OPC_UA_ = "";
+//	public static final String PROPERTY_OPC_UA_ = "";
+//	public static final String PROPERTY_OPC_UA_ = "";
+//	public static final String PROPERTY_OPC_UA_ = "";
+	
+	
 	private OpcUaClient opcUaClient;
 	private boolean opcUaClientActive;
+
+	private List<OpcUaConnectorListener> connectorListener;
+	
+	private OpcUaDataAccess dataAccess;
 	
 	private OpcUaConnectorPanel configPanel;
-	
-	private List<OpcUaConnectorListener> connectorListener;
+	private UaNode browserUaNode;
 	
 	
 	/* (non-Javadoc)
@@ -51,7 +62,8 @@ public class OpcUaConnector extends AbstractConnector {
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_PROTOCOL, OpcUaConnectorService.CONNECTOR_NAME);
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
 
-		
+		initProps.setStringValue(PROPERTY_KEY_SERVER_HOST, "localhost");
+		initProps.setIntegerValue(PROPERTY_KEY_SERVER_PORT, 62541);
 		
 		return initProps;
 	}
@@ -106,6 +118,9 @@ public class OpcUaConnector extends AbstractConnector {
 			case SessionInactive:
 				listener.onSessionInactive();
 				break;
+			case BrowserUaNodeSelection:
+				listener.onBrowserUaNodeSelection();
+				break;
 			}
 		});
 	}
@@ -139,15 +154,17 @@ public class OpcUaConnector extends AbstractConnector {
 	public boolean connect() {
 		
 		if (this.opcUaClient==null) {
-			// --- TODO Check the available settings --------------------------
-			
+
+			// --- Get required information -----------------------------------
+			String host = this.getConnectorProperties().getStringValue(PROPERTY_KEY_SERVER_HOST);
+			Integer port = this.getConnectorProperties().getIntegerValue(PROPERTY_KEY_SERVER_PORT);
 			
 			
 			// --- Try to establish connection --------------------------------
 			try {
 				
 				this.opcUaClient = OpcUaClient.create(
-						"opc.tcp://SIDEWALK:62541/milo",
+						"opc.tcp://" + host + ":" + port + "/milo",
 						endpoints ->
 						endpoints.stream()
 						.filter(e -> e.getSecurityPolicyUri().equals(SecurityPolicy.None.getUri()))
@@ -173,6 +190,9 @@ public class OpcUaConnector extends AbstractConnector {
 					}
 				});
 				
+				// --- Start the data acquisition -----------------------------
+				this.getOpcUaDataAccess().startDataAcquisition();
+				
 						
 			} catch (UaException | InterruptedException | ExecutionException uaEx) {
 				this.opcUaClient = null;
@@ -186,7 +206,7 @@ public class OpcUaConnector extends AbstractConnector {
 		
 		return this.opcUaClientActive;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#isConnected()
 	 */
@@ -218,6 +238,34 @@ public class OpcUaConnector extends AbstractConnector {
 	 */
 	public OpcUaClient getOpcUaClient() {
 		return opcUaClient;
+	}
+
+	/**
+	 * Returns the data access.
+	 * @return the data access
+	 */
+	public OpcUaDataAccess getOpcUaDataAccess() {
+		if (dataAccess==null) {
+			dataAccess = new OpcUaDataAccess(this);
+		}
+		return dataAccess;
+	}
+	
+	
+	/**
+	 * Sets the current UaNode.
+	 * @param uaNode the new browser UaNode
+	 */
+	public void setBrowserUaNode(UaNode uaNode) {
+		this.browserUaNode = uaNode;
+		this.informListener(Event.BrowserUaNodeSelection);
+	}
+	/**
+	 * Returns the currently browsed UaNode
+	 * @return the browser ua node
+	 */
+	public UaNode getBrowserUaNode() {
+		return browserUaNode;
 	}
 	
 }

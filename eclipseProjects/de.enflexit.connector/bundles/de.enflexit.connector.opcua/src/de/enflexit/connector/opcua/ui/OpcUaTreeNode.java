@@ -2,6 +2,8 @@ package de.enflexit.connector.opcua.ui;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
+
 /**
  * The Class OpcUaTreeNode.
  *
@@ -41,5 +43,19 @@ public class OpcUaTreeNode extends DefaultMutableTreeNode {
     public OpcUaTreeNode(Object userObject, boolean allowsChildren) {
         super(userObject, allowsChildren);
     }
+    
+	/**
+	 * Returns the current UaNode, stored in the tree nodes user object.
+	 * @return the ua node
+	 */
+	public UaNode getUaNode() {
+		UaNode uaNode = null;
+		try {
+			uaNode = (UaNode) this.getUserObject();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return uaNode;
+	}
 	
 }
