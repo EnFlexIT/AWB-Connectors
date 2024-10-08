@@ -14,11 +14,10 @@ public class OpcUaConnectorPanel extends JTabbedPane {
 
 	private static final long serialVersionUID = 8381100221948055055L;
 
-
 	private OpcUaConnector opcUaConnector;
 	
 	private JPanel baseConfigPanel;
-	private OpcUaView dataView;
+	private OpcUaViews uaViews;
 	
 	/**
 	 * Instantiates a new OPC/UA connector / configuration panel.
@@ -37,7 +36,7 @@ public class OpcUaConnectorPanel extends JTabbedPane {
 	 */
 	private void initialize() {
 		this.addTab(" Connection Settings ", this.baseConfigPanel);
-		this.addTab(" OPC UA Settings ", this.getOpcUaDataView());
+		this.addTab(" OPC UA - Views ", this.getOpcUaViews());
 	}
 	
 	/**
@@ -60,11 +59,11 @@ public class OpcUaConnectorPanel extends JTabbedPane {
 	 * Returns a OPC/UA data view.
 	 * @return the opc ua data view
 	 */
-	public OpcUaView getOpcUaDataView() {
-		if (dataView==null) {
-			dataView = new OpcUaView(this.opcUaConnector);
+	public OpcUaViews getOpcUaViews() {
+		if (uaViews==null) {
+			uaViews = new OpcUaViews(this.opcUaConnector);
 		}
-		return dataView;
+		return uaViews;
 	}
 	
 }

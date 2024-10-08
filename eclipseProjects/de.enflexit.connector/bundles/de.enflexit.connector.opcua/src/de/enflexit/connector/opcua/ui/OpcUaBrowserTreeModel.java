@@ -63,7 +63,9 @@ public class OpcUaBrowserTreeModel extends DefaultTreeModel {
 	 * Clears the local TreeModel.
 	 */
 	public void clearTreeModel() {
-		this.getRootTreeNode().removeAllChildren();
+		if (this.getRootTreeNode()!=null) {
+			this.getRootTreeNode().removeAllChildren();
+		}
 		this.root = null;
 		this.setRoot(null);
 		this.getNodeHashMap().clear();
