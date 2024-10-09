@@ -638,19 +638,25 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 * Apples all changes to the current connector configuration.
 	 */
 	protected void applyChanges() {
-		// --- Write the changed properties to the connector ------------------
-		
+
+		//--- Update the properties in the connector manager --------
 		Properties editedProperties = this.getConfigurationPanel().getConnectorProperties();
 		ConnectorManager.getInstance().updateConnectorProperties(this.selectedConnectorName, editedProperties);
 		this.setConfigChanged(false);
 		
+		// --- If the connector has been instantiated already, update that instance, too ----------
 		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(this.selectedConnectorName);
-		if (connector!=null && connector.isConnected()==true) {
-			String message = "The connection you modified is currently active! Reconnect now to apply the changes immediately?";
-			int userResponse = JOptionPane.showConfirmDialog(this, message, "Reconnect now?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-			if (userResponse==JOptionPane.YES_OPTION) {
-				connector.disconnect();
-				connector.connect();
+		if (connector!=null) {
+			connector.setConnectorProperties(editedProperties);
+			
+			// --- Check if currently connected. Is so, ask for reconnect to apply changes --------
+			if (connector.isConnected()) {
+				String message = "The connection you modified is currently active! Reconnect now to apply the changes immediately?";
+				int userResponse = JOptionPane.showConfirmDialog(this, message, "Reconnect now?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (userResponse==JOptionPane.YES_OPTION) {
+					connector.disconnect();
+					connector.connect();
+				}
 			}
 		}
 	}
