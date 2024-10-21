@@ -6,9 +6,11 @@ import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JMenuItem;
 
 import org.agentgui.gui.swing.MainWindowExtension;
 import agentgui.core.application.Application;
+import agentgui.core.gui.MainWindow.WorkbenchMenu;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
@@ -24,8 +26,11 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	private static final String ICON_PATH = "/icons/Connection.png";
 	
 	private JButton toolbarButton;
+	private JMenuItem menuItem;
 	private MenuItem trayIconMenuItem;
-
+	
+	private ImageIcon imageIcon;
+	
 	/**
 	 * Initialize.
 	 */
@@ -36,6 +41,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 			// --- Tool bar and tray icon menu ------------
 			this.addToolbarComponent(this.getToolbarButton(), 8, SeparatorPosition.NoSeparator);
 			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
+			this.addJMenuItem(WorkbenchMenu.MenuExtra, this.getMenuItem(), 6, SeparatorPosition.NoSeparator);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
@@ -53,12 +59,23 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 */
 	private JButton getToolbarButton() {
 		if (toolbarButton==null) {
-			ImageIcon imageIcon = new ImageIcon(this.getClass().getResource(ICON_PATH));
-			toolbarButton = new JButton(imageIcon);
+			toolbarButton = new JButton(this.getImageIcon());
 			toolbarButton.setToolTipText("Configure connector settings");
 			toolbarButton.addActionListener(this);
 		}
 		return toolbarButton;
+	}
+	
+	/**
+	 * Gets the menu item.
+	 * @return the menu item
+	 */
+	private JMenuItem getMenuItem() {
+		if (menuItem==null) {
+			menuItem = new JMenuItem("Connector Manager", this.getImageIcon());
+			menuItem.addActionListener(this);
+		}
+		return menuItem;
 	}
 
 	/**
@@ -78,8 +95,8 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
-		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getTrayIconMenuItem()) {
-			new ConnectorManagerDialog().setVisible(true);
+		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getMenuItem() || ae.getSource()==this.getTrayIconMenuItem()) {
+			ConnectorManagerDialog.showDialog();
 		}
 	}
 	
@@ -118,6 +135,17 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 		}
 		
 		return integrationType;
+	}
+	
+	/**
+	 * Gets the image icon.
+	 * @return the image icon
+	 */
+	private ImageIcon getImageIcon() {
+		if (imageIcon==null) {
+			imageIcon = new ImageIcon(this.getClass().getResource(ICON_PATH));
+		}
+		return imageIcon;
 	}
 	
 }

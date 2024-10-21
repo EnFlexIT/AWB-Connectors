@@ -37,10 +37,12 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 	
 	private Timer sizePositionWaitTimer;
 	
+	private static ConnectorManagerDialog dialogInstance;
+	
 	/**
 	 * Instantiates a new connector manager dialog.
 	 */
-	public ConnectorManagerDialog() {
+	private ConnectorManagerDialog() {
 		super(Application.getMainWindow());
 		initialize();
 	}
@@ -203,6 +205,7 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 		Application.removeApplicationListener(this);
 		this.getMainPanel().dispose();
 		super.dispose();
+		dialogInstance = null;
 	}
 
 	/* (non-Javadoc)
@@ -214,4 +217,12 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 			this.dispose();
 		}
 	}
+
+	public static void showDialog() {
+		if (dialogInstance==null) {
+			dialogInstance = new ConnectorManagerDialog();
+		}
+		dialogInstance.setVisible(true);
+	}
+	
 }
