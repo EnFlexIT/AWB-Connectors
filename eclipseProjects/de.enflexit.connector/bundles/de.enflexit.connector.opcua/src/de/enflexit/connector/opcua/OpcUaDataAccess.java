@@ -42,6 +42,7 @@ public class OpcUaDataAccess {
 	private List<String> nodeIdListOrdered;
 	private ConcurrentHashMap<String, DataValue> valueHashMap;
 	
+	private List<OpcUaDataAccessSubscriptionListener> listener;
 	
 	/**
 	 * Instantiates a new OpcUaDataAccess instance.
@@ -245,8 +246,9 @@ public class OpcUaDataAccess {
 		this.opcUaConnector.getOpcUaClient().getSubscriptionManager().deleteSubscription(this.subscriptionID);
 		this.subscriptionID = null;
         this.isStartDataAcquisition = false;
-		
+        this.valueHashMap = null;
 	}
+	
 	
 	/**
 	 * On subscription value.
@@ -256,11 +258,43 @@ public class OpcUaDataAccess {
 	 */
 	private void onSubscriptionValue(UaMonitoredItem item, DataValue value) {
 		
-		if (this.isDebug) System.out.println("subscription value received: item=" + item.getReadValueId().getNodeId() + ", value=" + value.getValue());
-		
+		// --- Remind as last value in local storage ----------------
 		this.getValueHashMap().put(item.getReadValueId().getNodeId().toParseableString(), value);
-		
-    }
 	
+		// --- Inform listener about update -------------------------
+		try {
+			this.getOpcUaDataAccessSubscriptionListener().forEach(listener -> listener.onSubscriptionValueUpdate(item, value));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+    }
+	/**
+	 * Return the list of OpcUaDataAccessSubscriptionListener.
+	 * @return the opc ua data access subscription listener
+	 */
+	private List<OpcUaDataAccessSubscriptionListener> getOpcUaDataAccessSubscriptionListener() {
+		if (listener==null) {
+			listener = new ArrayList<>();
+		}
+		return listener;
+	}
+	/**
+	 * Adds the specified OpcUaDataAccessSubscriptionListener.
+	 * @param listener the listener to add
+	 */
+	public void addOpcUaDataAccessSubscriptionListener(OpcUaDataAccessSubscriptionListener listener) {
+		if (this.getOpcUaDataAccessSubscriptionListener().contains(listener)==false) {
+			this.getOpcUaDataAccessSubscriptionListener().add(listener);
+		}
+	}
+	/**
+	 * Removes the specified OpcUaDataAccessSubscriptionListener.
+	 * @param listener the listener to remove
+	 */
+	public void removeOpcUaDataAccessSubscriptionListener(OpcUaDataAccessSubscriptionListener listener) {
+		if (this.getOpcUaDataAccessSubscriptionListener().contains(listener)==true) {
+			this.getOpcUaDataAccessSubscriptionListener().remove(listener);
+		}
+	}
 
 }

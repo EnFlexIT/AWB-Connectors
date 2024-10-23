@@ -210,7 +210,6 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 */
 	@Override
 	public void onDisconnection() {
-		this.getOpcUaBrowserModel().clearTreeModel();
 		this.getJTreeOpcUaNodes().setEnabled(false);
 	}
 	/* (non-Javadoc)

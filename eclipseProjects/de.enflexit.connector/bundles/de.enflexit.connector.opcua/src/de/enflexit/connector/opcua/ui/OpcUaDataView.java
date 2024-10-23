@@ -1,18 +1,28 @@
 package de.enflexit.connector.opcua.ui;
 
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DropMode;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.UaException;
@@ -22,22 +32,40 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 
+import de.enflexit.connector.opcua.BundleHelper;
 import de.enflexit.connector.opcua.OpcUaConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener;
+import de.enflexit.connector.opcua.OpcUaDataAccessSubscriptionListener;
 
 /**
  * The Class OpcUaDataView.
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener {
+public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener, OpcUaDataAccessSubscriptionListener {
 
 	private static final long serialVersionUID = -9117876381830606802L;
 
+	private static final String HEADER_UA_NODE = "UaNode";
+	private static final String HEADER_NO = "#";
+	private static final String HEADER_NODE_ID = "NodeID";
+	private static final String HEADER_DISPLAY_NAME = "DisplayName";
+	private static final String HEADER_VALUE = "Value";
+	private static final String HEADER_DATA_TYPE = "DataType";
+	private static final String HEADER_SOURCE_TIMESTAMP = "SourceTimestamp";
+	private static final String HEADER_SERVER_TIMESTAMP = "ServerTimestamp";
+	private static final String HEADER_STATUS_CODE = "StatusCode";
+	
+	
 	private OpcUaConnector opcUaConnector;
+	
+	private HashMap<String, Integer> colNameIndexHashMap;
+	private HashMap<NodeId, Vector<Object>> dataRowHashMap;
 	
 	private DefaultTableModel tableModel;
 	private JTable jTableDataView;
+	private JPopupMenu jPopupMenuTable;
+	private JMenuItem jMenueItemRemoveOpcUaNode;
 	
 	/**
 	 * Instantiates a new OpcUaDataView.
@@ -46,6 +74,7 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 	public OpcUaDataView(OpcUaConnector opcUaConnector) {
 		this.opcUaConnector = opcUaConnector;
 		this.opcUaConnector.addConnectionListener(this);
+		this.opcUaConnector.getOpcUaDataAccess().addOpcUaDataAccessSubscriptionListener(this);
 		this.initialize();
 	}
 	
@@ -54,25 +83,58 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		this.reFillTableModel();
 	}
 
+	/**
+	 * Returns the table model.
+	 * @return the table model
+	 */
 	private DefaultTableModel getTableModel() {
 		if (tableModel==null) {
-			Vector<String> header = new Vector<>();
-			header.add("UaNode");
-			header.add("#");
-			header.add("Node ID");
-			header.add("DisplayName");
-			header.add("Value");
-			header.add("DataType");
-			header.add("SourceTimestamp");
-			header.add("ServerTimestamp");
-			header.add("StatusCode");
 			
-			tableModel = new DefaultTableModel(null, header) {
+			// --- Define Header vector -------------------
+			Vector<String> headerVector = new Vector<>();
+			headerVector.add(HEADER_UA_NODE);
+			headerVector.add(HEADER_NO);
+			headerVector.add(HEADER_NODE_ID);
+			headerVector.add(HEADER_DISPLAY_NAME);
+			headerVector.add(HEADER_VALUE);
+			headerVector.add(HEADER_DATA_TYPE);
+			headerVector.add(HEADER_SOURCE_TIMESTAMP);
+			headerVector.add(HEADER_SERVER_TIMESTAMP);
+			headerVector.add(HEADER_STATUS_CODE);
+			
+			// --- Remind header index --------------------
+			this.colNameIndexHashMap = new HashMap<>();
+			for (int i = 0; i < headerVector.size(); i++) {
+				this.colNameIndexHashMap.put(headerVector.get(i), i);
+			}
+
+			// --- Define table model ---------------------
+			tableModel = new DefaultTableModel(null, headerVector) {
+				
 				private static final long serialVersionUID = -8648404786784718747L;
+				private int colIdxValue = -1; 
+				
+				/* (non-Javadoc)
+				 * @see javax.swing.table.DefaultTableModel#isCellEditable(int, int)
+				 */
 				@Override
 				public boolean isCellEditable(int row, int column) {
-					if (column!=5) return false;
-					return true;
+					return (column==this.getIndexOfValueColumn());
+				}
+				/**
+				 * Returns the index number of the value column.
+				 * @return the index of value column
+				 */
+				private int getIndexOfValueColumn() {
+					if (colIdxValue==-1) {
+						for (int colIdx = 0; colIdx < this.getColumnCount(); colIdx++) {
+							if (this.getColumnName(colIdx).equals(HEADER_VALUE)==true) {
+								colIdxValue = colIdx;
+								break;
+							}
+						}
+					}
+					return colIdxValue;
 				}
 			};
 		}
@@ -87,9 +149,41 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 
 			jTableDataView.setDragEnabled(true);
 			jTableDataView.setTransferHandler(new OpcUaBrowserTransferHandler(this.opcUaConnector));
-			
 			jTableDataView.setDropMode(DropMode.INSERT_ROWS);
 			
+			jTableDataView.addMouseListener(new MouseAdapter() {
+			    @Override
+			    public void mouseReleased(MouseEvent me) {
+			    	
+			    	JTable jTableDV = OpcUaDataView.this.jTableDataView;
+			    	
+			    	// --- Change selection? ------------------------
+			    	if (jTableDV.getSelectedRowCount()<=1) {
+			    		int row = jTableDV.rowAtPoint(me.getPoint());
+			    		if (row >= 0 && row < jTableDV.getRowCount()) {
+			    			jTableDV.setRowSelectionInterval(row, row);
+			    		} else {
+			    			return;
+			    		}
+			    	}
+			    	
+			    	// --- Show popup? ------------------------------
+			        if (jTableDV.getSelectedRow() >= 0 && me.isPopupTrigger() && me.getComponent() instanceof JTable ) {
+			        	OpcUaDataView.this.getJPopupMenuTable().show(me.getComponent(), me.getX(), me.getY());
+			        }
+			    }
+			});
+			
+			jTableDataView.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent ke) {
+					if (ke.getKeyCode()==KeyEvent.VK_DELETE) {
+						OpcUaDataView.this.removeSelectedOpcUaNodeFromList();
+					}
+				}				
+			});
+			
+			// --- Define initial column width ----------------------
 			TableColumnModel tcm =  jTableDataView.getColumnModel();
 
 			// --- Column UaNode ------------------------------------ 
@@ -106,6 +200,64 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 			
 		}
 		return jTableDataView;
+	}
+
+	public JPopupMenu getJPopupMenuTable() {
+		if (jPopupMenuTable==null) {
+			jPopupMenuTable = new JPopupMenu();
+			jPopupMenuTable.add(this.getJMenueItemRemoveOpcUaNode());
+		}
+		return jPopupMenuTable;
+	}
+	private JMenuItem getJMenueItemRemoveOpcUaNode() {
+		if (jMenueItemRemoveOpcUaNode==null) {
+			jMenueItemRemoveOpcUaNode = new JMenuItem("Remove from 'Data View' list");
+			jMenueItemRemoveOpcUaNode.setIcon(BundleHelper.getImageIcon("ListMinus.png"));
+			jMenueItemRemoveOpcUaNode.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent ae) {
+					OpcUaDataView.this.removeSelectedOpcUaNodeFromList();
+				}
+			});
+			
+		}
+		return jMenueItemRemoveOpcUaNode;
+	}
+	/**
+	 * Removes the selected row of an UaNode from the list.
+	 */
+	private void removeSelectedOpcUaNodeFromList() {
+		
+		if (this.getJTableDataView().getSelectedRowCount()==-0) return;
+		
+		// --- Remove each UaNode ID --------------------------------
+		for (int rowSel : this.getJTableDataView().getSelectedRows()) {
+			UaNode uaNodeToRemove = (UaNode) this.getJTableDataView().getValueAt(rowSel, this.getIndexOfColumnName(HEADER_UA_NODE));
+			OpcUaDataView.this.opcUaConnector.getOpcUaDataAccess().removeOpcUaNode(uaNodeToRemove);
+		}
+		// --- Refill the local table model -------------------------
+		this.reFillTableModel();
+	}
+	
+	/**
+	 * Returns the index of column name.
+	 *
+	 * @param colName the col name
+	 * @return the index of column name
+	 */
+	private int getIndexOfColumnName(String colName) {
+		if (this.tableModel==null) return -1; 
+		return this.colNameIndexHashMap.get(colName);
+	}
+	/**
+	 * Returns the data row hash map that enables faster table row access.
+	 * @return the data row hash map
+	 */
+	private HashMap<NodeId, Vector<Object>> getDataRowHashMap() {
+		if (dataRowHashMap==null) {
+			dataRowHashMap = new HashMap<>();
+		}
+		return dataRowHashMap;
 	}
 	
 	/**
@@ -167,6 +319,51 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		dataRow.add(valueLocal + ", " + valueText);
 		
 		// --- Value ------------------
+		dataRow.add(null);
+		
+		// --- DataType ---------------
+		dataRow.add(this.getDataTypeDescription(uaNode));
+		
+		// --- SourceTimestamp, ServerTimestamp & StatusCode --------
+		dataRow.add(null);
+		dataRow.add(null);
+		dataRow.add(null);
+
+		// --- Call update method for table data row ---------------- 
+		this.updateDataRow(dataRow, dataValue);
+		// --- Add the row to the table model -----------------------
+		this.getTableModel().addRow(dataRow);
+		// --- Remind the data row for later updates ----------------
+		this.getDataRowHashMap().put(uaNode.getNodeId(), dataRow);
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaDataAccessSubscriptionListener#onSubscriptionValueUpdate(org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem, org.eclipse.milo.opcua.stack.core.types.builtin.DataValue)
+	 */
+	@Override
+	public void onSubscriptionValueUpdate(UaMonitoredItem item, DataValue dataValue) {
+		
+		boolean isDebug = false;
+		if (isDebug) System.out.println("subscription value received: item=" + item.getReadValueId().getNodeId() + ", value=" + dataValue.getValue());
+		
+		Vector<Object> dataRow = this.getDataRowHashMap().get(item.getReadValueId().getNodeId());
+		if (dataRow!=null) {
+			this.updateDataRow(dataRow, dataValue);
+			int modelRowNumber = (int) dataRow.get(this.getIndexOfColumnName(HEADER_NO)) - 1;
+			this.getTableModel().fireTableRowsUpdated(modelRowNumber, modelRowNumber);
+		}
+	}
+	/**
+	 * Updates the specified table data row with the DataValue.
+	 *
+	 * @param dataRow the data row
+	 * @param value the value
+	 */
+	private void updateDataRow(Vector<Object> dataRow, DataValue dataValue) {
+		
+		if (dataRow==null || dataValue==null) return;
+		
+		// --- Value ------------------
 		Object value = null;
 		if (dataValue!=null) {
 			// --- From DataValue -----
@@ -187,10 +384,7 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 				value = valueString;
 			} 
 		}
-		dataRow.add(value);
-		
-		// --- DataType ---------------
-		dataRow.add(this.getDataTypeDescription(uaNode));
+		dataRow.set(this.getIndexOfColumnName(HEADER_VALUE), value);
 		
 		// --- SourceTimestamp, ServerTimestamp & StatusCode --------
 		String sourceTime = "";
@@ -201,12 +395,9 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 			serverTime = this.getDateTimeAsString(dataValue.getServerTime());
 			status = this.getQuality(dataValue.getStatusCode()) + " (" + dataValue.getStatusCode().getValue() + ")";
 		}
-		dataRow.add(sourceTime);
-		dataRow.add(serverTime);
-		dataRow.add(status);
-		
-		// --- Add the row to the table model ----------------------- 
-		this.getTableModel().addRow(dataRow);
+		dataRow.set(this.getIndexOfColumnName(HEADER_SOURCE_TIMESTAMP), sourceTime);
+		dataRow.set(this.getIndexOfColumnName(HEADER_SERVER_TIMESTAMP), serverTime);
+		dataRow.set(this.getIndexOfColumnName(HEADER_STATUS_CODE), status);
 	}
 	
 	/**
@@ -266,26 +457,34 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		}
 	}
 	
-	
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onConnection()
 	 */
 	@Override
 	public void onConnection() { 
+		this.opcUaConnector.getOpcUaDataAccess().addOpcUaDataAccessSubscriptionListener(this);
 		this.reFillTableModel();
 	}
 
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onDisconnection()
+	 */
 	@Override
 	public void onDisconnection() {	}
-
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionActive()
+	 */
 	@Override
 	public void onSessionActive() { }
-
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionInactive()
+	 */
 	@Override
 	public void onSessionInactive() { }
-
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onBrowserUaNodeSelection()
+	 */
 	@Override
 	public void onBrowserUaNodeSelection() { }
-	
 	
 }

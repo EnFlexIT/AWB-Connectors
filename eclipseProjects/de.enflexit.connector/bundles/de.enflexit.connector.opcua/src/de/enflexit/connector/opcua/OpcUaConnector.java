@@ -230,13 +230,15 @@ public class OpcUaConnector extends AbstractConnector {
 		if (this.opcUaClient!=null) {
 			// --- Stop data acquisition --------
 			this.getOpcUaDataAccess().stopDataAcquisition();
-			this.opcUaDataAccess=null;
+			this.opcUaDataAccess = null;
 			// --- Close connection -------------
 			this.opcUaClient.disconnect();
 			Stack.releaseSharedResources();
 			this.opcUaClient = null;
 			this.opcUaClientActive = false;
 			this.informListener(Event.Disconnect);
+			// --- Clear browser tree -----------
+			this.getOpcUaBrowserTreeModel().clearTreeModel();
 		}
 	}
 	
