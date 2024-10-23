@@ -323,6 +323,9 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (userReply==JOptionPane.YES_OPTION) {
 						this.applyChanges();
+					} else {
+						// --- Changes discarded -----------------------
+						this.setConfigChanged(false);
 					}
 				}
 			}
