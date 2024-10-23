@@ -17,7 +17,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import de.enflexit.common.SerialClone;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
@@ -50,7 +49,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private static final String ICON_START = "Start.png";
 	private static final String ICON_STOP = "Stop.png";
 	private static final String ICON_RESTART = "Restart.png";
-	private static final String ICON_TEST = "Test.png";
 	
 	private JToolBar mainToolBar;
 	private JButton jButtonAdd;
@@ -73,7 +71,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private boolean skipPendingChangesQuestion = false;
 	private JButton jButtonApply;
 	private JButton jButtonDiscard;
-	private JButton jButtonTest;
 	
 	private boolean configChanged;
 	
@@ -81,7 +78,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 * Instantiates a new connector manager main panel.
 	 */
 	public ConnectorManagerMainPanel() {
-		initialize();
+		this.initialize();
 	}
 	
 	/**
@@ -89,9 +86,9 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	private void initialize() {
 		this.setLayout(new BorderLayout(0, 0));
-		this.add(getMainSplitPane(), BorderLayout.CENTER);
+		this.add(this.getMainSplitPane(), BorderLayout.CENTER);
+		this.add(this.getMainToolBar(), BorderLayout.NORTH);
 		ConnectorManager.getInstance().addListener(this);
-		add(getMainToolBar(), BorderLayout.NORTH);
 	}
 	
 	private JToolBar getMainToolBar() {
@@ -107,8 +104,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			mainToolBar.add(getJButtonStart());
 			mainToolBar.add(getJButtonStop());
 			mainToolBar.add(getJButtonRestart());
-			mainToolBar.addSeparator();
-			mainToolBar.add(getJButtonTest());
 		}
 		return mainToolBar;
 	}
@@ -191,15 +186,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return jButtonRestart;
 	}
 	
-	private JButton getJButtonTest() {
-		if (jButtonTest == null) {
-			jButtonTest = new JButton(BundleHelper.getImageIcon(ICON_TEST));
-			jButtonTest.setToolTipText("Test the current configuration");
-			jButtonTest.addActionListener(this);
-			jButtonTest.setEnabled(false);
-		}
-		return jButtonTest;
-	}
 	
 	private void showJPopupMenuAddNewConnection() {
 		this.getjPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
@@ -329,8 +315,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	@Override
 	public void valueChanged(ListSelectionEvent lse) {
-		if (lse.getSource()==this.getConnectorsList()) {
-			
+		
+		if (lse.getSource()==this.getConnectorsList() && lse.getValueIsAdjusting()==false) {
 			if (this.selectedConnectorName!=null) {
 				if (this.isConfigChanged()==true && this.skipPendingChangesQuestion==false) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
@@ -345,7 +331,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			this.setSelectedConnector(connectorName);
 		}
 	}
-	
 	/**
 	 * Sets the selected connector.
 	 * @param connectorName the new selected connector
@@ -354,14 +339,17 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		this.selectedConnectorName = connectorName;
 		if (connectorName!=null) {
 			// --- Get the properties for the selected connector and set them to the panel --------
-			Properties propertiesToSet = ConnectorManager.getInstance().getConnectorProperies(connectorName);
+			Properties propertiesToSet = ConnectorManager.getInstance().getConnectorProperties(connectorName);
 			this.setPropertiesToEdit(propertiesToSet);
 		} else {
 			// --- No connector selected, clear the panel -----------------------------------------
 			this.setPropertiesToEdit(null);
 		}
 	}
-	
+	/**
+	 * Sets the current properties to edit.
+	 * @param connectorProperties the new properties to edit
+	 */
 	private void setPropertiesToEdit(Properties connectorProperties) {
 		
 		int dividerPos = this.getMainSplitPane().getDividerLocation();
@@ -370,15 +358,18 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (this.getConfigurationPanel().getConnectorProperties()!=null) {
 			this.getConfigurationPanel().getConnectorProperties().removePropertiesListener(this);
 		}
+
 		if (connectorProperties!=null) {
+			// --- Create a working copy for editing ? --------------------------------------------
+			//Properties workingInstance = SerialClone.clone(connectorProperties);
+			//workingInstance.addPropertiesListener(this);
 			
-			Properties workingInstance = SerialClone.clone(connectorProperties);
-			workingInstance.addPropertiesListener(this);
-			this.getConfigurationPanel().setConnectorProperties(workingInstance);
+			this.getConfigurationPanel().setConnectorProperties(connectorProperties);
+			connectorProperties.addPropertiesListener(this);
 			
+			// --- If the connector instance is available, use its UI component -------------------
 			AbstractConnector connectorInstance = ConnectorManager.getInstance().getConnectorByName(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME));
 			if (connectorInstance!=null) {
-				// --- If the connector instance is available, use the UI component defined there for configuration
 				JComponent connectorUI = connectorInstance.getConfigurationUIComponent(this.getConfigurationPanel());
 				if (connectorUI==null) {
 					connectorUI = this.getConfigurationPanel();
@@ -430,8 +421,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else if (ae.getSource()==this.getJButtonRestart()) {
 			this.stopConnection();
 			this.startConnection();
-		} else if (ae.getSource()==this.getJButtonTest()) {
-			this.testConnection();
 		}
 	}
 	
@@ -502,27 +491,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (this.getSelectedConnector()!=null) {
 			this.getSelectedConnector().disconnect();
 			this.updateButtonState();
-		}
-	}
-	
-	/**
-	 * Tests the selected connection.
-	 */
-	private void testConnection() {
-		String protocolName = this.getConfigurationPanel().getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
-		ConnectorService connectorService = ConnectorManager.getInstance().getConnectorServiceForProtocol(protocolName);
-		if (connectorService!=null) {
-			AbstractConnector testConnector = connectorService.getNewConnectorInstance();
-			testConnector.setConnectorProperties(this.getConfigurationPanel().getConnectorProperties());
-			if (testConnector.connect()==true) {
-				JOptionPane.showMessageDialog(this, "Connection successful!", "Connection successful!", JOptionPane.INFORMATION_MESSAGE);
-				testConnector.disconnect();
-			} else {
-				JOptionPane.showMessageDialog(this, "Connection test failed, please check your settings!", "Connection failed!", JOptionPane.ERROR_MESSAGE);
-			}
-		} else {
-			System.err.println("[" + this.getClass().getSimpleName() + "] No connector service implementation for the protocol " + protocolName + " could not be found!");
-			JOptionPane.showMessageDialog(this, "No conector service found for the configured protocol " + protocolName + "!", "Not available!", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -605,7 +573,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					// --- No name was entered ------------
 					dialogMessage = "The connector  name cannot be empty, please enter a unique name!";
 					
-				} else if (ConnectorManager.getInstance().getConnectorProperies(connectorName)!=null) { 
+				} else if (ConnectorManager.getInstance().getConnectorProperties(connectorName)!=null) { 
 					// --- The name is already in use -----
 					dialogMessage = "The name is already in use, please choose a different name!";
 					
@@ -668,7 +636,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		int userResponse = JOptionPane.showConfirmDialog(this, "This will discard your changes! Are you sure?", "Discard changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (userResponse==JOptionPane.YES_OPTION) {
 			// --- Replace with the original properties from the connector ----
-			Properties originalProperties = ConnectorManager.getInstance().getConnectorProperies(this.selectedConnectorName);
+			Properties originalProperties = ConnectorManager.getInstance().getConnectorProperties(this.selectedConnectorName);
 			this.setPropertiesToEdit(originalProperties);
 			this.setConfigChanged(false);
 		}
@@ -681,7 +649,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	public boolean isConfigChanged() {
 		return configChanged;
 	}
-
 	/**
 	 * Sets the configuration changed state, also enables/disables related buttons.
 	 * @param configChanged the new config changed
@@ -692,9 +659,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		// --- These buttons only make sense when the configuration is changed
 		this.getJButtonApply().setEnabled(configChanged);
 		this.getJButtonDiscard().setEnabled(configChanged);
-		this.getJButtonTest().setEnabled(configChanged);
 	}
-
 	/* (non-Javadoc)
 	 * @see de.enflexit.common.properties.PropertiesListener#onPropertiesEvent(de.enflexit.common.properties.PropertiesEvent)
 	 */

@@ -44,7 +44,7 @@ public class OpcUaViews extends JPanel {
 	private JSplitPane getJSplitPaneMain() {
 		if (jSplitPaneMain == null) {
 			jSplitPaneMain = new JSplitPane();
-			jSplitPaneMain.setDividerLocation(250);
+			jSplitPaneMain.setDividerLocation(300);
 			jSplitPaneMain.setDividerSize(5);
 			jSplitPaneMain.setResizeWeight(0);
 			jSplitPaneMain.setLeftComponent(this.getJSplitPaneLeft());

@@ -16,5 +16,6 @@
 		<module>de.enflexit.connector.core</module>		
 		<module>de.enflexit.connector.core.ui</module>
 		<module>de.enflexit.connector.mqtt</module>
+		<module>de.enflexit.connector.opcua</module>
 	</modules>
 </project>

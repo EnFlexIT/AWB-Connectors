@@ -17,6 +17,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener.Event;
+import de.enflexit.connector.opcua.ui.OpcUaBrowserTreeModel;
 import de.enflexit.connector.opcua.ui.OpcUaConnectorPanel;
 
 /**
@@ -26,6 +27,8 @@ import de.enflexit.connector.opcua.ui.OpcUaConnectorPanel;
  */
 public class OpcUaConnector extends AbstractConnector {
 
+	public static final String DATE_TIME_PATTERN_FORMAT = "dd.MM.yy HH:mm:ss.SSS";
+	
 //	public static final String PROPERTY_OPC_UA_ = "";
 //	public static final String PROPERTY_OPC_UA_ = "";
 //	public static final String PROPERTY_OPC_UA_ = "";
@@ -38,7 +41,8 @@ public class OpcUaConnector extends AbstractConnector {
 
 	private List<OpcUaConnectorListener> connectorListener;
 	
-	private OpcUaDataAccess dataAccess;
+	private OpcUaBrowserTreeModel opcUaBrowserModel;
+	private OpcUaDataAccess opcUaDataAccess;
 	
 	private OpcUaConnectorPanel configPanel;
 	private UaNode browserUaNode;
@@ -156,7 +160,7 @@ public class OpcUaConnector extends AbstractConnector {
 		if (this.opcUaClient==null) {
 
 			// --- Get required information -----------------------------------
-			String host = this.getConnectorProperties().getStringValue(PROPERTY_KEY_SERVER_HOST);
+			String host  = this.getConnectorProperties().getStringValue(PROPERTY_KEY_SERVER_HOST);
 			Integer port = this.getConnectorProperties().getIntegerValue(PROPERTY_KEY_SERVER_PORT);
 			
 			
@@ -224,6 +228,10 @@ public class OpcUaConnector extends AbstractConnector {
 	@Override
 	public void disconnect() {
 		if (this.opcUaClient!=null) {
+			// --- Stop data acquisition --------
+			this.getOpcUaDataAccess().stopDataAcquisition();
+			this.opcUaDataAccess=null;
+			// --- Close connection -------------
 			this.opcUaClient.disconnect();
 			Stack.releaseSharedResources();
 			this.opcUaClient = null;
@@ -240,15 +248,27 @@ public class OpcUaConnector extends AbstractConnector {
 		return opcUaClient;
 	}
 
+	
+	/**
+	 * Returns the OPC UA browser model of the current connector.
+	 * @return the opc UA browser model
+	 */
+	public OpcUaBrowserTreeModel getOpcUaBrowserTreeModel() {
+		if (opcUaBrowserModel==null) {
+			opcUaBrowserModel = new OpcUaBrowserTreeModel(this);
+		}
+		return opcUaBrowserModel;
+	}
+	
 	/**
 	 * Returns the data access.
 	 * @return the data access
 	 */
 	public OpcUaDataAccess getOpcUaDataAccess() {
-		if (dataAccess==null) {
-			dataAccess = new OpcUaDataAccess(this);
+		if (opcUaDataAccess==null) {
+			opcUaDataAccess = new OpcUaDataAccess(this);
 		}
-		return dataAccess;
+		return opcUaDataAccess;
 	}
 	
 	

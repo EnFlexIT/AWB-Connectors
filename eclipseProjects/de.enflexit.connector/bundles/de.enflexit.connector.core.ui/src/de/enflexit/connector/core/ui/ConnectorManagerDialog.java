@@ -50,7 +50,7 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 	 */
 	private void initialize() {
 		this.setContentPane(this.getMainPanel());
-		this.setTitle("Connector configuration");
+		this.setTitle("Connector Configuration");
 		this.setIconImage(new ImageIcon(this.getClass().getResource("/icons/Connection.png")).getImage());
 		
 		this.loadAndApplyDialogSizeAndPosition();

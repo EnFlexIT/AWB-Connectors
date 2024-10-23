@@ -28,7 +28,7 @@ import de.enflexit.common.properties.Properties;
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUaDataAccess {
+public class OpcUaDataAccessBackup {
 
 	public static final String DATA_NODE_ID_KEY_PREFIX = "Data.NodeID.";
 	
@@ -40,14 +40,14 @@ public class OpcUaDataAccess {
 	private UInteger subscriptionID;
 	
 	private List<String> nodeIdListOrdered;
-	private ConcurrentHashMap<String, DataValue> valueHashMap;
+	private ConcurrentHashMap<String, Object> valueHashMap;
 	
 	
 	/**
 	 * Instantiates a new OpcUaDataAccess instance.
 	 * @param opcUaConnector the OpcUaConnector
 	 */
-	public OpcUaDataAccess(OpcUaConnector opcUaConnector) {
+	public OpcUaDataAccessBackup(OpcUaConnector opcUaConnector) {
 		this.opcUaConnector = opcUaConnector;
 		this.getNodeIdListOrdered();
 	}
@@ -94,7 +94,7 @@ public class OpcUaDataAccess {
 	 * Returns the value hash map.
 	 * @return the value hash map
 	 */
-	public ConcurrentHashMap<String, DataValue> getValueHashMap() {
+	public ConcurrentHashMap<String, Object> getValueHashMap() {
 		if (valueHashMap==null) {
 			valueHashMap = new ConcurrentHashMap<>();
 		}
@@ -181,20 +181,13 @@ public class OpcUaDataAccess {
 			// --- Create UaSubsription and MonitoringParameters ----
         	UaSubscription subscription = this.getUaSubscription();
         	
-        	// --- Create list of MonitoredItemCreateRequest --------
-        	UInteger clientHandle = null;
+        	UInteger clientHandle = subscription.nextClientHandle();
+        	MonitoringParameters parameters = new MonitoringParameters(clientHandle, 1000.0, null, UInteger.valueOf(10), true);
+			
+			// --- Create list of MonitoredItemCreateRequest --------
 			List<MonitoredItemCreateRequest> monitoredItemList = new ArrayList<>();
-        	for (ReadValueId readValueID : readValueIdList) {
-        		
-        		if (clientHandle==null) {
-        			clientHandle = subscription.nextClientHandle();
-        		} else {
-        			clientHandle = UInteger.valueOf(clientHandle.intValue() + 1);
-        		}
-        		MonitoringParameters parameters = new MonitoringParameters(clientHandle, 1000.0, null, UInteger.valueOf(10), true);
-        		monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, MonitoringMode.Reporting, parameters));
-        	}
-        	
+			readValueIdList.forEach(readValueID -> monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, MonitoringMode.Reporting, parameters)));
+
 			// --- Define local callback method ---------------------
 			UaSubscription.ItemCreationCallback itemCreationCallback = (item, id) -> item.setValueConsumer(this::onSubscriptionValue);
 
@@ -258,7 +251,6 @@ public class OpcUaDataAccess {
 		
 		if (this.isDebug) System.out.println("subscription value received: item=" + item.getReadValueId().getNodeId() + ", value=" + value.getValue());
 		
-		this.getValueHashMap().put(item.getReadValueId().getNodeId().toParseableString(), value);
 		
     }
 	

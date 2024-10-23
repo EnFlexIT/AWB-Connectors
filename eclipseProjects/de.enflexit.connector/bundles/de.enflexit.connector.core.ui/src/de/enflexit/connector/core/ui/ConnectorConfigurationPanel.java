@@ -45,7 +45,7 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * Instantiates a new manage connection panel.
 	 */
 	public ConnectorConfigurationPanel() {
-		initialize();
+		this.initialize();
 	}
 	
 	/**

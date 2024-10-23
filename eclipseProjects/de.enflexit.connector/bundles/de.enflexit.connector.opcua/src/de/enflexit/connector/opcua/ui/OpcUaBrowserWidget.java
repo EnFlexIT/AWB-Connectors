@@ -1,17 +1,27 @@
 package de.enflexit.connector.opcua.ui;
 
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 
+import de.enflexit.connector.opcua.BundleHelper;
 import de.enflexit.connector.opcua.OpcUaConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener;
 
@@ -20,14 +30,17 @@ import de.enflexit.connector.opcua.OpcUaConnectorListener;
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionListener, KeyListener, OpcUaConnectorListener {
+public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionListener, OpcUaConnectorListener {
 
 	private static final long serialVersionUID = -4990198119008390049L;
 	
 	private OpcUaConnector opcUaConnector;
-	private OpcUaBrowserTreeModel opcUaBrowserModel;
 	
 	private JTree jTreeOpcUaNodes;
+	
+	private JPopupMenu treePopoUp;
+	private JMenuItem jMenuItemAddToDataView;
+	
 	
 	/**
 	 * Instantiates a new OpcUaBrowserWidget.
@@ -50,10 +63,7 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	 * @return the opc UA browser model
 	 */
 	private OpcUaBrowserTreeModel getOpcUaBrowserModel() {
-		if (opcUaBrowserModel==null) {
-			opcUaBrowserModel = new OpcUaBrowserTreeModel(this.opcUaConnector);
-		}
-		return opcUaBrowserModel;
+		return this.opcUaConnector.getOpcUaBrowserTreeModel();
 	}
 	/**
 	 * Returns the JTree of the OPC/UA nodes.
@@ -64,9 +74,13 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 			jTreeOpcUaNodes = new JTree(this.getOpcUaBrowserModel());
 			jTreeOpcUaNodes.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 			jTreeOpcUaNodes.addTreeSelectionListener(this);
-			jTreeOpcUaNodes.addKeyListener(this);
-			//jTreeOpcUaNodes.addMouseListener(this.getMouseAdapter());
+			jTreeOpcUaNodes.addKeyListener(this.getKeyAdapter());
 
+			jTreeOpcUaNodes.setDragEnabled(true);
+			jTreeOpcUaNodes.setTransferHandler(new OpcUaBrowserTransferHandler(this.opcUaConnector));
+			
+			jTreeOpcUaNodes.addMouseListener(this.getMouseAdapter());
+			
 			jTreeOpcUaNodes.setCellRenderer(new OpcUaBrowserTreeCellRenderer());
 			ToolTipManager.sharedInstance().registerComponent(this);
 
@@ -95,32 +109,89 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 		}
 	}
 	
+	/**
+	 * Returns the mouse adapter for this JTree.
+	 * @return the mouse adapter
+	 */
+	private MouseAdapter getMouseAdapter() {
+		
+		MouseAdapter ma = new MouseAdapter() {
+			
+			/* (non-Javadoc)
+			 * @see java.awt.event.MouseAdapter#mousePressed(java.awt.event.MouseEvent)
+			 */
+			@Override
+			public void mousePressed(MouseEvent me) {
+			
+				if (SwingUtilities.isRightMouseButton(me)) {
+					// --- Display the context menu -----------------
+					JTree myTree = (JTree) me.getSource();
+					TreePath path = myTree.getPathForLocation(me.getX(), me.getY());
+					Rectangle pathBounds = myTree.getUI().getPathBounds(myTree, path);
+					if (pathBounds!=null && pathBounds.contains(me.getX(), me.getY())) {
+						myTree.setSelectionPath(path);
+						myTree.scrollPathToVisible(path);
+						OpcUaBrowserWidget.this.getPopupMenu().show (myTree, pathBounds.x, pathBounds.y + pathBounds.height);
+					}
+				}
+			} // end mousePressed
+		};
+		return ma;
+	}
+	/**
+	 * Returns the key adapter.
+	 * @return the key adapter
+	 */
+	private KeyAdapter getKeyAdapter() {
+		
+		KeyAdapter ka = new KeyAdapter() {
+			
+			@Override
+			public void keyReleased(KeyEvent ke) {
+				
+				if (ke.getKeyCode()==KeyEvent.VK_CONTEXT_MENU ) {
+					// --------------------------------------------
+					// --- Show context menu ----------------------
+					// --------------------------------------------
+					JTree browserTree = OpcUaBrowserWidget.this.getJTreeOpcUaNodes();
+					Rectangle pathBounds = browserTree. getPathBounds(browserTree.getSelectionPath());
+					OpcUaBrowserWidget.this.getPopupMenu().show (browserTree, pathBounds.x, pathBounds.y + pathBounds.height);
+				}
+			} // key released
+		};
+		return ka;
+	}
 	
-	// --------------------------------------------------------------
-	// --- KeyListener events ---------------------------------------
-	/* (non-Javadoc)
-	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
+	/**
+	 * Returns the JPopupMenu of the browser tree.
+	 * @return the popup menu
 	 */
-	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
+	private JPopupMenu getPopupMenu() {
+		if (treePopoUp==null) {
+			treePopoUp = new JPopupMenu();
+			treePopoUp.add(this.getJMenuItemAddToDataView());
+		}
+		return treePopoUp;
 	}
-	/* (non-Javadoc)
-	 * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
+	/**
+	 * Returns the JMenuItem to add the current UaNode to the data view.
+	 * @return the j menu item add to data view
 	 */
-	@Override
-	public void keyPressed(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-	/* (non-Javadoc)
-	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
-	 */
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
+	private JMenuItem getJMenuItemAddToDataView() {
+		if (jMenuItemAddToDataView==null) {
+			jMenuItemAddToDataView = new JMenuItem("Add to 'Data View' list");
+			jMenuItemAddToDataView.setIcon(BundleHelper.getImageIcon("ListPlus.png"));
+			jMenuItemAddToDataView.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent ae) {
+					JTree browserTree = OpcUaBrowserWidget.this.getJTreeOpcUaNodes();
+					OpcUaTreeNode treeNode = (OpcUaTreeNode) browserTree.getLastSelectedPathComponent();
+					UaNode uaNode = treeNode.getUaNode();
+					OpcUaBrowserWidget.this.opcUaConnector.getOpcUaDataAccess().addOpcUaNode(uaNode);
+				}
+			});
+		}
+		return jMenuItemAddToDataView;
 	}
 	
 	

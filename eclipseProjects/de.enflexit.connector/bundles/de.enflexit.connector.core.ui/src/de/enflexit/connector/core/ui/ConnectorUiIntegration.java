@@ -3,6 +3,8 @@ package de.enflexit.connector.core.ui;
 import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -26,8 +28,11 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	private JButton toolbarButton;
 	private MenuItem trayIconMenuItem;
 
-	/**
-	 * Initialize.
+	private static ConnectorManagerDialog cmDialog;
+	
+	
+	/* (non-Javadoc)
+	 * @see org.agentgui.gui.swing.MainWindowExtension#initialize()
 	 */
 	@Override
 	public void initialize() {
@@ -79,15 +84,36 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getTrayIconMenuItem()) {
-			new ConnectorManagerDialog().setVisible(true);
+			ConnectorUiIntegration.openOrFocusConnectorManagerDialog();
 		}
 	}
+	/**
+	 * Open or focus connector manager dialog.
+	 */
+	private static void openOrFocusConnectorManagerDialog() {
+		if (cmDialog==null) {
+			cmDialog = new ConnectorManagerDialog();
+			cmDialog.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosed(WindowEvent e) {
+					ConnectorUiIntegration.cmDialog.dispose();
+					ConnectorUiIntegration.cmDialog = null;
+				}
+			});
+			cmDialog.setVisible(true);
+		} else {
+			cmDialog.toFront();
+			cmDialog.requestFocus();
+		}
+	}
+	
 	
 	/**
 	 * Gets the integration type.
 	 * @return the integration type
 	 */
 	private IntegrationType getIntegrationType() {
+		
 		IntegrationType integrationType = null;
 		
 		if (Application.isOperatingHeadless()==true) {
@@ -116,7 +142,6 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 				break;
 			}
 		}
-		
 		return integrationType;
 	}
 	

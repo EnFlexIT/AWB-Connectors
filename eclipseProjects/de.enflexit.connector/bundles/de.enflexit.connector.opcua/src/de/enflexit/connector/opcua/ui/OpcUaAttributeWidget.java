@@ -39,7 +39,6 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 	private DefaultTableModel tableModel;
 	private JTable jTableAttributes;
 	
-	private static final String DATE_TIME_PATTERN_FORMAT = "dd.MM.yy HH:mm:ss.SSS";
 			
 	/**
 	 * Instantiates a new OpcUaAttributeWidget.
@@ -110,7 +109,7 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 	}
 	
 	private void addRow(String key, DateTime dateTime) {
-		this.addRow(key, ZonedDateTime.ofInstant(dateTime.getJavaInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN_FORMAT)));
+		this.addRow(key, ZonedDateTime.ofInstant(dateTime.getJavaInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(OpcUaConnector.DATE_TIME_PATTERN_FORMAT)));
 	}
 	
 	private void addRow(String key, UShort uShort) {

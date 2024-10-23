@@ -3,7 +3,6 @@ package de.enflexit.connector.core;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import de.enflexit.common.properties.Properties;
-import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * Abstract superclass for connectors to different communication protocols.
@@ -24,18 +23,16 @@ public abstract class AbstractConnector {
 		ManualStart;
 	}
 	
-	protected ConnectorManager connectorManager;
 	
 	private Properties connectorProperties;
 	
 	/**
-	 * Gets the connector properties.
+	 * Returns the connector properties.
 	 * @return the connector properties
 	 */
 	public Properties getConnectorProperties() {
 		return connectorProperties;
 	}
-
 	/**
 	 * Sets the connector properties.
 	 * @param connectorProperties the new connector properties
@@ -45,10 +42,23 @@ public abstract class AbstractConnector {
 	}
 	
 	/**
+	 * This method should provide an initial set of properties for this type of connectors, containing all required keys, and useful default values if possible.
+	 * @return the initial properties
+	 */
+	public abstract Properties getInitialProperties();
+
+	
+	/**
 	 * Establishes the connection.
 	 * @return true, if successful
 	 */
 	public abstract boolean connect();
+
+	/**
+	 * Checks if this connector instance is currently connected.
+	 * @return 
+	 */
+	public abstract boolean isConnected();
 	
 	/**
 	 * Closes the connection.
@@ -57,24 +67,11 @@ public abstract class AbstractConnector {
 	
 	
 	/**
-	 * Checks if this connector instance is currently connected.
-	 * @return 
-	 */
-	public abstract boolean isConnected();
-	
-	/**
 	 * Gets the protocol name.
 	 * @return the protocol name
 	 */
 	public abstract String getProtocolName();
 	
-	/**
-	 * Sets the connector manager.
-	 * @param connectorManager the new connector manager
-	 */
-	public void setConnectorManager(ConnectorManager connectorManager) {
-		this.connectorManager = connectorManager;
-	}
 	
 	/**
 	 * Checks when this connector is supposed to be started.
@@ -91,14 +88,7 @@ public abstract class AbstractConnector {
 		}
 		return startOn;
 	}
-	
-	
-	/**
-	 * This method should provide an initial set of properties for this type of connectors, containing all required keys, and useful default values if possible.
-	 * @return the initial properties
-	 */
-	public abstract Properties getInitialProperties();
-	
+
 	
 	/**
 	 * Gets the configuration UI component. This default implementation just returns the base panel for editing 
