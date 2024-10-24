@@ -274,6 +274,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
+		
 		if (evt.getSource()==ConnectorManager.getInstance()) {
 			
 			if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {

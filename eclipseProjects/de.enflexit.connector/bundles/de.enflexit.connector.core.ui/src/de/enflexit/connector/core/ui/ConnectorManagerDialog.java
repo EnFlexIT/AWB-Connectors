@@ -26,6 +26,8 @@ import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
  */
 public class ConnectorManagerDialog extends JDialog implements ApplicationListener {
 	
+	public static final String TITLE = "Connector Manager";
+	
 	private static final long serialVersionUID = 7253191266415274699L;
 	
 	private static final String PREF_CONNECTOR_DIALOG_X = "Connector-Dialog-X";
@@ -50,7 +52,7 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 	 */
 	private void initialize() {
 		this.setContentPane(this.getMainPanel());
-		this.setTitle("Connector Configuration");
+		this.setTitle(TITLE);
 		this.setIconImage(new ImageIcon(this.getClass().getResource("/icons/Connection.png")).getImage());
 		
 		this.loadAndApplyDialogSizeAndPosition();

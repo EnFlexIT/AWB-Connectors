@@ -24,7 +24,10 @@ public class OpcUaViews extends JPanel {
 	
 	private JSplitPane jSplitPaneLeft;	
 	
+	private JPanel jPanelLeftTop;
+	private OpcUaConnectorToolbar opcUaConnectorToolbar;
 	private OpcUaBrowserWidget opcUaBrowserWidget;
+	
 	private OpcUaAttributeWidget opcUaAttributeWidget;
 	private OpcUaDataView opcUaDataView;
 	
@@ -60,10 +63,26 @@ public class OpcUaViews extends JPanel {
 			jSplitPaneLeft.setDividerLocation(500);
 			jSplitPaneLeft.setDividerSize(5);
 			jSplitPaneLeft.setResizeWeight(1.0);
-			jSplitPaneLeft.setTopComponent(this.getOpcUaBrowserWidget());
+			jSplitPaneLeft.setTopComponent(this.getjPanelLeftTop());
 			jSplitPaneLeft.setBottomComponent(this.getOpcUaAttributeWidget());
 		}
 		return jSplitPaneLeft;
+	}
+
+	private JPanel getjPanelLeftTop() {
+		if (jPanelLeftTop==null) {
+			jPanelLeftTop = new JPanel();
+			jPanelLeftTop.setLayout(new BorderLayout());
+			jPanelLeftTop.add(this.getOpcUaConnectorToolbar(), BorderLayout.NORTH);
+			jPanelLeftTop.add(this.getOpcUaBrowserWidget(), BorderLayout.CENTER);
+		}
+		return jPanelLeftTop;
+	}
+	private OpcUaConnectorToolbar getOpcUaConnectorToolbar() {
+		if (opcUaConnectorToolbar==null) {
+			opcUaConnectorToolbar = new OpcUaConnectorToolbar(this.opcUaConnector);
+		}
+		return opcUaConnectorToolbar;
 	}
 	private OpcUaBrowserWidget getOpcUaBrowserWidget() {
 		if (opcUaBrowserWidget == null) {

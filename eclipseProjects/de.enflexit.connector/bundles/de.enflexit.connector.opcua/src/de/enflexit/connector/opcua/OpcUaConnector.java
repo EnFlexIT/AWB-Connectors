@@ -13,6 +13,7 @@ import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
@@ -164,11 +165,14 @@ public class OpcUaConnector extends AbstractConnector {
 			Integer port = this.getConnectorProperties().getIntegerValue(PROPERTY_KEY_SERVER_PORT);
 			
 			
+			String endpointURL = "opc.tcp://" + host + ":" + port + "/milo";
+			List<EndpointDescription> epDescList = OpcUaHelper.discoverEndPointDescription(endpointURL);
+			
 			// --- Try to establish connection --------------------------------
 			try {
 				
 				this.opcUaClient = OpcUaClient.create(
-						"opc.tcp://" + host + ":" + port + "/milo",
+						endpointURL,
 						endpoints ->
 						endpoints.stream()
 						.filter(e -> e.getSecurityPolicyUri().equals(SecurityPolicy.None.getUri()))
@@ -194,9 +198,11 @@ public class OpcUaConnector extends AbstractConnector {
 					}
 				});
 				
+				// --- Inform listener ----------------------------------------
+				this.informListener(Event.Connect);
+				
 				// --- Start the data acquisition -----------------------------
 				this.getOpcUaDataAccess().startDataAcquisition();
-				
 						
 			} catch (UaException | InterruptedException | ExecutionException uaEx) {
 				this.opcUaClient = null;
@@ -205,8 +211,6 @@ public class OpcUaConnector extends AbstractConnector {
 			}
 		}
 		
-		// --- Inform listener ------------------------------------------------
-		this.informListener(Event.Connect);
 		
 		return this.opcUaClientActive;
 	}

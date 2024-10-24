@@ -32,17 +32,18 @@ public class OpcUaDataAccess {
 
 	public static final String DATA_NODE_ID_KEY_PREFIX = "Data.NodeID.";
 	
-	private boolean isDebug = true;
+	private boolean isDebug = false;
 
 	private OpcUaConnector opcUaConnector;
 	
-	private boolean isStartDataAcquisition;
+	private boolean isStartedDataAcquisition;
 	private UInteger subscriptionID;
 	
 	private List<String> nodeIdListOrdered;
 	private ConcurrentHashMap<String, DataValue> valueHashMap;
 	
 	private List<OpcUaDataAccessSubscriptionListener> listener;
+	
 	
 	/**
 	 * Instantiates a new OpcUaDataAccess instance.
@@ -67,7 +68,7 @@ public class OpcUaDataAccess {
 	/**
 	 * Updates the ordered ID list .
 	 */
-	public void updateNodeIdListOrdered() {
+	private void updateNodeIdListOrdered() {
 
 		// --- Clear ordered list first -----------------------------
 		this.getNodeIdListOrdered().clear();
@@ -92,6 +93,33 @@ public class OpcUaDataAccess {
 	}
 	
 	/**
+	 * Rearrange the node IDs in the connector properties.
+	 */
+	private void rearrangeNodeIDsInProperties() {
+		
+		List<String> dataNodeIdList = new ArrayList<>();
+		
+		// --- Find current ID keys -----------------------
+		Properties props = this.opcUaConnector.getConnectorProperties();
+		for (String propKey : props.getIdentifierList()) {
+			if (propKey.startsWith(DATA_NODE_ID_KEY_PREFIX)==true) {
+				dataNodeIdList.add(propKey);
+			}
+		}
+		
+		// --- Remove current ID keys ---------------------
+		dataNodeIdList.forEach(dataNodeIdKey -> props.remove(dataNodeIdKey));
+		
+		// --- Add the new ID keys and their value --------
+		for (int i = 0; i < this.getNodeIdListOrdered().size(); i++) {
+			String propKey = DATA_NODE_ID_KEY_PREFIX + (i+1);
+			String propValue = this.getNodeIdListOrdered().get(i);
+			props.setStringValue(propKey, propValue);
+		}  
+		
+	}
+	
+	/**
 	 * Returns the value hash map.
 	 * @return the value hash map
 	 */
@@ -103,7 +131,7 @@ public class OpcUaDataAccess {
 	}
 	
 	/**
-	 * Adds the opc ua node.
+	 * Adds the specified UaNode.
 	 * @param uaNodeToAdd the ua node to add
 	 */
 	public void addOpcUaNode(UaNode uaNodeToAdd) {
@@ -125,26 +153,34 @@ public class OpcUaDataAccess {
 		this.opcUaConnector.getConnectorProperties().setStringValue(DATA_NODE_ID_KEY_PREFIX + newPos, parseableID);
 		this.updateNodeIdListOrdered();
 		
-		// --- Do we have running data acquisition --------
-		if (this.isStartDataAcquisition==false) return;
-		
-		
-		
-		
-		
-		
+		// --- Dynamically add to monitored values --------
+		if (this.isStartedDataAcquisition==true) {
+			this.addUaNodeToMonitoring(uaNodeToAdd);
+		}
 	}
+	
 	/**
-	 * Removes the opc ua node.
+	 * Removes the specified UaNode.
 	 * @param uaNodeToRemove the ua node to remove
 	 */
 	public void removeOpcUaNode(UaNode uaNodeToRemove) {
 
 		if (uaNodeToRemove==null) return;
-		System.out.println("Remove UaNode " + uaNodeToRemove.getDisplayName());
+		if (this.isDebug==true) System.out.println("Remove UaNode " + uaNodeToRemove.getDisplayName());
 		
+		// --- Find & remove corresponding property -------
+		String nodeIDString = uaNodeToRemove.getNodeId().toParseableString();
+		if (this.getNodeIdListOrdered().remove(nodeIDString) == false) return;
+		this.getValueHashMap().remove(nodeIDString);
+		
+		// --- Rearrange order of nodeID counter ----------
+		this.rearrangeNodeIDsInProperties();
+		
+		// --- Dynamically remove from monitored values ---
+		if (this.isStartedDataAcquisition==true) {
+			this.removeUaNodeFromMonitoring(uaNodeToRemove);
+		}
 	}
-	
 	
 	
 	/**
@@ -208,13 +244,72 @@ public class OpcUaDataAccess {
 	            	System.err.println("[" + this.getClass().getSimpleName() + "] Failed to create item for nodeId '" + item.getReadValueId().getNodeId() + "' => " + item.getStatusCode().toString());
 	            }
 	        }
-	        this.isStartDataAcquisition = true;
+	        this.isStartedDataAcquisition = true;
 	        
 		} catch (InterruptedException | ExecutionException ex) {
 			ex.printStackTrace();
 		}
 	}
 
+	/**
+	 * Adds the specified UaNode to the running monitoring.
+	 * @param uaNode the {@link UaNode} to add
+	 */
+	private void addUaNodeToMonitoring(UaNode uaNode) {
+		
+    	try {
+    		
+    		NodeId nodeID = uaNode.getNodeId();
+    		ReadValueId readValueID = new ReadValueId(nodeID, AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
+
+    		// --- Create UaSubsription and MonitoringParameters ----
+			UaSubscription subscription = this.getUaSubscription();
+			UInteger clientHandle = subscription.nextClientHandle();
+			MonitoringParameters parameters = new MonitoringParameters(clientHandle, 1000.0, null, UInteger.valueOf(10), true);
+
+			List<MonitoredItemCreateRequest> monitoredItemList = new ArrayList<>();
+			monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, MonitoringMode.Reporting, parameters));
+			
+			// --- Define local callback method ---------------------
+			UaSubscription.ItemCreationCallback itemCreationCallback = (item, id) -> item.setValueConsumer(this::onSubscriptionValue);
+			
+			List<UaMonitoredItem> items = subscription.createMonitoredItems(TimestampsToReturn.Both, monitoredItemList, itemCreationCallback).get();
+			for (UaMonitoredItem item : items) {
+	            if (item.getStatusCode().isGood()==true) {
+	            	if (this.isDebug) System.out.println("[" + this.getClass().getSimpleName() + "] UaMonitoredItem created for nodeId '" + item.getReadValueId().getNodeId() + "'");
+	            } else {
+	            	System.err.println("[" + this.getClass().getSimpleName() + "] Failed to create item for nodeId '" + item.getReadValueId().getNodeId() + "' => " + item.getStatusCode().toString());
+	            }
+	        }
+						
+		} catch (InterruptedException | ExecutionException ex) {
+			ex.printStackTrace();
+		}
+	}
+	/**
+	 * Removes the specified UaNode from the running monitoring.
+	 * @param uaNode the {@link UaNode} to remove
+	 */
+	private void removeUaNodeFromMonitoring(UaNode uaNode) {
+		
+		try {
+			
+			UaSubscription subscription = this.getUaSubscription();
+			if (subscription==null) return;
+			
+			List<UaMonitoredItem> itemsToDelete = new ArrayList<>();
+			for (UaMonitoredItem monItem : subscription.getMonitoredItems()) {
+				if (monItem.getReadValueId().getNodeId().equals(uaNode.getNodeId())==true) {
+					itemsToDelete.add(monItem);
+				}
+			}
+			subscription.deleteMonitoredItems(itemsToDelete);
+			
+		} catch (InterruptedException | ExecutionException ex) {
+			ex.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Returns the current UaSubscription. If required, it will create the UaSubscription.
 	 * @return the ua subscription
@@ -245,7 +340,7 @@ public class OpcUaDataAccess {
 	
 		this.opcUaConnector.getOpcUaClient().getSubscriptionManager().deleteSubscription(this.subscriptionID);
 		this.subscriptionID = null;
-        this.isStartDataAcquisition = false;
+        this.isStartedDataAcquisition = false;
         this.valueHashMap = null;
 	}
 	

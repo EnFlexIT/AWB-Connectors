@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
+import javax.swing.tree.TreePath;
 
 import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 
@@ -57,9 +58,15 @@ public class OpcUaBrowserTransferHandler extends TransferHandler {
 		JTree browserTree = (JTree) c;
 		if (browserTree.getSelectionPath()==null) return null;
 		
-		OpcUaTreeNode uaTreeNode = (OpcUaTreeNode) browserTree.getSelectionPath().getLastPathComponent();
-		final UaNode uaNode = uaTreeNode.getUaNode();
+		// --- Create reminder array ----------------------
+		TreePath[] treePathArray = browserTree.getSelectionPaths();
+		UaNode[] uaNodes = new UaNode[browserTree.getSelectionCount()];
+		for (int i = 0; i < treePathArray.length; i++) {
+			OpcUaTreeNode treeNode = (OpcUaTreeNode) treePathArray[i].getLastPathComponent();
+			uaNodes[i] = treeNode.getUaNode();
+		}
 		
+		final UaNode[] uaNodeArray = uaNodes;
 		return new Transferable() {
 			/* (non-Javadoc)
 			 * @see java.awt.datatransfer.Transferable#getTransferDataFlavors()
@@ -80,7 +87,7 @@ public class OpcUaBrowserTransferHandler extends TransferHandler {
 			 */
 			@Override
 			public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-				return uaNode;
+				return uaNodeArray;
 			}
 		};
 	}
@@ -122,10 +129,12 @@ public class OpcUaBrowserTransferHandler extends TransferHandler {
 	@Override
 	public boolean importData(TransferSupport support) {
 		
-		UaNode uaNodeTrans = null;
+		UaNode[] uaNodeArrayTrans = null;
 		try {
-			uaNodeTrans = (UaNode) support.getTransferable().getTransferData(this.dfUaNode);
-			this.opcUaConnector.getOpcUaDataAccess().addOpcUaNode(uaNodeTrans);
+			uaNodeArrayTrans = (UaNode[]) support.getTransferable().getTransferData(this.dfUaNode);
+			for (UaNode uaNodeAdd : uaNodeArrayTrans) {
+				this.opcUaConnector.getOpcUaDataAccess().addOpcUaNode(uaNodeAdd);
+			}
 			return true;
 			
 		} catch (Exception ex) {

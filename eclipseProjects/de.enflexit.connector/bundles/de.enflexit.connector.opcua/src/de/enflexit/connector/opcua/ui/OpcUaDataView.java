@@ -231,9 +231,12 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		if (this.getJTableDataView().getSelectedRowCount()==-0) return;
 		
 		// --- Remove each UaNode ID --------------------------------
+		int colUaNode = this.getIndexOfColumnName(HEADER_UA_NODE);
 		for (int rowSel : this.getJTableDataView().getSelectedRows()) {
-			UaNode uaNodeToRemove = (UaNode) this.getJTableDataView().getValueAt(rowSel, this.getIndexOfColumnName(HEADER_UA_NODE));
+			// --- Get the UaNode to remove -------------------------
+			UaNode uaNodeToRemove = (UaNode) this.getJTableDataView().getValueAt(rowSel, colUaNode);
 			OpcUaDataView.this.opcUaConnector.getOpcUaDataAccess().removeOpcUaNode(uaNodeToRemove);
+			this.getDataRowHashMap().remove(uaNodeToRemove.getNodeId());
 		}
 		// --- Refill the local table model -------------------------
 		this.reFillTableModel();
@@ -267,6 +270,7 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		
 		// --- Empty table model ------------------------------------
 		this.getTableModel().setRowCount(0);
+		this.getDataRowHashMap().clear();
 		
 		if (this.opcUaConnector.isConnected()==false) return;
 		
@@ -346,11 +350,24 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		boolean isDebug = false;
 		if (isDebug) System.out.println("subscription value received: item=" + item.getReadValueId().getNodeId() + ", value=" + dataValue.getValue());
 		
-		Vector<Object> dataRow = this.getDataRowHashMap().get(item.getReadValueId().getNodeId());
+		NodeId nodeID = item.getReadValueId().getNodeId();
+		Vector<Object> dataRow = this.getDataRowHashMap().get(nodeID);
 		if (dataRow!=null) {
+			// --- Data row is already available ----------
 			this.updateDataRow(dataRow, dataValue);
 			int modelRowNumber = (int) dataRow.get(this.getIndexOfColumnName(HEADER_NO)) - 1;
 			this.getTableModel().fireTableRowsUpdated(modelRowNumber, modelRowNumber);
+			
+		} else {
+			// --- No data row found, create one ----------
+			UaNode uaNode = null;
+			try {
+				uaNode = item.getClient().getAddressSpace().getNode(nodeID);
+				this.addDataRow(uaNode, dataValue);
+				
+			} catch (UaException uaEx) {
+				uaEx.printStackTrace();
+			}
 		}
 	}
 	/**

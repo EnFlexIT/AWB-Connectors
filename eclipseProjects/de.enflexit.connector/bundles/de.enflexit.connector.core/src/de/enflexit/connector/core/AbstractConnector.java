@@ -78,17 +78,25 @@ public abstract class AbstractConnector {
 	 * @return the start on
 	 */
 	public StartOn getStartOn() {
-		// --- Default case if nothing else is configured -----------
+		
+		// --- Default case if nothing else is configured ---------------------
 		StartOn startOn = StartOn.ManualStart;
 		
-		// --- Try to get the configured start level from the properties
+		// --- Try to get the configured start level from the properties ------
 		String startLevelFromProperties = this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_START_ON);
 		if (startLevelFromProperties!=null && startLevelFromProperties.isBlank()==false) {
 			startOn = StartOn.valueOf(startLevelFromProperties);
 		}
 		return startOn;
 	}
-
+	/**
+	 * Sets the new start on.
+	 * @param newStartOn the new start on
+	 */
+	public void setStartOn(StartOn newStartOn) {
+		if (newStartOn==null) return;
+		this.getConnectorProperties().setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, newStartOn.toString());
+	}
 	
 	/**
 	 * Gets the configuration UI component. This default implementation just returns the base panel for editing 

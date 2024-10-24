@@ -45,7 +45,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 			// --- Tool bar and tray icon menu ------------
 			this.addToolbarComponent(this.getToolbarButton(), 8, SeparatorPosition.NoSeparator);
 			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
-			this.addJMenuItem(WorkbenchMenu.MenuExtra, this.getMenuItem(), 6, SeparatorPosition.NoSeparator);
+			this.addJMenuItem(WorkbenchMenu.MenuExtra, this.getJMenuItem(), 7, SeparatorPosition.NoSeparator);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
@@ -84,9 +84,9 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 * Gets the menu item.
 	 * @return the menu item
 	 */
-	private JMenuItem getMenuItem() {
+	private JMenuItem getJMenuItem() {
 		if (menuItem==null) {
-			menuItem = new JMenuItem("Connector Manager", this.getImageIcon());
+			menuItem = new JMenuItem(ConnectorManagerDialog.TITLE, this.getImageIcon());
 			menuItem.addActionListener(this);
 		}
 		return menuItem;
@@ -109,7 +109,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
-		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getTrayIconMenuItem()) {
+		if (ae.getSource()==this.getToolbarButton() || ae.getSource()==this.getTrayIconMenuItem() || ae.getSource()==this.getJMenuItem()) {
 			ConnectorUiIntegration.openOrFocusConnectorManagerDialog();
 		}
 	}

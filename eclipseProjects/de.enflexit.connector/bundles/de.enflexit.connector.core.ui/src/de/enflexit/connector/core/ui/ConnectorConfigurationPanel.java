@@ -3,6 +3,8 @@ package de.enflexit.connector.core.ui;
 import javax.swing.JPanel;
 
 import de.enflexit.common.properties.Properties;
+import de.enflexit.common.properties.PropertiesEvent;
+import de.enflexit.common.properties.PropertiesListener;
 import de.enflexit.common.properties.PropertiesPanel;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnector.StartOn;
@@ -22,7 +24,7 @@ import javax.swing.JSeparator;
  * THis class provides the UI to manage an existing connection.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorConfigurationPanel extends JPanel implements ActionListener {
+public class ConnectorConfigurationPanel extends JPanel implements ActionListener, PropertiesListener {
 	
 	private static final long serialVersionUID = -1435935216371131219L;
 	
@@ -35,11 +37,13 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	private JComboBox<StartOn> jComboBoxStartOn;
 	private JLabel jLabelConnectionDetails;
 	
-	private boolean pauseListener;
 	private JSeparator separator;
 	
 	private JLabel jLabelProtocol;
 	private JLabel jLabelProtocolName;
+
+	private boolean pauseActionListener;
+	private boolean pausePropertiesListener;
 	
 	/**
 	 * Instantiates a new manage connection panel.
@@ -162,16 +166,29 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	 * @param connector the new connector
 	 */
 	public void setConnectorProperties(Properties connectorProperties) {
+		
 		if (connectorProperties!=null) {
-			this.pauseListener = true;
+			// --- Set new properties to UI -----------------------------------
+			this.pauseActionListener = true;
 			this.getJLabelProtocolName().setText(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL));
+			// --- Remove this as PropertyListener from current properties ----
+			Properties previosConnectorProperties = this.getConnectorProperties();
+			if (previosConnectorProperties!=null) {
+				previosConnectorProperties.removePropertiesListener(this);
+			}
+			// --- Set new properties to UI and add this as listener ----------
 			this.getConnectionPropertiesPanel().setProperties(connectorProperties);
+			connectorProperties.addPropertiesListener(this);
+			
+			// --- Set the StartOn value -------------------------------------- 
 			StartOn startOn = StartOn.valueOf(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON));
 			this.getJComboBoxStartOn().setSelectedItem(startOn);
-			this.pauseListener = false;
+			this.pauseActionListener = false;
+			
 		} else {
 			this.getJLabelProtocolName().setText("No connection selected");
 			this.getConnectionPropertiesPanel().setProperties(null);
+			
 		}
 	}
 	
@@ -184,14 +201,34 @@ public class ConnectorConfigurationPanel extends JPanel implements ActionListene
 	}
 
 	/* (non-Javadoc)
+	 * @see de.enflexit.common.properties.PropertiesListener#onPropertiesEvent(de.enflexit.common.properties.PropertiesEvent)
+	 */
+	@Override
+	public void onPropertiesEvent(PropertiesEvent pe) {
+		
+		if (this.pausePropertiesListener == true) return;
+		
+		if (pe.getIdentifier().equals(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON)) {
+			StartOn newStartOn = StartOn.valueOf((String)pe.getPropertyValue().getValueString());
+			this.pauseActionListener = true;
+			this.getJComboBoxStartOn().setSelectedItem(newStartOn);
+			this.pauseActionListener = false;
+		}
+	}
+	
+	
+	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
+		
+		if (this.pauseActionListener==true) return;
+
 		if (ae.getSource()==this.getJComboBoxStartOn()) {
-			if (this.pauseListener==false ) {
-				this.getConnectionPropertiesPanel().getProperties().setValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
-			}
+			this.pausePropertiesListener = true;
+			this.getConnectorProperties().setValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, this.getJComboBoxStartOn().getSelectedItem().toString());
+			this.pausePropertiesListener = false;
 		}
 	}
 	

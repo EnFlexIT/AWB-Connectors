@@ -72,7 +72,7 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 	private JTree getJTreeOpcUaNodes() {
 		if (jTreeOpcUaNodes==null) {
 			jTreeOpcUaNodes = new JTree(this.getOpcUaBrowserModel());
-			jTreeOpcUaNodes.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+			jTreeOpcUaNodes.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
 			jTreeOpcUaNodes.addTreeSelectionListener(this);
 			jTreeOpcUaNodes.addKeyListener(this.getKeyAdapter());
 
@@ -123,15 +123,35 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 			@Override
 			public void mousePressed(MouseEvent me) {
 			
-				if (SwingUtilities.isRightMouseButton(me)) {
+				if (SwingUtilities.isRightMouseButton(me)==true) {
 					// --- Display the context menu -----------------
 					JTree myTree = (JTree) me.getSource();
-					TreePath path = myTree.getPathForLocation(me.getX(), me.getY());
-					Rectangle pathBounds = myTree.getUI().getPathBounds(myTree, path);
-					if (pathBounds!=null && pathBounds.contains(me.getX(), me.getY())) {
-						myTree.setSelectionPath(path);
-						myTree.scrollPathToVisible(path);
-						OpcUaBrowserWidget.this.getPopupMenu().show (myTree, pathBounds.x, pathBounds.y + pathBounds.height);
+					
+					// --- Change selection? ------------------------
+					if (myTree.getSelectionCount()<=1) {
+						// --- For single or no selection -----------
+						TreePath path = myTree.getPathForLocation(me.getX(), me.getY());
+						Rectangle pathBounds = myTree.getUI().getPathBounds(myTree, path);
+						if (pathBounds!=null && pathBounds.contains(me.getX(), me.getY())) {
+							myTree.setSelectionPath(path);
+							myTree.scrollPathToVisible(path);
+							OpcUaBrowserWidget.this.getPopupMenu().show (myTree, pathBounds.x, pathBounds.y + pathBounds.height);
+						}
+						
+					} else {
+						// --- For multiple selections --------------
+						boolean isInSelectedPathRectangle = false;
+						Rectangle pathBounds = null;
+						for (TreePath pathSelected : myTree.getSelectionPaths()) {
+							pathBounds = myTree.getUI().getPathBounds(myTree, pathSelected);
+							if (pathBounds!=null && pathBounds.contains(me.getX(), me.getY())) {
+								isInSelectedPathRectangle = true;
+								break;
+							}
+						}
+						if (isInSelectedPathRectangle==true) {
+							OpcUaBrowserWidget.this.getPopupMenu().show (myTree, pathBounds.x, pathBounds.y + pathBounds.height);
+						}
 					}
 				}
 			} // end mousePressed
@@ -185,9 +205,10 @@ public class OpcUaBrowserWidget extends JScrollPane implements TreeSelectionList
 				@Override
 				public void actionPerformed(ActionEvent ae) {
 					JTree browserTree = OpcUaBrowserWidget.this.getJTreeOpcUaNodes();
-					OpcUaTreeNode treeNode = (OpcUaTreeNode) browserTree.getLastSelectedPathComponent();
-					UaNode uaNode = treeNode.getUaNode();
-					OpcUaBrowserWidget.this.opcUaConnector.getOpcUaDataAccess().addOpcUaNode(uaNode);
+					for (TreePath path : browserTree.getSelectionPaths()) {
+						OpcUaTreeNode treeNode = (OpcUaTreeNode) path.getLastPathComponent();
+						OpcUaBrowserWidget.this.opcUaConnector.getOpcUaDataAccess().addOpcUaNode(treeNode.getUaNode());
+					}
 				}
 			});
 		}
