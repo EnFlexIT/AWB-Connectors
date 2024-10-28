@@ -11,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JMenuItem;
 
 import org.agentgui.gui.swing.MainWindowExtension;
+
 import agentgui.core.application.Application;
 import agentgui.core.gui.MainWindow.WorkbenchMenu;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -122,7 +123,6 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 			cmDialog.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosed(WindowEvent e) {
-					ConnectorUiIntegration.cmDialog.dispose();
 					ConnectorUiIntegration.cmDialog = null;
 				}
 			});

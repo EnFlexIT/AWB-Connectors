@@ -28,8 +28,12 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener.Event;
+import de.enflexit.connector.opcua.ui.OpcUaAttributeWidget;
 import de.enflexit.connector.opcua.ui.OpcUaBrowserTreeModel;
+import de.enflexit.connector.opcua.ui.OpcUaBrowserWidget;
 import de.enflexit.connector.opcua.ui.OpcUaConnectorPanel;
+import de.enflexit.connector.opcua.ui.OpcUaConnectorToolbar;
+import de.enflexit.connector.opcua.ui.OpcUaDataView;
 
 /**
  * The Class OpcUaConnector.
@@ -103,7 +107,7 @@ public class OpcUaConnector extends AbstractConnector {
 	// --- From here listener handling ------------------------------
 	// --------------------------------------------------------------
 	/**
-	 * Gets the connector listener.
+	 * Returns the local connector listener.
 	 * @return the connector listener
 	 */
 	private List<OpcUaConnectorListener> getConnectorListener() {
@@ -126,8 +130,26 @@ public class OpcUaConnector extends AbstractConnector {
 	 * @param listener the listener to remove
 	 */
 	public void removeConnectionListener(OpcUaConnectorListener listener) {
-		if (listener!=null) this.getConnectorListener().add(listener);
+		if (listener!=null) this.getConnectorListener().remove(listener);
 	}
+	/**
+	 * Removes all listener of the specified type from the current list of {@link OpcUaConnectorListener}.
+	 * @param listener the listener type to remove
+	 */
+	public void removeConnectionListener(Class<?> listenerClass) {
+		if (listenerClass!=null) {
+			// --- Find listener to remove ------
+			List<OpcUaConnectorListener> listToRemove = new ArrayList<>();
+			for (OpcUaConnectorListener listener : this.getConnectorListener()) {
+				if (listener.getClass().equals(listenerClass)==true) {
+					listToRemove.add(listener);
+				}
+			}
+			// --- Remove all listeners found --- 
+			listToRemove.forEach(listenerToRemove -> this.getConnectorListener().remove(listenerToRemove));
+		}
+	}
+	
 	/**
 	 * Inform listener.
 	 * @param event the listener event to invoke
@@ -174,7 +196,14 @@ public class OpcUaConnector extends AbstractConnector {
 	 */
 	@Override
 	public void disposeUI() {
-		this.configPanel = null;
+		if (this.configPanel!=null) {
+			this.getConnectorProperties().removePropertiesListener(OpcUaConnectorToolbar.class);
+			this.removeConnectionListener(OpcUaConnectorToolbar.class);
+			this.removeConnectionListener(OpcUaBrowserWidget.class);
+			this.removeConnectionListener(OpcUaAttributeWidget.class);
+			this.removeConnectionListener(OpcUaDataView.class);
+			this.configPanel = null;
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -192,6 +221,7 @@ public class OpcUaConnector extends AbstractConnector {
 				String endpointURL  = this.getConnectorProperties().getStringValue(PROP_ENDPOINT_URL);
 				EndpointDescription endpointDescription = this.getEndPointDescription(endpointURL);
 				
+				// --- Build client configuration -----------------------------
 				OpcUaClientConfig clientConfig = OpcUaClientConfig.builder()
 						.setApplicationName(LocalizedText.english(this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_NAME)))
 						.setApplicationUri("urn:awb:connctor:opcua:" + this.hashCode())

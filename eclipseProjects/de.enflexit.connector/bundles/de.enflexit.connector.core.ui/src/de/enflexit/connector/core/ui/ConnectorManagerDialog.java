@@ -15,8 +15,8 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
+
 import agentgui.core.application.Application;
-import agentgui.core.application.ApplicationListener;
 import de.enflexit.common.swing.WindowSizeAndPostionController;
 import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
 
@@ -24,7 +24,7 @@ import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
  * A dialog to configure connectors.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManagerDialog extends JDialog implements ApplicationListener {
+public class ConnectorManagerDialog extends JDialog {
 	
 	public static final String TITLE = "Connector Manager";
 	
@@ -51,6 +51,7 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 	 * Initialize the dialog.
 	 */
 	private void initialize() {
+		
 		this.setContentPane(this.getMainPanel());
 		this.setTitle(TITLE);
 		this.setIconImage(new ImageIcon(this.getClass().getResource("/icons/Connection.png")).getImage());
@@ -60,8 +61,6 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 		this.addSizeAndPositionsListener();
 		
 		this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-		
-		Application.addApplicationListener(this);
 		
 		this.addWindowListener(new WindowAdapter() {
 			@Override
@@ -87,10 +86,18 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 				}
 			}
 		});
-		
 		WindowSizeAndPostionController.setJDialogPositionOnScreen(this, JDialogPosition.ParentCenter);
 	}
 
+	/* (non-Javadoc)
+	 * @see java.awt.Window#dispose()
+	 */
+	@Override
+	public void dispose() {
+		this.getMainPanel().dispose();
+		super.dispose();
+	}
+	
 	/**
 	 * Gets the main panel.
 	 * @return the main panel
@@ -197,23 +204,4 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
     	}
     }
 	
-	/* (non-Javadoc)
-	 * @see java.awt.Window#dispose()
-	 */
-	@Override
-	public void dispose() {
-		Application.removeApplicationListener(this);
-		this.getMainPanel().dispose();
-		super.dispose();
-	}
-
-	/* (non-Javadoc)
-	 * @see agentgui.core.application.ApplicationListener#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
-	 */
-	@Override
-	public void onApplicationEvent(ApplicationEvent awbEvent) {
-		if (awbEvent.getApplicationEvent()==ApplicationEvent.PROJECT_CLOSED) {
-			this.dispose();
-		}
-	}
 }
