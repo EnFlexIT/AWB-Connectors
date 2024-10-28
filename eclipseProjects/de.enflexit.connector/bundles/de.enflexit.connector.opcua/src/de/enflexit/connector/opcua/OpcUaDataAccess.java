@@ -156,6 +156,8 @@ public class OpcUaDataAccess {
 		// --- Dynamically add to monitored values --------
 		if (this.isStartedDataAcquisition==true) {
 			this.addUaNodeToMonitoring(uaNodeToAdd);
+		} else {
+			this.startDataAcquisition();
 		}
 	}
 	
@@ -168,18 +170,18 @@ public class OpcUaDataAccess {
 		if (uaNodeToRemove==null) return;
 		if (this.isDebug==true) System.out.println("Remove UaNode " + uaNodeToRemove.getDisplayName());
 		
-		// --- Find & remove corresponding property -------
-		String nodeIDString = uaNodeToRemove.getNodeId().toParseableString();
-		if (this.getNodeIdListOrdered().remove(nodeIDString) == false) return;
-		this.getValueHashMap().remove(nodeIDString);
-		
-		// --- Rearrange order of nodeID counter ----------
-		this.rearrangeNodeIDsInProperties();
-		
 		// --- Dynamically remove from monitored values ---
 		if (this.isStartedDataAcquisition==true) {
 			this.removeUaNodeFromMonitoring(uaNodeToRemove);
 		}
+		
+		// --- Find & remove corresponding property -------
+		String nodeIDString = uaNodeToRemove.getNodeId().toParseableString();
+		this.getNodeIdListOrdered().remove(nodeIDString);
+		this.getValueHashMap().remove(nodeIDString);
+		
+		// --- Rearrange order of nodeID counter ----------
+		this.rearrangeNodeIDsInProperties();
 	}
 	
 	

@@ -1,5 +1,7 @@
 package de.enflexit.connector.opcua;
 
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -9,10 +11,18 @@ import javax.swing.JPanel;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
+import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;
+import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
+import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
+import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
+import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
 import de.enflexit.common.properties.Properties;
@@ -30,11 +40,22 @@ public class OpcUaConnector extends AbstractConnector {
 
 	public static final String DATE_TIME_PATTERN_FORMAT = "dd.MM.yy HH:mm:ss.SSS";
 	
-//	public static final String PROPERTY_OPC_UA_ = "";
-//	public static final String PROPERTY_OPC_UA_ = "";
-//	public static final String PROPERTY_OPC_UA_ = "";
-//	public static final String PROPERTY_OPC_UA_ = "";
-//	public static final String PROPERTY_OPC_UA_ = "";
+	private static final String PROP_CONNECTION = "Connector.Settings";
+	private static final String PROP_SECURITY = "SecuritySettings";
+	private static final String PROP_AUTHENTIFICATION = "Authentification";
+	
+	
+	public static final String PROP_ENDPOINT_URL = PROP_CONNECTION + ".EndpointUrl";
+	
+	public static final String PROP_SECURITY_POLICY = PROP_CONNECTION + "." + PROP_SECURITY + ".SecurityPolicy";
+	public static final String PROP_SECURITY_MESSAGE_MODE = PROP_CONNECTION + "." + PROP_SECURITY + ".MessageSecurityMode";
+	
+	public static final String PROP_AUTH_TYPE = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION;
+	public static final String PROP_AUTH_USERNAME = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".Username";
+	public static final String PROP_AUTH_PASSWORD = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".Password";
+	
+	public static final String PROP_AUTH_CERTIFICATE = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".Certificate";
+	public static final String PROP_AUTH_PRIVATE_KEY  = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".PrivateKey";
 	
 	
 	private OpcUaClient opcUaClient;
@@ -67,8 +88,12 @@ public class OpcUaConnector extends AbstractConnector {
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_PROTOCOL, OpcUaConnectorService.CONNECTOR_NAME);
 		initProps.setStringValue(PROPERTY_KEY_CONNECTOR_START_ON, StartOn.ManualStart.toString());
 
-		initProps.setStringValue(PROPERTY_KEY_SERVER_HOST, "localhost");
-		initProps.setIntegerValue(PROPERTY_KEY_SERVER_PORT, 62541);
+		initProps.setStringValue(PROP_ENDPOINT_URL, "opc.tcp://localhost:62541/milo");
+		
+		initProps.setStringValue(PROP_SECURITY_POLICY, SecurityPolicy.None.toString());
+		initProps.setStringValue(PROP_SECURITY_MESSAGE_MODE, MessageSecurityMode.None.toString());
+		
+		initProps.setStringValue(PROP_AUTH_TYPE, OpcUaHelper.getIdentityProviderName(AnonymousProvider.class));
 		
 		return initProps;
 	}
@@ -160,27 +185,24 @@ public class OpcUaConnector extends AbstractConnector {
 		
 		if (this.opcUaClient==null) {
 
-			// --- Get required information -----------------------------------
-			String host  = this.getConnectorProperties().getStringValue(PROPERTY_KEY_SERVER_HOST);
-			Integer port = this.getConnectorProperties().getIntegerValue(PROPERTY_KEY_SERVER_PORT);
-			
-			
-			String endpointURL = "opc.tcp://" + host + ":" + port + "/milo";
-			List<EndpointDescription> epDescList = OpcUaHelper.discoverEndPointDescription(endpointURL);
-			
 			// --- Try to establish connection --------------------------------
 			try {
+
+				// --- Get required information -------------------------------
+				String endpointURL  = this.getConnectorProperties().getStringValue(PROP_ENDPOINT_URL);
+				EndpointDescription endpointDescription = this.getEndPointDescription(endpointURL);
 				
-				this.opcUaClient = OpcUaClient.create(
-						endpointURL,
-						endpoints ->
-						endpoints.stream()
-						.filter(e -> e.getSecurityPolicyUri().equals(SecurityPolicy.None.getUri()))
-						.findFirst(),
-						configBuilder ->
-						configBuilder.build()
-						);
+				OpcUaClientConfig clientConfig = OpcUaClientConfig.builder()
+						.setApplicationName(LocalizedText.english(this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_NAME)))
+						.setApplicationUri("urn:awb:connctor:opcua:" + this.hashCode())
+						.setCertificate(null)
+						.setKeyPair(null)
+						.setEndpoint(endpointDescription)
+						.setIdentityProvider(this.getIdentityProvider())
+						.setRequestTimeout(UInteger.valueOf(5000))
+						.build();
 				
+				this.opcUaClient = OpcUaClient.create(clientConfig);
 				this.opcUaClient.connect().get();
 				this.opcUaClientActive = true;
 				
@@ -214,6 +236,75 @@ public class OpcUaConnector extends AbstractConnector {
 		
 		return this.opcUaClientActive;
 	}
+	
+	/**
+	 * Based on the specified end point URL, returns the currently configured {@link EndpointDescription}
+	 * with respect to the {@link SecurityPolicy} and the {@link MessageSecurityMode}.
+	 *
+	 * @param endpointURL the end point URL
+	 * @return the end point description
+	 */
+	private EndpointDescription getEndPointDescription(String endpointURL) {
+		
+		if (endpointURL==null || endpointURL.isBlank()==true) return null;
+		
+		String securityPolicyProperty  = this.getConnectorProperties().getStringValue(PROP_SECURITY_POLICY);
+		String msgSecurityModeProperty = this.getConnectorProperties().getStringValue(PROP_SECURITY_MESSAGE_MODE);
+		
+		SecurityPolicy securityPolicy       = securityPolicyProperty==null  ? SecurityPolicy.None      : SecurityPolicy.valueOf(securityPolicyProperty);
+		MessageSecurityMode msgSecurityMode = msgSecurityModeProperty==null ? MessageSecurityMode.None : MessageSecurityMode.valueOf(msgSecurityModeProperty);
+		
+		EndpointDescription epDec = null;
+		try {
+			
+			// --- Call discover for end point URL --------------------------------------
+			List<EndpointDescription> epDescList = OpcUaHelper.discoverEndPointDescription(endpointURL);
+			// --- Filter according to SecurityPolicy and MessageSecurityMode -----------
+			epDec = epDescList.stream()
+			.filter(e -> e.getSecurityPolicyUri().equals(securityPolicy.getUri()))
+			.filter(e -> e.getSecurityMode()==msgSecurityMode)
+			.findFirst()
+			.orElseThrow(() -> new Exception("No desired endpoint could be found returned"));
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return epDec;
+	}
+	
+	/**
+	 * Returns the current identity provider.
+	 * @return the identity provider
+	 */
+	private IdentityProvider getIdentityProvider() {
+		
+		IdentityProvider idProvider = null;
+		
+		String idProviderName = this.getConnectorProperties().getStringValue(PROP_AUTH_TYPE);
+		switch (idProviderName) {
+		case "Anonymous": 
+			idProvider = new AnonymousProvider();
+			break;
+			
+		case "Username":
+			String user= this.getConnectorProperties().getStringValue(PROP_AUTH_USERNAME);
+			String pswd = this.getConnectorProperties().getStringValue(PROP_AUTH_PASSWORD);
+			idProvider = new UsernameProvider(user, pswd);
+			break;
+			
+		case "X509Identity":
+			// TODO Load certificate and PrivateKey
+			X509Certificate cert = null;
+			PrivateKey pk = null;
+			idProvider = new X509IdentityProvider(cert, pk);
+			break;
+		
+		default:
+			throw new IllegalArgumentException("Unexpected value for identity provider: " + idProviderName + ". Use 'Anonymous', 'Username' or 'X509Identity'");
+		}
+		return idProvider;
+	}
+	
 	
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#isConnected()

@@ -1,10 +1,10 @@
 package de.enflexit.connector.opcua;
 
 import java.awt.Component;
+import java.awt.Image;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-
 
 /**
  * The Class BundleHelper provides some static help methods to be used within the bundle.
@@ -23,7 +23,7 @@ public class BundleHelper {
 		return imagePackage;
 	}
 	/**
-	 * Gets the image icon for the specified image.
+	 * Returns the image icon for the specified image.
 	 *
 	 * @param fileName the file name
 	 * @return the image icon
@@ -38,6 +38,17 @@ public class BundleHelper {
 			err.printStackTrace();
 		}	
 		return imageIcon;
+	}
+	/**
+	 * Returns the image for the specified image.
+	 *
+	 * @param fileName the file name
+	 * @return the image icon
+	 */
+	public static Image getImage(String fileName) {
+		ImageIcon imageIcon = getImageIcon(fileName);
+		if (imageIcon==null) return null;
+		return imageIcon.getImage();
 	}
 	
 	

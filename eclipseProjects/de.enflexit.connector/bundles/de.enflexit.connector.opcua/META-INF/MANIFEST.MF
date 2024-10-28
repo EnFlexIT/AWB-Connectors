@@ -49,6 +49,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-17
 Automatic-Module-Name: de.enflexit.connector.opcua
 Bundle-ActivationPolicy: lazy
 Import-Package: de.enflexit.common.properties,
+ de.enflexit.common.swing,
  org.slf4j
 Require-Bundle: de.enflexit.connector.core
 Bundle-ClassPath: lib/bcpkix-jdk18on-1.78.1.jar,

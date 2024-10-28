@@ -2,6 +2,7 @@ package de.enflexit.connector.opcua;
 
 import java.util.List;
 
+import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
@@ -44,4 +45,15 @@ public class OpcUaHelper {
 		return endpoints;
 	}
 
+	/**
+	 * Return the identity provider name, derived from the specified class' name.
+	 *
+	 * @param identityProviderClass the identity provider class
+	 * @return the identity provider name
+	 */
+	public static String getIdentityProviderName(Class<? extends IdentityProvider> identityProviderClass) {
+		if (identityProviderClass==null) return null;
+		return identityProviderClass.getSimpleName().replace("Provider", "");
+	}
+	
 }

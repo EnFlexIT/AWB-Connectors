@@ -12,11 +12,13 @@ import javax.swing.JToolBar;
 
 import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
+import de.enflexit.common.swing.OwnerDetection;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.AbstractConnector.StartOn;
 import de.enflexit.connector.opcua.BundleHelper;
 import de.enflexit.connector.opcua.OpcUaConnector;
 import de.enflexit.connector.opcua.OpcUaConnectorListener;
+import de.enflexit.connector.opcua.ui.endpoint.OpcUaEndpointDialg;
 
 /**
  * The Class OpcUaConnectorToolbar.
@@ -27,6 +29,8 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 
 	private static final long serialVersionUID = 1334543496357971374L;
 
+	public static String IMAGE_FILE_NAME_CONNECTOR = "Connection.png";
+	
 	private OpcUaConnector opcUaConnector;
 	
 	private boolean pauseActionListener;
@@ -73,7 +77,7 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 		if (jButtonConnectorProperties==null) {
 			jButtonConnectorProperties = new JButton();
 			jButtonConnectorProperties.setToolTipText("Open Server Properties");
-			jButtonConnectorProperties.setIcon(BundleHelper.getImageIcon("Connection.png"));
+			jButtonConnectorProperties.setIcon(BundleHelper.getImageIcon(IMAGE_FILE_NAME_CONNECTOR));
 			jButtonConnectorProperties.addActionListener(this);
 		}
 		return jButtonConnectorProperties;
@@ -106,8 +110,10 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 		
 		if (ae.getSource()==this.getJButtonConnectorProperties()) {
 			// --- Open dialog for server and connection properties -----------
-			
-			
+			OpcUaEndpointDialg endpointConfig = new OpcUaEndpointDialg(OwnerDetection.getOwnerWindowForComponent(this), opcUaConnector);
+			endpointConfig.setVisible(true);
+			// - - - model wait - - - - 
+								
 		} else if (ae.getSource()==this.getJComboBoxStartOn()) {
 			// --- Set new StartOn value --------------------------------------
 			this.pausePropertiesListener = true;

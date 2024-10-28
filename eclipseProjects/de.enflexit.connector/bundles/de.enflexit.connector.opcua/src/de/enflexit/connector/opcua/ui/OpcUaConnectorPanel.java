@@ -35,8 +35,8 @@ public class OpcUaConnectorPanel extends JTabbedPane {
 	 * Initializes the tabs of the configuration panel.
 	 */
 	private void initialize() {
-		this.addTab(" Connection Settings ", this.baseConfigPanel);
 		this.addTab(" OPC UA - Views ", this.getOpcUaViews());
+		this.addTab(" Connection Settings ", this.baseConfigPanel);
 	}
 	
 	/**
@@ -47,6 +47,7 @@ public class OpcUaConnectorPanel extends JTabbedPane {
 
 		if (baseConfigPanel==null) return;
 
+		// --- Remove all tabs --------
 		while (this.getTabCount()>0) {
 			this.removeTabAt(0);
 		}
