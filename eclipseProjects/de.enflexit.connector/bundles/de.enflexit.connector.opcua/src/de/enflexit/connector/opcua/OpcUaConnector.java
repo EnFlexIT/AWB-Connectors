@@ -23,6 +23,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
 import de.enflexit.common.properties.Properties;
@@ -47,7 +48,7 @@ public class OpcUaConnector extends AbstractConnector {
 	private static final String PROP_CONNECTION = "Connector.Settings";
 	private static final String PROP_SECURITY = "SecuritySettings";
 	private static final String PROP_AUTHENTIFICATION = "Authentification";
-	
+
 	
 	public static final String PROP_ENDPOINT_URL = PROP_CONNECTION + ".EndpointUrl";
 	
@@ -60,6 +61,24 @@ public class OpcUaConnector extends AbstractConnector {
 	
 	public static final String PROP_AUTH_CERTIFICATE = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".Certificate";
 	public static final String PROP_AUTH_PRIVATE_KEY  = PROP_CONNECTION + "." + PROP_AUTHENTIFICATION + ".PrivateKey";
+	
+	
+	static final String PROP_DATA = "Data";
+	
+	private static final String PROP_DATA_SUBSCRIPTION = ".a) SubscriptionSettings";
+	
+	public static final String PROP_DATA_SUBSCRIPTION_PUBLISHING_INTERVAL = PROP_DATA + PROP_DATA_SUBSCRIPTION + ".PublishingInterval [ms]";
+	public static final String PROP_DATA_SUBSCRIPTION_LIFE_TIME_COUNT = PROP_DATA + PROP_DATA_SUBSCRIPTION + ".LifetimeCount";
+	public static final String PROP_DATA_SUBSCRIPTION_MAX_KEEP_ALIVE_COUNT = PROP_DATA + PROP_DATA_SUBSCRIPTION + ".MaxKeepAliveCount";
+	public static final String PROP_DATA_SUBSCRIPTION_MAX_NOTIFICATIONS_PER_PUBLISH = PROP_DATA + PROP_DATA_SUBSCRIPTION + ".MaxNotificationsPerPublish";
+	public static final String PROP_DATA_SUBSCRIPTION_PRIORITY = PROP_DATA + PROP_DATA_SUBSCRIPTION + ".Priority";
+	
+	private static final String PROP_DATA_MONITORING = ".b) MonitoringSettings";
+	public static final String PROP_DATA_MONITORING_SAMPLING_INTERVAL = PROP_DATA + PROP_DATA_MONITORING + ".SamplingInterval [ms]";
+	public static final String PROP_DATA_MONITORING_QUEUE_SIZE = PROP_DATA + PROP_DATA_MONITORING + ".QueueSize";
+	public static final String PROP_DATA_MONITORING_DISCARD_OLDEST = PROP_DATA + PROP_DATA_MONITORING + ".DiscardOldest";
+	public static final String PROP_DATA_MONITORING_MODE = PROP_DATA + PROP_DATA_MONITORING + ".Mode";
+	
 	
 	
 	private OpcUaClient opcUaClient;
@@ -98,6 +117,21 @@ public class OpcUaConnector extends AbstractConnector {
 		initProps.setStringValue(PROP_SECURITY_MESSAGE_MODE, MessageSecurityMode.None.toString());
 		
 		initProps.setStringValue(PROP_AUTH_TYPE, OpcUaHelper.getIdentityProviderName(AnonymousProvider.class));
+		
+		// --- Subscription parameter ---------------------
+		initProps.setIntegerValue(PROP_DATA_SUBSCRIPTION_PUBLISHING_INTERVAL, 500);
+		initProps.setIntegerValue(PROP_DATA_SUBSCRIPTION_LIFE_TIME_COUNT, 60);
+		initProps.setIntegerValue(PROP_DATA_SUBSCRIPTION_MAX_KEEP_ALIVE_COUNT, 10);
+		initProps.setIntegerValue(PROP_DATA_SUBSCRIPTION_MAX_NOTIFICATIONS_PER_PUBLISH, 0);
+		initProps.setIntegerValue(PROP_DATA_SUBSCRIPTION_PRIORITY, 0);
+		
+		// --- Monitoring parameter -----------------------
+		initProps.setIntegerValue(PROP_DATA_MONITORING_SAMPLING_INTERVAL, 1000);
+		initProps.setIntegerValue(PROP_DATA_MONITORING_QUEUE_SIZE, 10);
+		initProps.setBooleanValue(PROP_DATA_MONITORING_DISCARD_OLDEST, true);
+		
+		initProps.setStringValue(PROP_DATA_MONITORING_MODE, MonitoringMode.Reporting.toString());
+		
 		
 		return initProps;
 	}

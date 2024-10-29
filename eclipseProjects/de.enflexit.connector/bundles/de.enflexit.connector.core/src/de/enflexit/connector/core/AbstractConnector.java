@@ -3,6 +3,7 @@ package de.enflexit.connector.core;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import de.enflexit.common.properties.Properties;
+import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
  * Abstract superclass for connectors to different communication protocols.
@@ -23,9 +24,22 @@ public abstract class AbstractConnector {
 		ManualStart;
 	}
 	
-	
 	private Properties connectorProperties;
+
+
+	/**
+	 * Gets the protocol name.
+	 * @return the protocol name
+	 */
+	public abstract String getProtocolName();
 	
+	
+	/**
+	 * This method should provide an initial set of properties for this type of connectors, containing all required keys, and useful default values if possible.
+	 * @return the initial properties
+	 */
+	public abstract Properties getInitialProperties();
+
 	/**
 	 * Returns the connector properties.
 	 * @return the connector properties
@@ -40,13 +54,21 @@ public abstract class AbstractConnector {
 	public void setConnectorProperties(Properties connectorProperties) {
 		this.connectorProperties = connectorProperties;
 	}
+	/**
+	 * Saves the current connector properties.
+	 */
+	public void saveSettings() {
+		ConnectorManager.getInstance().updateConnectorProperties(this.getConnectorName(), this.getConnectorProperties());
+	}
 	
 	/**
-	 * This method should provide an initial set of properties for this type of connectors, containing all required keys, and useful default values if possible.
-	 * @return the initial properties
+	 * Returns the connector name, located in the local connector {@link Properties}.
+	 * @return the connector name
 	 */
-	public abstract Properties getInitialProperties();
-
+	public String getConnectorName() {
+		if (this.getConnectorProperties()==null) return null;
+		return this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_NAME);
+	}
 	
 	/**
 	 * Establishes the connection.
@@ -64,13 +86,6 @@ public abstract class AbstractConnector {
 	 * Closes the connection.
 	 */
 	public abstract void disconnect();
-	
-	
-	/**
-	 * Gets the protocol name.
-	 * @return the protocol name
-	 */
-	public abstract String getProtocolName();
 	
 	
 	/**
@@ -109,7 +124,6 @@ public abstract class AbstractConnector {
 	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
 		return baseConfigPanel;
 	}
-	
 	/**
 	 * Overwrite to dispose the UI (if any).
 	 */

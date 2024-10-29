@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -30,6 +31,9 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 	private static final long serialVersionUID = 1334543496357971374L;
 
 	public static String IMAGE_FILE_NAME_CONNECTOR = "Connection.png";
+
+	private ImageIcon imageIconConnectorRed   = BundleHelper.getImageIcon("ConnectionRed.png");
+	private ImageIcon imageIconConnectorGreen = BundleHelper.getImageIcon("ConnectionGreen.png");
 	
 	private OpcUaConnector opcUaConnector;
 	
@@ -68,6 +72,8 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 		this.add(this.getJComboBoxStartOn());
 		this.addSeparator();	
 		
+		this.setImageIconConnector();
+		
 		this.pauseActionListener = true;
 		this.getJComboBoxStartOn().setSelectedItem(this.opcUaConnector.getStartOn());
 		this.pauseActionListener = false;
@@ -77,10 +83,16 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 		if (jButtonConnectorProperties==null) {
 			jButtonConnectorProperties = new JButton();
 			jButtonConnectorProperties.setToolTipText("Open Server Properties");
-			jButtonConnectorProperties.setIcon(BundleHelper.getImageIcon(IMAGE_FILE_NAME_CONNECTOR));
 			jButtonConnectorProperties.addActionListener(this);
 		}
 		return jButtonConnectorProperties;
+	}
+	private void setImageIconConnector() {
+		if (this.opcUaConnector.isConnected()==true) {
+			this.getJButtonConnectorProperties().setIcon(this.imageIconConnectorGreen);
+		} else {
+			this.getJButtonConnectorProperties().setIcon(this.imageIconConnectorRed);
+		}
 	}
 	
 	private JLabel getJLabelStartOn() {
@@ -140,14 +152,21 @@ public class OpcUaConnectorToolbar extends JToolBar implements ActionListener, O
 		}
 	}
 		
+	
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onConnection()
 	 */
 	@Override
-	public void onConnection() { }
-
+	public void onConnection() { 
+		this.setImageIconConnector();
+	}
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onDisconnection()
+	 */
 	@Override
-	public void onDisconnection() { }
+	public void onDisconnection() { 
+		this.setImageIconConnector();
+	}
 
 	@Override
 	public void onSessionActive() { }

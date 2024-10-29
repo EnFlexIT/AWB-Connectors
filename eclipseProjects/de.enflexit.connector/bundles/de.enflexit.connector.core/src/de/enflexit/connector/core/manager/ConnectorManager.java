@@ -25,6 +25,8 @@ public class ConnectorManager {
 	public static final String CONNECTOR_REMOVED = "Connector removed";
 	public static final String CONNECTOR_RENAMED = "Connector renamed";
 	
+	public static final String CONNECTOR_SETTINGS_SAVED = "Connector settings saved";
+	
 	private static final String DEFAULT_CONFIG_FILE_NAME = "ConnectorProperties.json";
 	
 	private HashMap<String, ConnectorService> availableConnectorServices;
@@ -282,6 +284,7 @@ public class ConnectorManager {
 		File configFile = this.getDefaultConfigFile();
 		if (configFile!=null) {
 			this.storeConfigurationToJSON(configFile);
+			this.notifyListeners(new PropertyChangeEvent(this, CONNECTOR_SETTINGS_SAVED, null, null));
 		}
 	}
 	

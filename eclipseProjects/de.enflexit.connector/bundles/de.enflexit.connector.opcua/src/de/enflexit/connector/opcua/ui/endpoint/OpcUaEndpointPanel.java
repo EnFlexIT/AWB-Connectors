@@ -258,7 +258,6 @@ public class OpcUaEndpointPanel extends JPanel implements ActionListener {
 		gbc_jButtonPrivateKey.gridy = 15;
 		this.add(getJButtonPrivateKey(), gbc_jButtonPrivateKey);
 		
-		
 		ButtonGroup bg = new ButtonGroup();
 		bg.add(this.getJRadioButtonAuthAnonymous());
 		bg.add(this.getJRadioButtonUsernamePassword());

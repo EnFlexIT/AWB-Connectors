@@ -14,6 +14,7 @@ import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
@@ -22,6 +23,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 
 import de.enflexit.common.properties.Properties;
+import de.enflexit.common.properties.PropertyValue;
 
 /**
  * The Class OpcUaDataAccess.
@@ -30,7 +32,7 @@ import de.enflexit.common.properties.Properties;
  */
 public class OpcUaDataAccess {
 
-	public static final String DATA_NODE_ID_KEY_PREFIX = "Data.NodeID.";
+	public static final String DATA_NODE_ID_KEY_PREFIX = OpcUaConnector.PROP_DATA + ".c) NodeIDs.";
 	
 	private boolean isDebug = false;
 
@@ -61,62 +63,25 @@ public class OpcUaDataAccess {
 	public List<String> getNodeIdListOrdered() {
 		if (nodeIdListOrdered==null) {
 			nodeIdListOrdered = new ArrayList<>();
-			this.updateNodeIdListOrdered();
+			
+			// --- Extract list position -------------------------------- 
+			TreeMap<Integer, String> sortingTreeMap = new TreeMap<>();
+			Properties props = this.opcUaConnector.getConnectorProperties();
+			for (String propKey : props.getIdentifierList()) {
+				if (propKey.startsWith(DATA_NODE_ID_KEY_PREFIX)==true) {
+					String nodeID = propKey.substring(DATA_NODE_ID_KEY_PREFIX.length());
+					Integer ordinalPos = props.getIntegerValue(propKey);
+					sortingTreeMap.put(ordinalPos, nodeID);
+				}
+			}
+			
+			// --- Refill ordered list according to property keys -------
+			for (Integer ordinal : sortingTreeMap.keySet()) {
+				String nodeID = sortingTreeMap.get(ordinal);
+				nodeIdListOrdered.add(nodeID);
+			}
 		}
 		return nodeIdListOrdered;
-	}
-	/**
-	 * Updates the ordered ID list .
-	 */
-	private void updateNodeIdListOrdered() {
-
-		// --- Clear ordered list first -----------------------------
-		this.getNodeIdListOrdered().clear();
-		
-		// --- Extract list position -------------------------------- 
-		TreeMap<Integer, String> sortingTreeMap = new TreeMap<>();
-		Properties props = this.opcUaConnector.getConnectorProperties();
-		for (String propKey : props.getIdentifierList()) {
-			if (propKey.startsWith(DATA_NODE_ID_KEY_PREFIX)==true) {
-				String ordinalPosString = propKey.substring(DATA_NODE_ID_KEY_PREFIX.length());
-				Integer ordinalPos = Integer.parseInt(ordinalPosString);
-				String mnodeID = props.getStringValue(propKey);
-				sortingTreeMap.put(ordinalPos, mnodeID);
-			}
-		}
-		
-		// --- Refill ordered list according to property keys -------
-		for (Integer ordinal : sortingTreeMap.keySet()) {
-			String nodeID = sortingTreeMap.get(ordinal);
-			this.getNodeIdListOrdered().add(nodeID);
-		}
-	}
-	
-	/**
-	 * Rearrange the node IDs in the connector properties.
-	 */
-	private void rearrangeNodeIDsInProperties() {
-		
-		List<String> dataNodeIdList = new ArrayList<>();
-		
-		// --- Find current ID keys -----------------------
-		Properties props = this.opcUaConnector.getConnectorProperties();
-		for (String propKey : props.getIdentifierList()) {
-			if (propKey.startsWith(DATA_NODE_ID_KEY_PREFIX)==true) {
-				dataNodeIdList.add(propKey);
-			}
-		}
-		
-		// --- Remove current ID keys ---------------------
-		dataNodeIdList.forEach(dataNodeIdKey -> props.remove(dataNodeIdKey));
-		
-		// --- Add the new ID keys and their value --------
-		for (int i = 0; i < this.getNodeIdListOrdered().size(); i++) {
-			String propKey = DATA_NODE_ID_KEY_PREFIX + (i+1);
-			String propValue = this.getNodeIdListOrdered().get(i);
-			props.setStringValue(propKey, propValue);
-		}  
-		
 	}
 	
 	/**
@@ -140,18 +105,18 @@ public class OpcUaDataAccess {
 		if (this.isDebug==true) System.out.println("Add UaNode " + uaNodeToAdd.getDisplayName());
 		
 		// --- Check if ID is already used ----------------
-		String parseableID = uaNodeToAdd.getNodeId().toParseableString();
-		if (this.getNodeIdListOrdered().contains(parseableID)==true) {
+		String parseableNodeID = uaNodeToAdd.getNodeId().toParseableString();
+		if (this.getNodeIdListOrdered().contains(parseableNodeID)==true) {
 			if (this.isDebug==true) {
-				System.err.println("[" + this.getClass().getSimpleName() + "] The Node with the ID '" + parseableID + "' is already monitored.");
+				System.err.println("[" + this.getClass().getSimpleName() + "] The Node with the ID '" + parseableNodeID + "' is already monitored.");
 			}
 			return;
 		}
 		
 		// --- Define this value in the properties --------
 		Integer newPos = this.getNodeIdListOrdered().size() + 1;
-		this.opcUaConnector.getConnectorProperties().setStringValue(DATA_NODE_ID_KEY_PREFIX + newPos, parseableID);
-		this.updateNodeIdListOrdered();
+		this.opcUaConnector.getConnectorProperties().setIntegerValue(DATA_NODE_ID_KEY_PREFIX + parseableNodeID, newPos);
+		this.getNodeIdListOrdered().add(parseableNodeID);
 		
 		// --- Dynamically add to monitored values --------
 		if (this.isStartedDataAcquisition==true) {
@@ -159,6 +124,9 @@ public class OpcUaDataAccess {
 		} else {
 			this.startDataAcquisition();
 		}
+		
+		// --- Save the connector settings ----------------
+		this.opcUaConnector.saveSettings();
 	}
 	
 	/**
@@ -176,12 +144,25 @@ public class OpcUaDataAccess {
 		}
 		
 		// --- Find & remove corresponding property -------
-		String nodeIDString = uaNodeToRemove.getNodeId().toParseableString();
-		this.getNodeIdListOrdered().remove(nodeIDString);
-		this.getValueHashMap().remove(nodeIDString);
+		String parseableNodeID = uaNodeToRemove.getNodeId().toParseableString();
+		this.getNodeIdListOrdered().remove(parseableNodeID);
+		this.getValueHashMap().remove(parseableNodeID);
 		
 		// --- Rearrange order of nodeID counter ----------
-		this.rearrangeNodeIDsInProperties();
+		this.opcUaConnector.getConnectorProperties().remove(DATA_NODE_ID_KEY_PREFIX + parseableNodeID);
+		
+		// --- Update position values ---------------------
+		Properties props = this.opcUaConnector.getConnectorProperties();
+		for (int i = 0; i < this.getNodeIdListOrdered().size(); i++) {
+			String propKey = DATA_NODE_ID_KEY_PREFIX + this.getNodeIdListOrdered().get(i);
+			PropertyValue propValue = props.getPropertyValue(propKey);
+			Integer newPos = i+1;
+			propValue.setValue(newPos);
+			propValue.setValueString(newPos.toString());
+		}  
+
+		// --- Save the connector settings ----------------
+		this.opcUaConnector.saveSettings();
 	}
 	
 	
@@ -215,10 +196,16 @@ public class OpcUaDataAccess {
 			// --- Exit since their is nothing to monitor -----------
 			// ------------------------------------------------------
 			if (readValueIdList.size()==0) return;
-			
+    		
 			
 			// --- Create UaSubsription and MonitoringParameters ----
         	UaSubscription subscription = this.getUaSubscription();
+
+        	Integer samplingInterval = this.opcUaConnector.getConnectorProperties().getIntegerValue(OpcUaConnector.PROP_DATA_MONITORING_SAMPLING_INTERVAL);
+        	Integer queueSize = this.opcUaConnector.getConnectorProperties().getIntegerValue(OpcUaConnector.PROP_DATA_MONITORING_QUEUE_SIZE);
+        	Boolean isDiscardOldest = this.opcUaConnector.getConnectorProperties().getBooleanValue(OpcUaConnector.PROP_DATA_MONITORING_DISCARD_OLDEST);
+        	
+        	MonitoringMode monitoringMode = MonitoringMode.valueOf(this.opcUaConnector.getConnectorProperties().getStringValue(OpcUaConnector.PROP_DATA_MONITORING_MODE));
         	
         	// --- Create list of MonitoredItemCreateRequest --------
         	UInteger clientHandle = null;
@@ -230,8 +217,8 @@ public class OpcUaDataAccess {
         		} else {
         			clientHandle = UInteger.valueOf(clientHandle.intValue() + 1);
         		}
-        		MonitoringParameters parameters = new MonitoringParameters(clientHandle, 1000.0, null, UInteger.valueOf(10), true);
-        		monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, MonitoringMode.Reporting, parameters));
+        		MonitoringParameters parameters = new MonitoringParameters(clientHandle, samplingInterval.doubleValue(), null, UInteger.valueOf(queueSize), isDiscardOldest);
+        		monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, monitoringMode, parameters));
         	}
         	
 			// --- Define local callback method ---------------------
@@ -261,16 +248,24 @@ public class OpcUaDataAccess {
 		
     	try {
     		
+    		// --- Get settings from properties ---------------------
+    		Integer samplingInterval = this.opcUaConnector.getConnectorProperties().getIntegerValue(OpcUaConnector.PROP_DATA_MONITORING_SAMPLING_INTERVAL);
+    		Integer queueSize = this.opcUaConnector.getConnectorProperties().getIntegerValue(OpcUaConnector.PROP_DATA_MONITORING_QUEUE_SIZE);
+    		Boolean isDiscardOldest = this.opcUaConnector.getConnectorProperties().getBooleanValue(OpcUaConnector.PROP_DATA_MONITORING_DISCARD_OLDEST);
+    		
+    		MonitoringMode monitoringMode = MonitoringMode.valueOf(this.opcUaConnector.getConnectorProperties().getStringValue(OpcUaConnector.PROP_DATA_MONITORING_MODE));
+    		
+    		
     		NodeId nodeID = uaNode.getNodeId();
     		ReadValueId readValueID = new ReadValueId(nodeID, AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
 
     		// --- Create UaSubsription and MonitoringParameters ----
 			UaSubscription subscription = this.getUaSubscription();
 			UInteger clientHandle = subscription.nextClientHandle();
-			MonitoringParameters parameters = new MonitoringParameters(clientHandle, 1000.0, null, UInteger.valueOf(10), true);
+			MonitoringParameters parameters = new MonitoringParameters(clientHandle, samplingInterval.doubleValue(), null, UInteger.valueOf(queueSize), isDiscardOldest);
 
 			List<MonitoredItemCreateRequest> monitoredItemList = new ArrayList<>();
-			monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, MonitoringMode.Reporting, parameters));
+			monitoredItemList.add(new MonitoredItemCreateRequest(readValueID, monitoringMode, parameters));
 			
 			// --- Define local callback method ---------------------
 			UaSubscription.ItemCreationCallback itemCreationCallback = (item, id) -> item.setValueConsumer(this::onSubscriptionValue);
@@ -322,8 +317,17 @@ public class OpcUaDataAccess {
 		
 		UaSubscription subscription = null;
 		if (this.subscriptionID==null) {
-			subscription = this.opcUaConnector.getOpcUaClient().getSubscriptionManager().createSubscription(1000.0).get();
+			// --- Get required configuration from settings -------------------
+			Properties props = this.opcUaConnector.getConnectorProperties();
+			Double publishingInterval = props.getIntegerValue(OpcUaConnector.PROP_DATA_SUBSCRIPTION_PUBLISHING_INTERVAL).doubleValue();
+			UInteger requestedLifetimeCount = UInteger.valueOf(props.getIntegerValue(OpcUaConnector.PROP_DATA_SUBSCRIPTION_LIFE_TIME_COUNT));
+	        UInteger requestedMaxKeepAliveCount = UInteger.valueOf(props.getIntegerValue(OpcUaConnector.PROP_DATA_SUBSCRIPTION_MAX_KEEP_ALIVE_COUNT));
+	        UInteger maxNotificationsPerPublish = UInteger.valueOf(props.getIntegerValue(OpcUaConnector.PROP_DATA_SUBSCRIPTION_MAX_NOTIFICATIONS_PER_PUBLISH));
+	        UByte priority = UByte.valueOf(props.getIntegerValue(OpcUaConnector.PROP_DATA_SUBSCRIPTION_PRIORITY));
+			// --- Create subscription ----------------------------------------
+			subscription = this.opcUaConnector.getOpcUaClient().getSubscriptionManager().createSubscription(publishingInterval, requestedLifetimeCount, requestedMaxKeepAliveCount, maxNotificationsPerPublish, true, priority).get();
 			this.subscriptionID = subscription.getSubscriptionId();
+			
 		} else {
 			for (UaSubscription uaSubscription : this.opcUaConnector.getOpcUaClient().getSubscriptionManager().getSubscriptions()) {
 				if (uaSubscription.getSubscriptionId().equals(this.subscriptionID)==true) {

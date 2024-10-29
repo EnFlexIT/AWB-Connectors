@@ -305,6 +305,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				if (newElementIndex>=0) {
 					this.getConnectorsList().setSelectedIndex(newElementIndex);
 				}
+				
 			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_REMOVED)) {
 				String removedConnectorName = (String) evt.getOldValue();
 				int elementIndex = this.getIndexOfListElement(removedConnectorName);
@@ -329,6 +330,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					this.getConnectorsList().setSelectedIndex(elementIndex);
 				}
 				this.skipPendingChangesQuestion = false;
+				
+			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_SETTINGS_SAVED)) {
+				this.setConfigChanged(false);
+				this.updateButtonState();
 			}
 		}
 	}
@@ -603,7 +608,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			newConnector.setConnectorProperties(connectorProperties);
 			ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
 		}
-		
 	}
 	
 	

@@ -193,7 +193,7 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 			tcm.getColumn(0).setResizable(false);
 			
 			// --- Column '#' - No. ---------------------------------
-			tcm.getColumn(1).setMaxWidth(35);
+			tcm.getColumn(1).setMaxWidth(40);
 			
 			// --- Column 'StatusCode -------------------------------
 			tcm.getColumn(8).setMaxWidth(100);
