@@ -45,6 +45,7 @@ public class OpcUaConnector extends AbstractConnector {
 
 	public static final String DATE_TIME_PATTERN_FORMAT = "dd.MM.yy HH:mm:ss.SSS";
 	
+	
 	private static final String PROP_CONNECTION = "Connector.Settings";
 	private static final String PROP_SECURITY = "SecuritySettings";
 	private static final String PROP_AUTHENTIFICATION = "Authentification";
@@ -129,9 +130,7 @@ public class OpcUaConnector extends AbstractConnector {
 		initProps.setIntegerValue(PROP_DATA_MONITORING_SAMPLING_INTERVAL, 1000);
 		initProps.setIntegerValue(PROP_DATA_MONITORING_QUEUE_SIZE, 10);
 		initProps.setBooleanValue(PROP_DATA_MONITORING_DISCARD_OLDEST, true);
-		
 		initProps.setStringValue(PROP_DATA_MONITORING_MODE, MonitoringMode.Reporting.toString());
-		
 		
 		return initProps;
 	}

@@ -9,6 +9,7 @@ import java.util.Vector;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.FolderTypeNode;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
@@ -67,14 +68,12 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 				public boolean isCellEditable(int row, int column) {
 
 					if (column==0) return false;
-					
 					String keyValue = (String) OpcUaAttributeWidget.this.getTableModel().getValueAt(row, 0);
 					if (keyValue.equalsIgnoreCase("Value")==true) {
 						return true;
 					}
 					return false;
 				}
-				
 			};
 		}
 		return tableModel;
@@ -85,7 +84,11 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 			jTableAttributes.setFont(new Font("Dialog", Font.PLAIN, 12));
 			jTableAttributes.setFillsViewportHeight(true);
 			jTableAttributes.getTableHeader().setReorderingAllowed(false);
-
+			
+			TableColumnModel tcm = jTableAttributes.getTableHeader().getColumnModel();
+			tcm.getColumn(1).setCellRenderer(new OpcUaDataValueTableCellRenderer());
+			tcm.getColumn(1).setCellEditor(new OpcUaDataValueTableCellEditor());
+			
 		}
 		return jTableAttributes;
 	}
@@ -200,7 +203,8 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 			} catch (UaException uaEx) {
 				uaEx.printStackTrace();
 			}
-			this.addRows(uaVarNode.getValue());
+			// --- Add rows for DataValue (within uaVarNode!!!) -----
+			this.addRows(uaVarNode);
 			
 			this.addRow("DataType", uaVarNode.getDataType());
 			
@@ -221,8 +225,10 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 	 * Adds table rows for the specified DataValue.
 	 * @param dataValue the data value
 	 */
-	private void addRows(DataValue dataValue) {
+	private void addRows(UaVariableNode uaVarNode) {
 
+		DataValue dataValue = uaVarNode.getValue();
+		
 		this.addRow("SourceTimeStamp", dataValue.getSourceTime());
 		this.addRow("SourcePicoseconds", dataValue.getSourcePicoseconds());
 		
@@ -230,18 +236,7 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 		this.addRow("ServerPicoseconds", dataValue.getServerPicoseconds());
 		this.addRow("StatusCode", dataValue.getStatusCode());
 		
-		// --- Add the value --------------------
-		Object value = dataValue.getValue().getValue();
-		if (value==null) {
-			this.addRow("Value", "Null");
-		} else if (value.getClass().isArray()==true) {
-			Object[] valueArr = (Object[]) value;
-			for (int i = 0; i < valueArr.length; i++) {
-				this.addRow("Value [" + i + "]", valueArr[i]);
-			}
-		} else {
-			this.addRow("Value", value);
-		}
+		this.addRow("Value", uaVarNode);
 	}
 	
 	
@@ -249,12 +244,18 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onConnection()
 	 */
 	@Override
-	public void onConnection() { }
+	public void onConnection() { 
+		this.getJTableAttributes().setEnabled(true);
+		this.clearTable();
+	}
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onDisconnection()
 	 */
 	@Override
-	public void onDisconnection() { }
+	public void onDisconnection() {
+		this.getJTableAttributes().getCellEditor().stopCellEditing();
+		this.getJTableAttributes().setEnabled(false);
+	}
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.opcua.OpcUaConnectorListener#onSessionActive()
 	 */

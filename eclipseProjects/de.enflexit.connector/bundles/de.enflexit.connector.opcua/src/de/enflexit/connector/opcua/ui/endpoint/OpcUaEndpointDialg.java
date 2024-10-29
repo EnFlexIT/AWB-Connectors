@@ -69,7 +69,7 @@ public class OpcUaEndpointDialg extends JDialog implements ActionListener {
 	 */
 	private void initialize() {
 		
-		this.setTitle( "OPC-UA Server Properties" );
+		this.setTitle( "OPC-UA Connection Properties" );
 		this.setIconImage(BundleHelper.getImage(OpcUaConnectorToolbar.IMAGE_FILE_NAME_CONNECTOR));
 		this.setModal(true);
 		
@@ -259,13 +259,18 @@ public class OpcUaEndpointDialg extends JDialog implements ActionListener {
 		
 		if (ae.getSource()==this.getJButtonApply()) {
 			// --- Apply edited connector settings ------------------
+			
+			// --- Try to find configuration errors -----------------
 			String errMsg = this.getOpcUaEndpointPanel().getConfigurationError();
+			if (errMsg==null) {
+				errMsg = this.getOpcUaSubscriptionPanel().getConfigurationError();
+			}
 			if (errMsg!=null) {
 				JOptionPane.showMessageDialog(this, errMsg, "Configuration Error", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			
-			if (this.getOpcUaEndpointPanel().setPanelToProperties()==true) {
+			if (this.getOpcUaEndpointPanel().setPanelToProperties()==true && this.getOpcUaSubscriptionPanel().setPanelToProperties()==true) {
 				this.setVisible(false);
 				this.dispose();
 			}

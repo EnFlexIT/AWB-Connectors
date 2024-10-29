@@ -14,6 +14,7 @@ import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
@@ -21,6 +22,7 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.properties.PropertyValue;
@@ -234,12 +236,28 @@ public class OpcUaDataAccess {
 	            }
 	        }
 	        this.isStartedDataAcquisition = true;
+	        //this.testWriteValue();
 	        
 		} catch (InterruptedException | ExecutionException ex) {
 			ex.printStackTrace();
 		}
 	}
 
+	/**
+	 * Test write value.
+	 */
+	@SuppressWarnings("unused")
+	private void testWriteValue() {
+		
+		NodeId nodeID = NodeId.parse("ns=2;i=0"); 
+
+		Variant v = new Variant(0);
+		DataValue newDataValue = new DataValue(v);
+		
+		this.opcUaConnector.getOpcUaClient().writeValue(nodeID, newDataValue);
+	}
+	
+	
 	/**
 	 * Adds the specified UaNode to the running monitoring.
 	 * @param uaNode the {@link UaNode} to add

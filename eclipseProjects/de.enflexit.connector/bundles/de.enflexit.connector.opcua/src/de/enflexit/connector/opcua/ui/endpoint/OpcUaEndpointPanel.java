@@ -371,14 +371,14 @@ public class OpcUaEndpointPanel extends JPanel implements ActionListener {
 	}
 	private JLabel getJLabelUsername() {
 		if (jLabelUsername == null) {
-			jLabelUsername = new JLabel("Username");
+			jLabelUsername = new JLabel("Username:");
 			jLabelUsername.setFont(new Font("Dialog", Font.PLAIN, 12));
 		}
 		return jLabelUsername;
 	}
 	private JLabel getJLabelPassword() {
 		if (jLabelPassword == null) {
-			jLabelPassword = new JLabel("Password");
+			jLabelPassword = new JLabel("Password:");
 			jLabelPassword.setFont(new Font("Dialog", Font.PLAIN, 12));
 		}
 		return jLabelPassword;
@@ -401,14 +401,14 @@ public class OpcUaEndpointPanel extends JPanel implements ActionListener {
 	}
 	private JLabel getJLabelCertificate() {
 		if (jLabelCertificate == null) {
-			jLabelCertificate = new JLabel("Certificate");
+			jLabelCertificate = new JLabel("Certificate:");
 			jLabelCertificate.setFont(new Font("Dialog", Font.PLAIN, 12));
 		}
 		return jLabelCertificate;
 	}
 	private JLabel getJLabelPrivateKey() {
 		if (jLabelPrivateKey == null) {
-			jLabelPrivateKey = new JLabel("Private Key");
+			jLabelPrivateKey = new JLabel("Private Key:");
 			jLabelPrivateKey.setFont(new Font("Dialog", Font.PLAIN, 12));
 		}
 		return jLabelPrivateKey;
