@@ -22,7 +22,6 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
-import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.common.properties.PropertyValue;
@@ -256,7 +255,6 @@ public class OpcUaDataAccess {
 		
 		this.opcUaConnector.getOpcUaClient().writeValue(nodeID, newDataValue);
 	}
-	
 	
 	/**
 	 * Adds the specified UaNode to the running monitoring.
