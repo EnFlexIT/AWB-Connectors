@@ -20,7 +20,10 @@ import org.eclipse.milo.opcua.sdk.client.nodes.UaNode;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
@@ -28,6 +31,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.opcua.OpcUaConnectorListener.Event;
 import de.enflexit.connector.opcua.ui.OpcUaAttributeWidget;
 import de.enflexit.connector.opcua.ui.OpcUaBrowserTreeModel;
@@ -44,7 +48,7 @@ import de.enflexit.connector.opcua.ui.OpcUaDataView;
 public class OpcUaConnector extends AbstractConnector {
 
 	public static final String DATE_TIME_PATTERN_FORMAT = "dd.MM.yy HH:mm:ss.SSS";
-	
+
 	
 	private static final String PROP_CONNECTION = "Connector.Settings";
 	private static final String PROP_SECURITY = "SecuritySettings";
@@ -81,6 +85,7 @@ public class OpcUaConnector extends AbstractConnector {
 	public static final String PROP_DATA_MONITORING_MODE = PROP_DATA + PROP_DATA_MONITORING + ".Mode";
 	
 	
+	private boolean isDoTestWritings = false;
 	
 	private OpcUaClient opcUaClient;
 	private boolean opcUaClientActive;
@@ -253,6 +258,7 @@ public class OpcUaConnector extends AbstractConnector {
 				// --- Get required information -------------------------------
 				String endpointURL  = this.getConnectorProperties().getStringValue(PROP_ENDPOINT_URL);
 				EndpointDescription endpointDescription = this.getEndPointDescription(endpointURL);
+				if (endpointDescription==null) return false;
 				
 				// --- Build client configuration -----------------------------
 				OpcUaClientConfig clientConfig = OpcUaClientConfig.builder()
@@ -288,6 +294,9 @@ public class OpcUaConnector extends AbstractConnector {
 				
 				// --- Start the data acquisition -----------------------------
 				this.getOpcUaDataAccess().startDataAcquisition();
+				
+				// --- Do test writings ---------------------------------------
+				this.doTestWritings();
 						
 			} catch (UaException | InterruptedException | ExecutionException uaEx) {
 				this.opcUaClient = null;
@@ -295,9 +304,36 @@ public class OpcUaConnector extends AbstractConnector {
 				uaEx.printStackTrace();
 			}
 		}
-		
-		
 		return this.opcUaClientActive;
+	}
+	
+	/**
+	 * Do test writings.
+	 */
+	private void doTestWritings() {
+		
+		if (this.isDoTestWritings==false) return;
+		
+		// --- Example code 1 -------------------
+		String nodeIDString2D = "ns=2;s=CTT/Static/All Profiles/Array2d/DoubleArray2d";
+		NodeId nodeId2D = NodeId.parse(nodeIDString2D);
+		
+		double[][] dblArray = new double[4][4];
+		dblArray[0][0] = 1;
+		dblArray[0][1] = 2;
+		dblArray[0][2] = 3;
+		dblArray[0][3] = 4;
+		dblArray[1][0] = 5;
+		
+		DataValue newDataValue2D = new DataValue(new Variant(dblArray));
+		this.opcUaClient.writeValue(nodeId2D, newDataValue2D);
+		
+		
+		// --- Example code 2 -------------------		
+		String nodeIDString = "ns=2;s=CTT/Static/All Profiles/Scalar/Double";
+		NodeId nodeId = NodeId.parse(nodeIDString);
+		DataValue newDataValue = new DataValue(new Variant(42.5));
+		this.opcUaClient.writeValue(nodeId, newDataValue);
 	}
 	
 	/**
@@ -322,6 +358,8 @@ public class OpcUaConnector extends AbstractConnector {
 			
 			// --- Call discover for end point URL --------------------------------------
 			List<EndpointDescription> epDescList = OpcUaHelper.discoverEndPointDescription(endpointURL);
+			if (epDescList==null || epDescList.size()==0) return null;
+			
 			// --- Filter according to SecurityPolicy and MessageSecurityMode -----------
 			epDec = epDescList.stream()
 			.filter(e -> e.getSecurityPolicyUri().equals(securityPolicy.getUri()))
@@ -386,18 +424,40 @@ public class OpcUaConnector extends AbstractConnector {
 	@Override
 	public void disconnect() {
 		if (this.opcUaClient!=null) {
-			// --- Stop data acquisition --------
+			// --- Stop data acquisition ------------------
 			this.getOpcUaDataAccess().stopDataAcquisition();
 			this.opcUaDataAccess = null;
-			// --- Close connection -------------
+			// --- Close connection -----------------------
 			this.opcUaClient.disconnect();
-			Stack.releaseSharedResources();
 			this.opcUaClient = null;
 			this.opcUaClientActive = false;
 			this.informListener(Event.Disconnect);
-			// --- Clear browser tree -----------
+			// --- Clear browser tree ---------------------
 			this.getOpcUaBrowserTreeModel().clearTreeModel();
+			// --- Release Milos shared resources ---------
+			this.callMiloReleaseSharedResources();
 		}
+	}
+	/**
+	 * Calls Milo to release all shared resources, if no other {@link OpcUaClient} is active.
+	 */
+	private void callMiloReleaseSharedResources() {
+		
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				ArrayList<AbstractConnector> connectorList = ConnectorManager.getInstance().getConnectorsByProtocol(OpcUaConnector.this.getProtocolName());
+				int connectedCount = 0;
+				for (AbstractConnector connector : connectorList) {
+					if (connector.isConnected()) {
+						connectedCount++;
+					}
+				}
+				if (connectedCount<=0) {
+					Stack.releaseSharedResources();
+				}
+			}
+		}, "Thread-to-release-Milo-shared-resources").start();
 	}
 	
 	/**

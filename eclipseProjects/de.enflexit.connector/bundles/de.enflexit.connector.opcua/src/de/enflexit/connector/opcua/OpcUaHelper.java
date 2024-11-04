@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 
 /**
@@ -54,6 +56,28 @@ public class OpcUaHelper {
 	public static String getIdentityProviderName(Class<? extends IdentityProvider> identityProviderClass) {
 		if (identityProviderClass==null) return null;
 		return identityProviderClass.getSimpleName().replace("Provider", "");
+	}
+
+	
+	/**
+	 * Returns the data type of the specified DataValue.
+	 *
+	 * @param dataValue the data value
+	 * @return the data type
+	 */
+	public static Class<?> getDataType(DataValue dataValue) {
+		if (dataValue==null || dataValue.getValue()==null ) return null;
+		return getDataType(dataValue.getValue());
+	}
+	/**
+	 * Returns the data type of the specified Variant.
+	 *
+	 * @param variant the variant
+	 * @return the data type
+	 */
+	public static Class<?> getDataType(Variant variant) {
+		if (variant==null || variant.getValue()==null) return null;
+		return variant.getValue().getClass();
 	}
 	
 }

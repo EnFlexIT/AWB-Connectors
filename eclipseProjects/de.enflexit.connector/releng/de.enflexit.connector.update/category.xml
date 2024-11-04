@@ -12,6 +12,12 @@
    <feature id="de.enflexit.connector.mqtt.feature.source">
       <category name="de.enflexit.connector.implementations"/>
    </feature>
+    <feature id="de.enflexit.connector.opcua.feature" version="0.0.0" os="linux,macosx,win32" arch="x86_64">
+      <category name="de.enflexit.connector.implementations"/>
+   </feature>
+   <feature id="de.enflexit.connector.opcua.feature.source">
+      <category name="de.enflexit.connector.implementations"/>
+   </feature>
    
    <category-def name="de.enflexit.connector" label="AWB Connector Base"/>
    

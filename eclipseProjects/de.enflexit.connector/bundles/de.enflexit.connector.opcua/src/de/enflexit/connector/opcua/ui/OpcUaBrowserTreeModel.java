@@ -160,13 +160,16 @@ public class OpcUaBrowserTreeModel extends DefaultTreeModel {
             // --- Check each child ---------------------------------
             for (ReferenceDescription rd : references) {
                 
+            	OpcUaClient opcUaClient = this.getOpcUaClient();
+            	if (opcUaClient==null) return;
+            	
                 ExpandedNodeId exNodeID = rd.getNodeId();
                 NodeId nodeId = null;
                 UaNode uaNode = null;
                 if (exNodeID.isLocal()==true) {
 					try {
 						nodeId = exNodeID.toNodeIdOrThrow(nsTable);
-						if (nodeId!=null) uaNode = this.getOpcUaClient().getAddressSpace().getNode(nodeId);
+						if (nodeId!=null) uaNode = opcUaClient.getAddressSpace().getNode(nodeId);
 						
 					} catch (Exception e) {
 						e.printStackTrace();

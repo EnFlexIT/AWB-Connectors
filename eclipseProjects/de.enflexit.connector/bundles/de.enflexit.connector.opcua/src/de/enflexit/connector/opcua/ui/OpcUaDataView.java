@@ -42,7 +42,7 @@ import de.enflexit.connector.opcua.OpcUaDataAccessSubscriptionListener;
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener, OpcUaDataAccessSubscriptionListener {
+public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener, OpcUaDataAccessSubscriptionListener, OpcUaDataValueTableCellEditorListener {
 
 	private static final long serialVersionUID = -9117876381830606802L;
 
@@ -195,6 +195,10 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 			// --- Column '#' - No. ---------------------------------
 			tcm.getColumn(1).setMaxWidth(40);
 			
+			// --- DataValue cell renderer & editor ----------------- 
+			tcm.getColumn(this.colNameIndexHashMap.get(HEADER_VALUE)).setCellRenderer(new OpcUaDataValueTableCellRenderer());
+			tcm.getColumn(this.colNameIndexHashMap.get(HEADER_VALUE)).setCellEditor(new OpcUaDataValueTableCellEditor(this));
+
 			// --- Column 'StatusCode -------------------------------
 			tcm.getColumn(8).setMaxWidth(100);
 			
@@ -202,6 +206,17 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		return jTableDataView;
 	}
 
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.ui.OpcUaDataValueTableCellEditorListener#onOpcUaDataValueChange(int, int, org.eclipse.milo.opcua.stack.core.types.builtin.DataValue, org.eclipse.milo.opcua.stack.core.types.builtin.DataValue)
+	 */
+	@Override
+	public void onOpcUaDataValueChange(int row, int col, DataValue oldDataValue, DataValue newDataValue) {
+		
+		System.out.println("[" + this.getClass().getSimpleName() + "] Value changed in row " + row + ",  column " + col); 
+		
+	}
+	
+	
 	public JPopupMenu getJPopupMenuTable() {
 		if (jPopupMenuTable==null) {
 			jPopupMenuTable = new JPopupMenu();
@@ -381,27 +396,7 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 		if (dataRow==null || dataValue==null) return;
 		
 		// --- Value ------------------
-		Object value = null;
-		if (dataValue!=null) {
-			// --- From DataValue -----
-			value = dataValue.getValue().getValue();
-			if (value==null) {
-				value = "Null";
-			} else if (value.getClass().isArray()==true) {
-				Object[] valueArr = (Object[]) value;
-				String valueString = "";
-				
-				for (int i = 0; i < valueArr.length; i++) {
-					if (valueString.isBlank()==true) {
-						valueString += valueArr[i].toString();
-					} else {
-						valueString += ", " + valueArr[i].toString();
-					}
-				}
-				value = valueString;
-			} 
-		}
-		dataRow.set(this.getIndexOfColumnName(HEADER_VALUE), value);
+		dataRow.set(this.getIndexOfColumnName(HEADER_VALUE), dataValue);
 		
 		// --- SourceTimestamp, ServerTimestamp & StatusCode --------
 		String sourceTime = "";
@@ -503,5 +498,6 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 	 */
 	@Override
 	public void onBrowserUaNodeSelection() { }
+
 	
 }

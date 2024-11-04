@@ -31,7 +31,7 @@ import de.enflexit.connector.opcua.OpcUaConnectorListener;
  *
  * @author Christian Derksen - SOFTEC - ICB - University of Duisburg-Essen
  */
-public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorListener {
+public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorListener, OpcUaDataValueTableCellEditorListener {
 
 	private static final long serialVersionUID = -4837654776526023691L;
 
@@ -87,10 +87,19 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 			
 			TableColumnModel tcm = jTableAttributes.getTableHeader().getColumnModel();
 			tcm.getColumn(1).setCellRenderer(new OpcUaDataValueTableCellRenderer());
-			tcm.getColumn(1).setCellEditor(new OpcUaDataValueTableCellEditor());
+			tcm.getColumn(1).setCellEditor(new OpcUaDataValueTableCellEditor(this));
 			
 		}
 		return jTableAttributes;
+	}
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.opcua.ui.OpcUaDataValueTableCellEditorListener#onOpcUaDataValueChange(int, int, org.eclipse.milo.opcua.stack.core.types.builtin.DataValue, org.eclipse.milo.opcua.stack.core.types.builtin.DataValue)
+	 */
+	@Override
+	public void onOpcUaDataValueChange(int row, int col, DataValue oldDataValue, DataValue newDataValue) {
+		
+		System.out.println("[" + this.getClass().getSimpleName() + "] Value changed in row " + row + ",  column " + col); 
+		
 	}
 	
 	private void clearTable() {
@@ -253,7 +262,9 @@ public class OpcUaAttributeWidget extends JScrollPane implements OpcUaConnectorL
 	 */
 	@Override
 	public void onDisconnection() {
-		this.getJTableAttributes().getCellEditor().stopCellEditing();
+		if (this.getJTableAttributes().getCellEditor()!=null) {
+			this.getJTableAttributes().getCellEditor().stopCellEditing();
+		}
 		this.getJTableAttributes().setEnabled(false);
 	}
 	/* (non-Javadoc)
