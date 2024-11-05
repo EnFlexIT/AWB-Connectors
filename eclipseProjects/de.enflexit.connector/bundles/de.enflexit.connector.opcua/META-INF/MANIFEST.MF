@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OPC/UA - Client Bundle
 Bundle-SymbolicName: de.enflexit.connector.opcua
 Bundle-Vendor: EnFlex.IT
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.6.13.qualifier
 Export-Package: org.eclipse.milo.opcua.sdk.client;version="0.6.13",
  org.eclipse.milo.opcua.sdk.client.api;version="0.6.13",
  org.eclipse.milo.opcua.sdk.client.api.config;version="0.6.13",

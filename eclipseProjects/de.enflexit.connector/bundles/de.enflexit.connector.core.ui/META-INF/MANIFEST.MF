@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: AWB Connector - UI
 Bundle-SymbolicName: de.enflexit.connector.core.ui;singleton:=true
 Bundle-Vendor: EnFlex.IT
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.1.0.qualifier
 Require-Bundle: org.agentgui.core,
  de.enflexit.connector.core,
  de.enflexit.common,

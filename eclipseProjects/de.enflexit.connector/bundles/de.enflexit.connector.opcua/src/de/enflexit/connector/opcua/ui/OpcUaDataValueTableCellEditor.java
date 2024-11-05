@@ -200,12 +200,12 @@ public class OpcUaDataValueTableCellEditor extends AbstractCellEditor implements
 		Variant newValueVariant = new Variant(newValueString);
 		if (Number.class.isAssignableFrom(this.currValueType)) {
 			// --- For numbers, do not allow Null values ----------------------
-			if (newValueString==null || newValueString.isBlank()) {
-				newValueString = "0";
-			}
+			if (newValueString==null || newValueString.isBlank()) newValueString = "0";
 			
 			try {
-				if (this.currValueType.equals(short.class)==true || this.currValueType.equals(Short.class)==true) {
+				if (this.currValueType.equals(byte.class)==true || this.currValueType.equals(Byte.class)==true) {
+					newValueVariant = new Variant(Byte.valueOf(newValueString));
+				} else if (this.currValueType.equals(short.class)==true || this.currValueType.equals(Short.class)==true) {
 					newValueVariant = new Variant(Short.valueOf(newValueString));
 				} else if (this.currValueType.equals(int.class)==true || this.currValueType.equals(Integer.class)==true) {
 					newValueVariant = new Variant(Integer.parseInt(newValueString));

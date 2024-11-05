@@ -212,8 +212,17 @@ public class OpcUaDataView extends JScrollPane implements OpcUaConnectorListener
 	@Override
 	public void onOpcUaDataValueChange(int row, int col, DataValue oldDataValue, DataValue newDataValue) {
 		
-		System.out.println("[" + this.getClass().getSimpleName() + "] Value changed in row " + row + ",  column " + col); 
-		
+		// --- Update value on server ---------------------
+		UaNode uaNode = (UaNode) this.getJTableDataView().getValueAt(row, 0);
+		NodeId nodeID = uaNode.getNodeId();
+		if (this.opcUaConnector.isConnected()==true) {
+			this.opcUaConnector.getOpcUaClient().writeValue(nodeID, newDataValue);
+			Vector<Object> dataRow = this.getDataRowHashMap().get(nodeID);
+			this.updateDataRow(dataRow, newDataValue);
+			
+		} else {
+			System.out.println("[" + this.getClass().getSimpleName() + "] Not connected to any OPC/UA server! - Can't change value any !"); 
+		}
 	}
 	
 	
