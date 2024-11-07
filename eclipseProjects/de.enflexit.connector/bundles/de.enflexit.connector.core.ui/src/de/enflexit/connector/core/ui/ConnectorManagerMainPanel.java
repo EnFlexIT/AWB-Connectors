@@ -557,10 +557,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			String connectorName = this.askForConnectorName();
 			if (connectorName!=null) {
 				this.createConnector(connectorName);
-			} else {
-				System.out.println("User abort");
-			}
-			
+			} 
 		}
 		
 		/**
