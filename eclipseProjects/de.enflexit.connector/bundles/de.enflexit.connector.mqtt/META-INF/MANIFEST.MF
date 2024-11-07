@@ -123,7 +123,6 @@ Export-Package: com.hivemq.client.annotations,
  com.hivemq.client.util,
  de.enflexit.connector.mqtt
 Require-Bundle: de.enflexit.common,
- org.agentgui.core,
  de.enflexit.connector.core
 Automatic-Module-Name: de.enflexit.connector.mqtt
 Bundle-ActivationPolicy: lazy

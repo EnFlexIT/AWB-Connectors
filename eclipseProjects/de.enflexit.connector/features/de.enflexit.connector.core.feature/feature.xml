@@ -3,6 +3,7 @@
       id="de.enflexit.connector.core.feature"
       label="AWB Connector Feature"
       version="1.1.0.qualifier"
+      provider-name="EnFlex.IT"
       plugin="de.enflexit.connector.core">
 
    <description url="http://www.example.com/description">
