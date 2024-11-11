@@ -21,7 +21,7 @@ public class MqttRemoteControlActivator implements BundleActivator {
 
 		// --- Only activate the remote control when the current application is hosting the main container of a JADE platform.
 		if (Application.isRemoteContainerApplication()==false) { 
-			if (this.getRemoteControl().doConnectorCheck()==true) {
+			if (this.getRemoteControl().isConnectorAvailable()==true) {
 				this.getRemoteControl().subscribeForCommands();
 			} else {
 				System.out.println("[" + this.getClass().getSimpleName() + "] MQTT connector not available!");

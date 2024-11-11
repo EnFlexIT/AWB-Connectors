@@ -1,7 +1,11 @@
 package de.enflexit.connector.mqtt.awbRemote;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -17,6 +21,7 @@ import de.enflexit.awbRemote.jsonCommand.AwbNotification;
 import de.enflexit.awbRemote.jsonCommand.Parameter;
 import de.enflexit.awbRemote.jsonCommand.Parameter.ParamName;
 import de.enflexit.common.properties.Properties;
+import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.manager.ConnectorManager;
 import de.enflexit.connector.mqtt.MQTTConnector;
 import de.enflexit.connector.mqtt.MQTTConnectorConfiguration;
@@ -27,16 +32,19 @@ import de.enflexit.connector.mqtt.MQTTSubscriber;
  * This implementation of {@link AwbRemoteControl} allows to control an AWB instance via MQTT. 
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber {
+public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscriber, PropertyChangeListener {
 	
+	public static final String PROPERTY_KEY_CONNECTOR_NAME = "mqtt.remoteControl.connectorName";
 	public static final String PROPERTY_KEY_BROKER_HOST = "mqtt.remoteControl.brokerHost";
 	public static final String PROPERTY_KEY_COMMAND_TOPIC = "mqtt.remoteControl.commandTopic";
 	public static final String PROPERTY_KEY_STATUS_TOPIC = "mqtt.remoteControl.statusTopic";
 	public static final String PROPERTY_KEY_CONTROL_STEPS = "mqtt.remoteControl.controlSteps";
+	public static final String PROPERTY_KEY_DATE_TIME_FORMAT = "mqtt.remoteControl.dateTimeFormat";
 	
+	private static final String DEFAULT_DATE_TIME_FORMAT = "dd.MM.yyyy HH:mm";
 	private static final String DEFAULT_TOPIC_REMOTE_COMMANDS = "awbControl";
 	private static final String DEFAULT_TOPIC_STATUS_UPDATES = "awbStatus";
-	private static final String DEFAULT_BROKER_HOST = "localhost";
+	
 	private static final boolean DEFAULT_CONTROL_STEPS = true;
 
 	private MQTTConnector mqttConnector;
@@ -49,16 +57,20 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	
 	private String statusTopic;
 	private String commandTopic;
-	private String brokerHost;
 	private Boolean controlSteps;
+	
+	private Properties projectProperties;
+	
+	private boolean connectorCheckFailed;
 	
 	/**
 	 * Instantiates a new AWB remote control MQTT.
 	 */
 	public AwbRemoteControlMQTT() {
 		Application.addApplicationListener(this);
+		ConnectorManager.getInstance().addListener(this);
 		if (this.isControlSteps()==true) {
-			this.getStepController();	// Initialize the step controller
+			this.getStepController().enable();	// Initialize the step controller
 		}
 	}
 
@@ -66,16 +78,15 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 * Checks if the MQTT connector is configured and available
 	 * @return true, if successful
 	 */
-	public boolean doConnectorCheck() {
+	public boolean isConnectorAvailable() {
 		if (this.getMqttConnector()==null) {
-			System.err.println("[" + this.getClass().getSimpleName() + "] No configured connector found for protocol " + MQTTConnectorConfiguration.PROTOCOL_NAME + " and host " + this.brokerHost);
+			this.connectorCheckFailed = true;
+			System.err.println("[" + this.getClass().getSimpleName() + "] No MQTT connector available!");
 			return false;
-		} else if (this.getMqttConnector().isConnected()==false) {
-			System.err.println("[" + this.getClass().getSimpleName() + "] A connector for protocol " + MQTTConnectorConfiguration.PROTOCOL_NAME + " and host " + this.brokerHost + " was found, but is not connected. Please check your settings!");
-			return false;
+		} else {
+			this.connectorCheckFailed = false;
+			return true;
 		}
-		
-		return true;
 	}
 	
 	/**
@@ -91,9 +102,67 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	 */
 	private MQTTConnector getMqttConnector() {
 		if (mqttConnector==null) {
-			mqttConnector = (MQTTConnector) ConnectorManager.getInstance().getConnectorByHostAndProtocol(this.getBrokerHost(), MQTTConnectorConfiguration.PROTOCOL_NAME);
+			
+			// --- If a specific connector is configured in the project properties, use that one --
+			AbstractConnector connectorFromProperties = this.getConnectorFromProjectProperties(Application.getProjectFocused());
+			if (connectorFromProperties!=null && connectorFromProperties instanceof MQTTConnector) {
+				mqttConnector = (MQTTConnector) connectorFromProperties;
+				
+				
+			// --- If not, use the first configured MQTT connector by default ---------------------
+			} else {
+				ArrayList<AbstractConnector> mqttConnectors = ConnectorManager.getInstance().getConnectorsByProtocol(MQTTConnectorConfiguration.PROTOCOL_NAME);
+				if (mqttConnectors.size()>0 && mqttConnectors.get(0) instanceof MQTTConnector) {
+					mqttConnector = (MQTTConnector) mqttConnectors.get(0);
+				}
+			}
+			
 		}
+		
+		if (mqttConnector != null && mqttConnector.isConnected()==false) {
+			mqttConnector.connect();
+		}
+		
 		return mqttConnector;
+	}
+	
+	/**
+	 * Gets the connector that is configured in the properties of the provided project. May return null if nothing is configured there.
+	 * @param project the project
+	 * @return the connector, null if not configured in the project properties.
+	 */
+	private MQTTConnector getConnectorFromProjectProperties(Project project) {
+		if (project==null) return null;
+		return this.getConnectorFromProperties(project.getProperties());
+	}
+	
+	/**
+	 * Gets the MQTT connector that is configured in the provided properties. May return null if nothing is configured there.
+	 * @param properties the properties
+	 * @return the connector, null if not configured in the properties.
+	 */
+	private MQTTConnector getConnectorFromProperties(Properties properties) {
+		
+		// --- If a connector name is configured in the properties, use the corresponding connector
+		String connectorNameFromProperties = properties.getStringValue(PROPERTY_KEY_CONNECTOR_NAME);
+		if (connectorNameFromProperties!=null && connectorNameFromProperties.isEmpty()==false) {
+			AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorNameFromProperties);
+			if (connector!=null && connector instanceof MQTTConnector) {
+				return (MQTTConnector) connector;
+			}
+		}
+		
+		// --- If a broker host is configured in the properties, use an MQTT connector from that host
+		String brokerHostFromProperties = properties.getStringValue(PROPERTY_KEY_BROKER_HOST);
+		if (brokerHostFromProperties!=null && brokerHostFromProperties.isEmpty()==false) {
+			AbstractConnector connector = ConnectorManager.getInstance().getConnectorByHostAndProtocol(brokerHostFromProperties, MQTTConnectorConfiguration.PROTOCOL_NAME);
+			if (connector!=null && connector instanceof MQTTConnector) {
+				return (MQTTConnector) connector;
+			}
+		}
+		
+		// --- Nothing configured -------------------------
+		return null;
 	}
 	
 	/**
@@ -103,7 +172,8 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	public void sendStatusUpdate(AwbNotification notification) {
 		if (this.getMqttConnector()!=null && this.getMqttConnector().isConnected()==true) {
 			String messageContent = this.getGson().toJson(notification);
-			this.getMqttConnector().publish(this.getStatusTopic(), messageContent);
+			boolean retain = (notification.getAwbState()==AwbNotification.AwbState.AWB_READY || notification.getAwbState()==AwbNotification.AwbState.AWB_TERMINATED);
+			this.getMqttConnector().publish(this.getStatusTopic(), messageContent, retain);
 		}
 	}
 
@@ -121,16 +191,28 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			case LOAD_PROJECT:
 				String projectFolder = command.getParameter();
 				if (projectFolder!=null) {
-					this.loadProject(projectFolder);
+					boolean success = this.loadProject(projectFolder);
+					
+					if (success==false) {
+						this.sendFailureUpdate("Failed to load project from " + projectFolder);
+						System.err.println("[" + this.getClass().getSimpleName() + "] Failed to load project from " + projectFolder);
+					}
+					
 				} else {
-					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to load project, no project folder passed!");
+					this.sendFailureUpdate("Missing parameter - LoadProject needs a project folder to load from!");
+					System.err.println("[" + this.getClass().getSimpleName() + "] Missing parameter - LoadProject needs a project folder to load from!");
 				}
 				break;
 			case SELECT_SETUP:
 				String setupName = command.getParameter();
 				if (setupName!=null) {
-					this.selectSetup(setupName);
+					boolean success = this.selectSetup(setupName);
+					if (success==false) {
+						this.sendFailureUpdate("Failed to select simultation setup " + setupName);
+						System.err.println("[" + this.getClass().getSimpleName() + "] Failed to select simulaiton setup " + setupName);
+					}
 				} else {
+					this.sendFailureUpdate("Unable to select setup, no setup name passed!");
 					System.err.println("[" + this.getClass().getSimpleName() + "] Unable to select setup, no setup name passed!");
 				}
 				break;
@@ -188,6 +270,13 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		this.sendStatusUpdate(notification);
 	}
+	
+	private void sendFailureUpdate(String failureMessage) {
+		AwbNotification failureNotification = new AwbNotification();
+		failureNotification.setAwbState(AwbNotification.AwbState.COMMAND_FAILED);
+		failureNotification.setStateDetails(failureMessage);
+		this.sendStatusUpdate(failureNotification);
+	}
 
 	/**
 	 * Extracts an {@link AwbCommand} from the provided json string.
@@ -226,12 +315,30 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		return null;
 	}
 	
+	/**
+	 * Gets the date time formatter.
+	 * @return the date time formatter
+	 */
 	private DateTimeFormatter getDateTimeFormatter() {
 		if (dateTimeFormatter==null) {
 			Application.getGlobalInfo();
-			dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").withZone(GlobalInfo.getCurrentZoneId());
+			dateTimeFormatter = DateTimeFormatter.ofPattern(this.getDateTimeFormatString()).withZone(GlobalInfo.getCurrentZoneId());
 		}
 		return dateTimeFormatter;
+	}
+	
+	/**
+	 * Gets the date time format string.
+	 * @return the date time format string
+	 */
+	private String getDateTimeFormatString() {
+		if (this.getProjectProperties()!=null) {
+			String formatString = this.getProjectProperties().getStringValue(PROPERTY_KEY_DATE_TIME_FORMAT);
+			if (formatString!=null) {
+				return formatString;
+			}
+		}
+		return DEFAULT_DATE_TIME_FORMAT;
 	}
 	
 	private Gson getGson() {
@@ -273,6 +380,8 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 			return AwbNotification.AwbState.SIMULATION_FINISHED;
 		case MAS_STOPPED:
 			return AwbNotification.AwbState.SIMULATION_STOPPED;
+		case AWB_TERMINATED:
+			return AwbNotification.AwbState.AWB_TERMINATED;
 		default:
 			return null;
 		}
@@ -315,6 +424,16 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		return statusTopic;
 	}
 
+	private Properties getProjectProperties() {
+		if (projectProperties==null) {
+			Project projectFocused = Application.getProjectFocused();
+			if (projectFocused!=null) {
+				projectProperties = projectFocused.getProperties();
+			}
+		}
+		return projectProperties;
+	}
+
 	private boolean isControlSteps() {
 		if (controlSteps==null) {
 			Boolean boolFromProperties = null;
@@ -327,20 +446,6 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		return controlSteps;
 	}
-
-
-	private String getBrokerHost() {
-		if (brokerHost==null) {
-			String hostFromProperties  = null;
-			Project projectFocused = Application.getProjectFocused();
-			if (projectFocused!=null) {
-				Properties projectProperties = Application.getProjectFocused().getProperties();
-				hostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
-			}
-			brokerHost = (hostFromProperties!=null) ? hostFromProperties : DEFAULT_BROKER_HOST;
-		}
-		return brokerHost;
-	}
 	
 	/* (non-Javadoc)
 	 * @see de.enflexit.awb.remoteControl.AwbRemoteControl#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
@@ -348,42 +453,52 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	@Override
 	public void onApplicationEvent(ApplicationEvent ae) {
 		if (ae.getApplicationEvent()==ApplicationEvent.PROJECT_FOCUSED) {
-			this.applyRemoteControlSettingsFromProject();
+			
+			if (Application.getProjectFocused()!=null) {
+				this.applyConfigurationFromProjectProperties(Application.getProjectFocused().getProperties());
+			}
 		}
 		super.onApplicationEvent(ae);
 	}
 	
-	private void applyRemoteControlSettingsFromProject() {
+	private void applyConfigurationFromProjectProperties(Properties properties) {
 		
-		// --- Check if remote control settings are specified in the project properties -----------
-		Project projectFocused = Application.getProjectFocused();
-		if (projectFocused!=null) {
-			Properties projectProperties = Application.getProjectFocused().getProperties();
-			String brokerHostFromProperties = projectProperties.getStringValue(PROPERTY_KEY_BROKER_HOST);
-			if (brokerHostFromProperties!=null && brokerHostFromProperties.equals(this.brokerHost)==false) {
-				this.brokerHost = brokerHostFromProperties;
-				this.getMqttConnector().getConnectorConfiguration().setUrlOrIP(brokerHostFromProperties);
-				if (this.getMqttConnector().isConnected()==true) {
-					this.getMqttConnector().disconnect();
-					this.getMqttConnector().connect();
-				}
+		if (properties==null) return;
+		
+		String commandTopicFromProperties = properties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
+		if (commandTopicFromProperties!=null && commandTopicFromProperties.isBlank()==false) {
+			if (commandTopicFromProperties.equals(this.commandTopic)==false) {
+				this.getMqttConnector().unsubscribe(this.getCommandTopic(), this);
+				this.commandTopic = commandTopicFromProperties;
+				this.getMqttConnector().subscribe(this.getCommandTopic(), this);
 			}
-			String commandsTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_COMMAND_TOPIC);
-			if (commandsTopicFromProperties!=null) {
-				this.commandTopic = commandsTopicFromProperties;
+		}
+		
+		String statusTopicFromProperties = properties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
+		if (statusTopicFromProperties!=null && statusTopicFromProperties.isBlank()==false) {
+			this.statusTopic = statusTopicFromProperties;
+		}
+		
+		Boolean controlStepsFromProperties = properties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
+		if (controlStepsFromProperties!=null && controlStepsFromProperties!=this.controlSteps) {
+			this.controlSteps = controlStepsFromProperties;
+			if (this.controlSteps==true) {
+				this.getStepController().enable();
+			} else {
+				this.getStepController().disable();
 			}
-			String statusTopicFromProperties = projectProperties.getStringValue(PROPERTY_KEY_STATUS_TOPIC);
-			if (statusTopicFromProperties!=null) {
-				this.statusTopic = statusTopicFromProperties;
-			}
-			Boolean controlStepsFromProperties = projectProperties.getBooleanValue(PROPERTY_KEY_CONTROL_STEPS);
-			if (controlStepsFromProperties!=null) {
-				this.controlSteps = controlStepsFromProperties;
-			}
-			
+		}
+		
+		MQTTConnector connectorFromProject = this.getConnectorFromProperties(properties);
+		
+		if (connectorFromProject!=null && connectorFromProject!=this.mqttConnector) {
+			this.getMqttConnector().unsubscribe(this.getCommandTopic(), this);
+			this.mqttConnector = connectorFromProject;
+			this.getMqttConnector().subscribe(this.getCommandTopic(), this);
+			this.setAwbState(AwbState.AWB_READY);
 		}
 	}
-
+	
 	/**
 	 * Inner class for handling discrete simulation steps.
 	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
@@ -407,6 +522,27 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		
 	}
+
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+	 */
+	@Override
+	public void propertyChange(PropertyChangeEvent pce) {
+		if (pce.getSource()==ConnectorManager.getInstance() && pce.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
+			// --- If previously not connected and a new connector is added, try to subscribe -----
+			if (this.connectorCheckFailed==true && this.isConnectorAvailable()==true) {
+				this.subscribeForCommands();
+				
+				// --- Send status updates to the new connection --------------
+				this.setAwbState(AwbState.AWB_READY);
+				if (Application.getProjectFocused()!=null) {
+					this.setAwbState(AwbState.PROJECT_LOADED);
+					this.setAwbState(AwbState.SETUP_READY);
+				}
+			}
+		}
+	}
 	
-		
+	
+
 }

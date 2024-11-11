@@ -15,8 +15,8 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
+
 import agentgui.core.application.Application;
-import agentgui.core.application.ApplicationListener;
 import de.enflexit.common.swing.WindowSizeAndPostionController;
 import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
 
@@ -24,7 +24,9 @@ import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
  * A dialog to configure connectors.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManagerDialog extends JDialog implements ApplicationListener {
+public class ConnectorManagerDialog extends JDialog {
+	
+	public static final String TITLE = "Connector Manager";
 	
 	private static final long serialVersionUID = 7253191266415274699L;
 	
@@ -49,8 +51,9 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 	 * Initialize the dialog.
 	 */
 	private void initialize() {
+		
 		this.setContentPane(this.getMainPanel());
-		this.setTitle("Connector configuration");
+		this.setTitle(TITLE);
 		this.setIconImage(new ImageIcon(this.getClass().getResource("/icons/Connection.png")).getImage());
 		
 		this.loadAndApplyDialogSizeAndPosition();
@@ -59,22 +62,19 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 		
 		this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		
-		Application.addApplicationListener(this);
-		
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				
 				boolean doClose = true;
-				ConnectorConfigurationPanel configPanel = ConnectorManagerDialog.this.getMainPanel().getConfigurationPanel();
 
 				// --- Check for pending changes, ask the user how to handle --  
-				if (configPanel.hasPendingChanges()==true) {
+				if (ConnectorManagerDialog.this.getMainPanel().isConfigChanged()==true) {
 					String userMessage = "Your current configuration has pending changes! Apply before closing?";
 					int userReply = JOptionPane.showConfirmDialog(ConnectorManagerDialog.this, userMessage, "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
 					
 					if (userReply==JOptionPane.YES_OPTION) {
-						configPanel.applyChanges();
+						ConnectorManagerDialog.this.getMainPanel().applyChanges();
 					} else if (userReply==JOptionPane.CANCEL_OPTION) {
 						doClose = false;
 					}
@@ -86,10 +86,18 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
 				}
 			}
 		});
-		
 		WindowSizeAndPostionController.setJDialogPositionOnScreen(this, JDialogPosition.ParentCenter);
 	}
 
+	/* (non-Javadoc)
+	 * @see java.awt.Window#dispose()
+	 */
+	@Override
+	public void dispose() {
+		this.getMainPanel().dispose();
+		super.dispose();
+	}
+	
 	/**
 	 * Gets the main panel.
 	 * @return the main panel
@@ -196,23 +204,4 @@ public class ConnectorManagerDialog extends JDialog implements ApplicationListen
     	}
     }
 	
-	/* (non-Javadoc)
-	 * @see java.awt.Window#dispose()
-	 */
-	@Override
-	public void dispose() {
-		Application.removeApplicationListener(this);
-		this.getMainPanel().dispose();
-		super.dispose();
-	}
-
-	/* (non-Javadoc)
-	 * @see agentgui.core.application.ApplicationListener#onApplicationEvent(agentgui.core.application.ApplicationListener.ApplicationEvent)
-	 */
-	@Override
-	public void onApplicationEvent(ApplicationEvent awbEvent) {
-		if (awbEvent.getApplicationEvent()==ApplicationEvent.PROJECT_CLOSED) {
-			this.dispose();
-		}
-	}
 }

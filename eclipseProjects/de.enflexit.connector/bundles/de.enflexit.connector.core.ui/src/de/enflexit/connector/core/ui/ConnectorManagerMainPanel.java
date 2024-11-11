@@ -1,39 +1,52 @@
 package de.enflexit.connector.core.ui;
 
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+
 import java.awt.BorderLayout;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import de.enflexit.common.properties.Properties;
-import de.enflexit.common.swing.OwnerDetection;
+import de.enflexit.common.properties.PropertiesEvent;
+import de.enflexit.common.properties.PropertiesListener;
+import de.enflexit.common.properties.PropertiesPanel;
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JToolBar;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 
 /**
  * The main panel for the {@link ConnectorManager}'s configuration UI.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManagerMainPanel extends JPanel implements ActionListener, ListSelectionListener, PropertyChangeListener {
+public class ConnectorManagerMainPanel extends JPanel implements ActionListener, ListSelectionListener, PropertyChangeListener, PropertiesListener {
 	
 	private static final long serialVersionUID = 3162788243111915591L;
 	
 	private static final String ICON_ADD = "ListPlus.png";
 	private static final String ICON_REMOVE = "ListMinus.png";
+	private static final String ICON_APPLY = "Apply.png";
+	private static final String ICON_RESET = "Reset.png";
 	private static final String ICON_START = "Start.png";
 	private static final String ICON_STOP = "Stop.png";
 	private static final String ICON_RESTART = "Restart.png";
@@ -45,21 +58,28 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	private JButton jButtonStop;
 	private JButton jButtonRestart;
 	
+	private JPopupMenu jPopupMenuNewConnection;
+	
 	private JSplitPane mainSplitPane;
 	private JScrollPane jScrollPane;
 	private JList<String> connectorsList;
 	private DefaultListModel<String> connectorsListModel;
 	
-	private ConnectorCreationPanel createConnectionPanel;
-	private ConnectorConfigurationPanel manageConnectionPanel;
+	private ConnectorConfigurationPanel connectorConfigurationPanel;
 	
 	private String selectedConnectorName;
+	
+	private boolean skipPendingChangesQuestion = false;
+	private JButton jButtonApply;
+	private JButton jButtonDiscard;
+	
+	private boolean configChanged;
 	
 	/**
 	 * Instantiates a new connector manager main panel.
 	 */
 	public ConnectorManagerMainPanel() {
-		initialize();
+		this.initialize();
 	}
 	
 	/**
@@ -67,21 +87,46 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	private void initialize() {
 		this.setLayout(new BorderLayout(0, 0));
-		this.add(getMainSplitPane(), BorderLayout.CENTER);
+		this.add(this.getMainSplitPane(), BorderLayout.CENTER);
+		this.add(this.getMainToolBar(), BorderLayout.NORTH);
 		ConnectorManager.getInstance().addListener(this);
-		add(getMainToolBar(), BorderLayout.NORTH);
+	}
+	/**
+	 * Dispose.
+	 */
+	protected void dispose() {
+		
+		// --- Remove the listener from the ConnectorManager ----------------------------  
+		ConnectorManager.getInstance().removeListener(this);
+		
+		// --- If the connectors provided a custom configuration UI, dispose those too --
+		for (String connectorName : ConnectorManager.getInstance().getConfiguredConnectorNames()) {
+			AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
+			if (connector!=null) {
+				// --- Remove all known property listener ------------------------------- 
+				Properties properties = connector.getConnectorProperties(); 
+				properties.removePropertiesListener(ConnectorManagerMainPanel.class);
+				properties.removePropertiesListener(ConnectorConfigurationPanel.class);
+				properties.removePropertiesListener(PropertiesPanel.class);
+				// --- Call to dispose individual UI elements ---------------------------
+				connector.disposeUI();
+			}
+		}
 	}
 	
 	private JToolBar getMainToolBar() {
 		if (mainToolBar == null) {
 			mainToolBar = new JToolBar();
 			mainToolBar.setFloatable(false);
-			mainToolBar.add(getJButtonAdd());
-			mainToolBar.add(getJButtonRemove());
+			mainToolBar.add(this.getJButtonAdd());
+			mainToolBar.add(this.getJButtonRemove());
 			mainToolBar.addSeparator();
-			mainToolBar.add(getJButtonStart());
-			mainToolBar.add(getJButtonStop());
-			mainToolBar.add(getJButtonRestart());
+			mainToolBar.add(this.getJButtonApply());
+			mainToolBar.add(this.getJButtonDiscard());
+			mainToolBar.addSeparator();
+			mainToolBar.add(this.getJButtonStart());
+			mainToolBar.add(this.getJButtonStop());
+			mainToolBar.add(this.getJButtonRestart());
 		}
 		return mainToolBar;
 	}
@@ -90,7 +135,16 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (jButtonAdd == null) {
 			jButtonAdd = new JButton(BundleHelper.getImageIcon(ICON_ADD));
 			jButtonAdd.setToolTipText("Add a new connector");
-			jButtonAdd.addActionListener(this);
+			jButtonAdd.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					ConnectorManagerMainPanel.this.showJPopupMenuAddNewConnection();
+				}
+				@Override
+				public void mousePressed(MouseEvent e) {
+					ConnectorManagerMainPanel.this.showJPopupMenuAddNewConnection();
+				}
+			});
 		}
 		return jButtonAdd;
 	}
@@ -103,6 +157,26 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			jButtonRemove.addActionListener(this);
 		}
 		return jButtonRemove;
+	}
+
+	private JButton getJButtonApply() {
+		if (jButtonApply == null) {
+			jButtonApply = new JButton(BundleHelper.getImageIcon(ICON_APPLY));
+			jButtonApply.setToolTipText("Apply changes to the selected connector");
+			jButtonApply.setEnabled(false);
+			jButtonApply.addActionListener(this);
+		}
+		return jButtonApply;
+	}
+
+	private JButton getJButtonDiscard() {
+		if (jButtonDiscard == null) {
+			jButtonDiscard = new JButton(BundleHelper.getImageIcon(ICON_RESET));
+			jButtonDiscard.setToolTipText("Discard changes to the selected connection");
+			jButtonDiscard.setEnabled(false);
+			jButtonDiscard.addActionListener(this);
+		}
+		return jButtonDiscard;
 	}
 
 	private JButton getJButtonStart() {
@@ -134,6 +208,23 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		}
 		return jButtonRestart;
 	}
+	
+	
+	private void showJPopupMenuAddNewConnection() {
+		this.getJPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
+	}
+	
+	private JPopupMenu getJPopupMenuNewConnection() {
+		if (jPopupMenuNewConnection==null) {
+			jPopupMenuNewConnection = new JPopupMenu();
+			
+			HashMap<String, ConnectorService> availableServices = ConnectorManager.getInstance().getAvailableConnectorServices();
+			for (ConnectorService connectorService : availableServices.values()) {
+				jPopupMenuNewConnection.add(new CreateConnectorAction(connectorService));
+			}
+		}
+		return jPopupMenuNewConnection;
+	}
 
 	/**
 	 * Gets the j split pane.
@@ -143,9 +234,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		if (mainSplitPane == null) {
 			mainSplitPane = new JSplitPane();
 			mainSplitPane.setLeftComponent(getJScrollPane());
-			mainSplitPane.setRightComponent(getConfigurationPanel());
+			mainSplitPane.setRightComponent(getConnectorConfigurationPanel());
 			mainSplitPane.setDividerLocation(250);
-			mainSplitPane.setResizeWeight(0.5);
+			mainSplitPane.setDividerSize(5);
+			mainSplitPane.setResizeWeight(0);
 		}
 		return mainSplitPane;
 	}
@@ -191,19 +283,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return connectorsListModel;
 	}
 	
-	private ConnectorCreationPanel getCreateConnectionPanel() {
-		if (createConnectionPanel == null) {
-			Frame owner = OwnerDetection.getOwnerFrameForComponent(this);
-			createConnectionPanel = new ConnectorCreationPanel(owner, this);
+	private ConnectorConfigurationPanel getConnectorConfigurationPanel() {
+		if (connectorConfigurationPanel == null) {
+			connectorConfigurationPanel = new ConnectorConfigurationPanel();
 		}
-		return createConnectionPanel;
-	}
-
-	protected ConnectorConfigurationPanel getConfigurationPanel() {
-		if (manageConnectionPanel == null) {
-			manageConnectionPanel = new ConnectorConfigurationPanel();
-		}
-		return manageConnectionPanel;
+		return connectorConfigurationPanel;
 	}
 
 	/* (non-Javadoc)
@@ -211,6 +295,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
+		
 		if (evt.getSource()==ConnectorManager.getInstance()) {
 			
 			if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_ADDED)) {
@@ -220,6 +305,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				if (newElementIndex>=0) {
 					this.getConnectorsList().setSelectedIndex(newElementIndex);
 				}
+				
 			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_REMOVED)) {
 				String removedConnectorName = (String) evt.getOldValue();
 				int elementIndex = this.getIndexOfListElement(removedConnectorName);
@@ -228,6 +314,26 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 					this.getConnectorsListModel().remove(elementIndex);
 				}
 				
+			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_RENAMED)) {
+				this.skipPendingChangesQuestion = true;
+				String oldName = (String) evt.getOldValue();
+				String newName = (String) evt.getNewValue();
+				int elementIndex = this.getIndexOfListElement(oldName);
+				if (elementIndex>-1) {
+					this.getConnectorsList().clearSelection();
+					this.getConnectorsListModel().remove(elementIndex);
+					if (elementIndex<this.getConnectorsListModel().getSize()) {
+						this.getConnectorsListModel().add(elementIndex, newName);
+					} else {
+						this.getConnectorsListModel().addElement(newName);
+					}
+					this.getConnectorsList().setSelectedIndex(elementIndex);
+				}
+				this.skipPendingChangesQuestion = false;
+				
+			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_SETTINGS_SAVED)) {
+				this.setConfigChanged(false);
+				this.updateButtonState();
 			}
 		}
 	}
@@ -236,14 +342,17 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	 */
 	@Override
 	public void valueChanged(ListSelectionEvent lse) {
-		if (lse.getSource()==this.getConnectorsList()) {
-			
+		
+		if (lse.getSource()==this.getConnectorsList() && lse.getValueIsAdjusting()==false) {
 			if (this.selectedConnectorName!=null) {
-				if (this.getConfigurationPanel().hasPendingChanges()==true) {
+				if (this.isConfigChanged()==true && this.skipPendingChangesQuestion==false) {
 					String userMessage = "Your current configuration has pending changes! Apply before switching?";
 					int userReply = JOptionPane.showConfirmDialog(this, userMessage, "Apply changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (userReply==JOptionPane.YES_OPTION) {
-						this.getConfigurationPanel().applyChanges();
+						this.applyChanges();
+					} else {
+						// --- Changes discarded -----------------------
+						this.setConfigChanged(false);
 					}
 				}
 			}
@@ -252,30 +361,69 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			this.setSelectedConnector(connectorName);
 		}
 	}
-	
+	/**
+	 * Sets the selected connector.
+	 * @param connectorName the new selected connector
+	 */
 	private void setSelectedConnector(String connectorName) {
 		this.selectedConnectorName = connectorName;
 		if (connectorName!=null) {
-			Properties connectorProperties = ConnectorManager.getInstance().getConnectorProperies(connectorName);
-			this.getConfigurationPanel().setConnectorProperties(connectorProperties);
+			// --- Get the properties for the selected connector and set them to the panel --------
+			Properties propertiesToSet = ConnectorManager.getInstance().getConnectorProperties(connectorName);
+			this.setPropertiesToEdit(propertiesToSet);
 		} else {
-			this.getConfigurationPanel().setConnectorProperties(null);
+			// --- No connector selected, clear the panel -----------------------------------------
+			this.setPropertiesToEdit(null);
 		}
+	}
+	/**
+	 * Sets the current properties to edit.
+	 * @param connectorProperties the new properties to edit
+	 */
+	private void setPropertiesToEdit(Properties connectorProperties) {
+		
+		int dividerPos = this.getMainSplitPane().getDividerLocation();
+		
+		// --- Unsubscribe from the property events of the previously selected connection ---------
+		if (this.getConnectorConfigurationPanel().getConnectorProperties()!=null) {
+			this.getConnectorConfigurationPanel().getConnectorProperties().removePropertiesListener(this);
+		}
+		this.getConnectorConfigurationPanel().setConnectorProperties(connectorProperties);
+
+		// --- Define the default case ------------------------------------------------------------
+		JComponent configUI = this.getConnectorConfigurationPanel();
+		if (connectorProperties!=null) {
+			// --- Register self as listener to the properties ------------------------------------ 
+			connectorProperties.addPropertiesListener(this);
+			// --- If the connector instance is available, use its UI component (?) ---------------
+			AbstractConnector connectorInstance = ConnectorManager.getInstance().getConnectorByName(connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME));
+			if (connectorInstance!=null) {
+				JComponent connectorUI = connectorInstance.getConfigurationUIComponent(this.getConnectorConfigurationPanel());
+				if (connectorUI!=null) {
+					configUI = connectorUI;
+				} 
+			}
+		}
+		// --- Show configuration UI -------------------------------------------------------------- 
+		this.getMainSplitPane().setRightComponent(configUI);
+		
+		this.getMainSplitPane().setDividerLocation(dividerPos);
 		this.updateButtonState();
 	}
 	
-	protected void dispose() {
-		ConnectorManager.getInstance().removeListener(this);
-	}
 	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getJButtonAdd()) {
-			this.showCreatePanel();
+			this.getJPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
 		} else if (ae.getSource()==this.getJButtonRemove()) {
 			this.deleteConnection();
+		} else if (ae.getSource()==this.getJButtonApply()) {
+			this.applyChanges();
+		} else if (ae.getSource()==this.getJButtonDiscard()) {
+			this.discardChanges();
 		} else if (ae.getSource()==this.getJButtonStart()) {
 			this.startConnection();
 		} else if (ae.getSource()==this.getJButtonStop()) {
@@ -300,17 +448,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return -1;
 	}
 
-	private void showCreatePanel() {
-		this.getCreateConnectionPanel();
-		int posX = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getX()).intValue();
-		int posY = Double.valueOf(this.getConfigurationPanel().getLocationOnScreen().getY()).intValue();
-		int width = this.getConfigurationPanel().getWidth();
-		this.getCreateConnectionPanel().setLocation(posX, posY);
-		this.getCreateConnectionPanel().setSize(width, 135);
-		this.getCreateConnectionPanel().requestFocus();
-		this.getCreateConnectionPanel().setVisible(true);
-	}
-	
 	private void updateButtonState() {
 		if (this.selectedConnectorName==null) {
 			// --- No connector selected ----------------------------
@@ -353,6 +490,12 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else {
 			JOptionPane.showMessageDialog(this, "Failed to instantiate the connector! Is there a connector service for the cnfigured protocol?", "Not available", JOptionPane.ERROR_MESSAGE);
 		}
+		
+		ArrayList<AbstractConnector> connectors = ConnectorManager.getInstance().getConnectorsByProtocol("MQTT");
+		for (AbstractConnector connector : connectors) {
+			System.out.println(connector.getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME) + " - connected: " + connector.isConnected());
+		}
+		
 	}
 	private void stopConnection() {
 		if (this.getSelectedConnector()!=null) {
@@ -362,7 +505,6 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	private void deleteConnection() {
-		
 		if (this.isCurrentlyConnected()==true) {
 			JOptionPane.showMessageDialog(this, "The selected connection is currently active! Please disconnect before deleting.", "Currently connected!", JOptionPane.WARNING_MESSAGE);
 		} else {
@@ -370,6 +512,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			if (answer==JOptionPane.YES_OPTION) {
 				String connectorName = this.selectedConnectorName;
 				ConnectorManager.getInstance().removeConnector(connectorName);
+				this.setSelectedConnector(null);
 			}
 		}
 	}
@@ -388,6 +531,147 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else {
 			return false;
 		}
+	}
+	
+	/**
+	 * This action class handles the creation of new connectors.
+	 * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
+	 */
+	private class CreateConnectorAction extends AbstractAction {
+		
+		private static final long serialVersionUID = 1953290624795078546L;
+		
+		private ConnectorService connectorService;
+
+		public CreateConnectorAction(ConnectorService connectorService) {
+			super("New " + connectorService.getProtocolName() + " connection");
+			this.connectorService = connectorService;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+		 */
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+
+			String connectorName = this.askForConnectorName();
+			if (connectorName!=null) {
+				this.createConnector(connectorName);
+			} 
+		}
+		
+		/**
+		 * Asks the user for a connector name, checks if the provided name is valid.
+		 * @return the name provided by the user, null if the user canceled the dialog
+		 */
+		private String askForConnectorName() {
+			
+			String dialogMessage = "Please enter a unique name for the new connection";
+			String connectorName = null;
+			
+			boolean nameValid = false;
+			while (nameValid==false) {
+				connectorName = JOptionPane.showInputDialog(ConnectorManagerMainPanel.this, dialogMessage, "New " + this.connectorService.getProtocolName()  + " connector", JOptionPane.QUESTION_MESSAGE);
+				
+				// --- User abort -------------------------
+				if (connectorName==null) return null;
+				
+				if (connectorName.isBlank()==true) {
+					// --- No name was entered ------------
+					dialogMessage = "The connector  name cannot be empty, please enter a unique name!";
+					
+				} else if (ConnectorManager.getInstance().getConnectorProperties(connectorName)!=null) { 
+					// --- The name is already in use -----
+					dialogMessage = "The name is already in use, please choose a different name!";
+					
+				} else {
+					// --- Name accepted ------------------
+					nameValid=true;
+				}
+			}
+			return connectorName;
+		}
+		
+		/**
+		 * Creates a new connector with the provided  name, and adds it to the {@link ConnectorManager}.
+		 * @param connectorName the connector name
+		 */
+		private void createConnector(String connectorName) {
+			
+			AbstractConnector newConnector = connectorService.getNewConnectorInstance();
+			Properties connectorProperties = newConnector.getInitialProperties();
+			connectorProperties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME, connectorName);
+			connectorProperties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL, this.connectorService.getProtocolName());
+			newConnector.setConnectorProperties(connectorProperties);
+			ConnectorManager.getInstance().addNewConnector(connectorName, newConnector);
+		}
+	}
+	
+	
+	/**
+	 * Apples all changes to the current connector configuration.
+	 */
+	protected void applyChanges() {
+
+		//--- Update the properties in the connector manager --------
+		Properties editedProperties = this.getConnectorConfigurationPanel().getConnectorProperties();
+		ConnectorManager.getInstance().updateConnectorProperties(this.selectedConnectorName, editedProperties);
+		this.setConfigChanged(false);
+		
+		// --- If the connector has been instantiated already, update that instance, too ----------
+		AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(this.selectedConnectorName);
+		if (connector!=null) {
+			connector.setConnectorProperties(editedProperties);
+			
+			// --- Check if currently connected. Is so, ask for reconnect to apply changes --------
+			if (connector.isConnected()) {
+				String message = "The connection you modified is currently active! Reconnect now to apply the changes immediately?";
+				int userResponse = JOptionPane.showConfirmDialog(this, message, "Reconnect now?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (userResponse==JOptionPane.YES_OPTION) {
+					connector.disconnect();
+					connector.connect();
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Discards all changes to the current connector configuration.
+	 */
+	private void discardChanges() {
+		int userResponse = JOptionPane.showConfirmDialog(this, "This will discard your changes! Are you sure?", "Discard changes?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+		if (userResponse==JOptionPane.YES_OPTION) {
+			// --- Replace with the original properties from the connector ----
+			Properties originalProperties = ConnectorManager.getInstance().getConnectorProperties(this.selectedConnectorName);
+			this.setPropertiesToEdit(originalProperties);
+			this.setConfigChanged(false);
+		}
+	}
+
+	/**
+	 * Checks if the selected configuration is changed.
+	 * @return true, if is config changed
+	 */
+	public boolean isConfigChanged() {
+		return configChanged;
+	}
+	/**
+	 * Sets the configuration changed state, also enables/disables related buttons.
+	 * @param configChanged the new config changed
+	 */
+	private void setConfigChanged(boolean configChanged) {
+		this.configChanged = configChanged;
+		
+		// --- These buttons only make sense when the configuration is changed
+		this.getJButtonApply().setEnabled(configChanged);
+		this.getJButtonDiscard().setEnabled(configChanged);
+	}
+	/* (non-Javadoc)
+	 * @see de.enflexit.common.properties.PropertiesListener#onPropertiesEvent(de.enflexit.common.properties.PropertiesEvent)
+	 */
+	@Override
+	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
+		this.setConfigChanged(true);
 	}
 	
 }

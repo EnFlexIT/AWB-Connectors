@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="de.enflexit.connector.opcua.feature"
+      label="AWB - Milo OPC/UA - Connector"
+      version="0.6.13.qualifier"
+      provider-name="EnFlex.IT"
+      plugin="de.enflexit.connector.opcua">
+
+   <description url="http://www.example.com/description">
+      [Enter Feature Description here.]
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      [Enter Copyright Description here.]
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      [Enter License Description here.]
+   </license>
+
+   <includes
+         id="de.enflexit.connector.core.feature"
+         version="0.0.0"/>
+
+   <plugin
+         id="de.enflexit.connector.opcua"
+         version="0.0.0"/>
+
+</feature>

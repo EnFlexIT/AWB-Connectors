@@ -12,8 +12,7 @@ import agentgui.core.application.Application;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
-import de.enflexit.connector.core.AbstractConnectorConfiguration;
-import de.enflexit.connector.core.AbstractConnectorConfiguration.StartOn;
+import de.enflexit.connector.core.AbstractConnector.StartOn;
 import de.enflexit.connector.core.ConnectorService;
 
 /**
@@ -26,23 +25,27 @@ public class ConnectorManager {
 	public static final String CONNECTOR_REMOVED = "Connector removed";
 	public static final String CONNECTOR_RENAMED = "Connector renamed";
 	
+	public static final String CONNECTOR_SETTINGS_SAVED = "Connector settings saved";
+	
 	private static final String DEFAULT_CONFIG_FILE_NAME = "ConnectorProperties.json";
 	
-	private static ConnectorManager instance;
+	private HashMap<String, ConnectorService> availableConnectorServices;
+	private ConnectorPropertiesTreeMap connectorPropertiesTreeMap; 
 	private HashMap<String, AbstractConnector> availableConnectors;
 	
 	private ArrayList<PropertyChangeListener> listeners;
-	
-	private HashMap<String, ConnectorService> availableConnectorServices;
-	
-	private ConnectorPropertiesTreeMap configuredConnectors; 
-	
+
 	private StartOn currentStartOnLevel;
 	
 	private boolean debug = false;
 	
-	private ConnectorManager() {}
 	
+	private static ConnectorManager instance;
+
+	/**
+	 * Instantiates a new connector manager.
+	 */
+	private ConnectorManager() {}
 	/**
 	 * Gets the single instance of ConnectorManager.
 	 * @return single instance of ConnectorManager
@@ -72,7 +75,7 @@ public class ConnectorManager {
 	 * @return the connector names
 	 */
 	public ArrayList<String> getConfiguredConnectorNames(){
-		return new ArrayList<>(this.getConfiguredConnectors().keySet());
+		return new ArrayList<>(this.getConnectorPropertiesTreeMap().keySet());
 	}
 	
 	/**
@@ -81,8 +84,7 @@ public class ConnectorManager {
 	 * @return the connector
 	 */
 	public AbstractConnector getConnectorByName(String connectorName) {
-		AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
-		return connector;
+		return this.getAvailableConnectors().get(connectorName);
 	}
 	
 	/**
@@ -93,7 +95,7 @@ public class ConnectorManager {
 	 */
 	public AbstractConnector getConnectorByHostAndProtocol(String host, String protocol) {
 		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
-			if (connector.getProtocolName().equals(protocol) && connector.getConnectorConfiguration().getUrlOrIP().equals(host)) {
+			if (connector.getProtocolName().equals(protocol) && connector.getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST).equals(host)) {
 				return connector;
 			}
 		}
@@ -109,7 +111,7 @@ public class ConnectorManager {
 		if (this.getConnectorByName(connectorName)!=null) {
 			throw new IllegalArgumentException("A connector with the name " + connectorName + " already exists!");
 		} else {
-			this.getConfiguredConnectors().put(connectorName, connector.getConnectorProperties());
+			this.getConnectorPropertiesTreeMap().put(connectorName, connector.getConnectorProperties());
 			this.getAvailableConnectors().put(connectorName, connector);
 			PropertyChangeEvent eventAdded = new PropertyChangeEvent(this, CONNECTOR_ADDED, null, connectorName);
 			this.notifyListeners(eventAdded);
@@ -131,7 +133,7 @@ public class ConnectorManager {
 		
 		// --- Remove the connector -----------------------
 		this.getAvailableConnectors().remove(connectorName);
-		this.getConfiguredConnectors().remove(connectorName);
+		this.getConnectorPropertiesTreeMap().remove(connectorName);
 		
 		// --- Notify registered listeners ----------------
 		PropertyChangeEvent removedEvent = new PropertyChangeEvent(this, CONNECTOR_REMOVED, connectorName, null);
@@ -152,7 +154,6 @@ public class ConnectorManager {
 		}
 		return listeners;
 	}
-	
 	/**
 	 * Adds the provided listener.
 	 * @param listener the listener
@@ -162,7 +163,6 @@ public class ConnectorManager {
 			this.getListeners().add(listener);
 		}
 	}
-	
 	/**
 	 * Removes the specified listener.
 	 * @param listener the listener
@@ -172,7 +172,6 @@ public class ConnectorManager {
 			this.getListeners().remove(listener);
 		}
 	}
-	
 	/**
 	 * Notifies the registered listener about an event.
 	 * @param event the event
@@ -188,7 +187,7 @@ public class ConnectorManager {
 	 * @param jsonFile the json file
 	 */
 	public void storeConfigurationToJSON(File jsonFile) {
-		this.configuredConnectors.storeToJsonFile(jsonFile);
+		this.connectorPropertiesTreeMap.storeToJsonFile(jsonFile);
 	}
 	
 	private void loadConfigurationsFromDefaultFile() {
@@ -200,29 +199,28 @@ public class ConnectorManager {
 	 * @param jsonFile the json file
 	 */
 	public void loadConfigurationFromJSON(File jsonFile) {
-		this.configuredConnectors = ConnectorPropertiesTreeMap.loadFromJsonFile(jsonFile);
-		for (String connectorName : this.getConfiguredConnectors().keySet()) {
+		this.connectorPropertiesTreeMap = ConnectorPropertiesTreeMap.loadFromJsonFile(jsonFile);
+		for (String connectorName : this.getConnectorPropertiesTreeMap().keySet()) {
 			AbstractConnector connectorInstance = this.instantiateConnector(connectorName);
 			if (connectorInstance!=null) {
 				this.getAvailableConnectors().put(connectorName, connectorInstance);
 			}
 		}
-		
 	}
-	
 	/**
-	 * Instantiate connector.
+	 * Instantiate the specified connector.
 	 * @param connectorName the connector name
 	 * @return the abstract connector
 	 */
 	private AbstractConnector instantiateConnector(String connectorName) {
+		
 		AbstractConnector connectorInstance = null;
-		Properties connectorProperties = this.getConfiguredConnectors().get(connectorName);
+		Properties connectorProperties = this.getConnectorPropertiesTreeMap().get(connectorName);
 		if (connectorProperties!=null) {
-			String protocolName = connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL);
-			ConnectorService service = this.getConnectorServiceForProtocol(protocolName);
-			if (service != null) {
-				connectorInstance = service.getNewConnectorInstance();
+			String protocolName = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
+			ConnectorService connectorService = this.getConnectorServiceForProtocol(protocolName);
+			if (connectorService != null) {
+				connectorInstance = connectorService.getNewConnectorInstance();
 				connectorInstance.setConnectorProperties(connectorProperties);
 				this.getAvailableConnectors().put(connectorName, connectorInstance);
 			} else {
@@ -231,7 +229,6 @@ public class ConnectorManager {
 		} else {
 			this.debugPrint("No configuration found for connector name " + connectorName);
 		}
-		
 		return connectorInstance;
 	}
 	
@@ -255,10 +252,10 @@ public class ConnectorManager {
 	 * @param startOn the start on
 	 */
 	public void startConnectionsWithStartLevel(StartOn startOn) {
+		
 		this.debugPrint("Starting all connectors with start level " + startOn);
 		for (String connectorName : this.getAvailableConnectors().keySet()) {
 			AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
-			
 			if (connector.isConnected()==false && connector.getStartOn()==startOn) {
 				boolean success = connector.connect();
 				if (success==false) {
@@ -287,6 +284,7 @@ public class ConnectorManager {
 		File configFile = this.getDefaultConfigFile();
 		if (configFile!=null) {
 			this.storeConfigurationToJSON(configFile);
+			this.notifyListeners(new PropertyChangeEvent(this, CONNECTOR_SETTINGS_SAVED, null, null));
 		}
 	}
 	
@@ -316,18 +314,22 @@ public class ConnectorManager {
 		return availableConnectorServices;
 	}
 	
+	/**
+	 * This method is called when a new connector is added.
+	 * @param connectorService the connector service
+	 */
 	public void newConnectorServiceAdded(ConnectorService connectorService) {
 		
 		this.debugPrint("A new connector service for " + connectorService.getProtocolName() + " was added.");
 		this.debugPrint("Current startlevel is " + this.currentStartOnLevel);
 		
-		ArrayList<Properties> connectorsForProtocol = this.getConnectorsByProtocol(connectorService.getProtocolName());
+		ArrayList<Properties> connectorsForProtocol = this.getConnectorPropertiesByProtocol(connectorService.getProtocolName());
 		for (Properties connProperties : connectorsForProtocol) {
 			
-			String conectorName = connProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_NAME);
+			String conectorName = connProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
 			AbstractConnector connector = this.instantiateConnector(conectorName);
 			
-			StartOn startOn = StartOn.valueOf(connProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY_CONNECTOR_START_ON));
+			StartOn startOn = StartOn.valueOf(connProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON));
 			if (startOn.ordinal()<=this.currentStartOnLevel.ordinal()) {
 				if (this.debug==true) {
 					this.debugPrint("Starting connector " + conectorName + " with start level " + startOn);
@@ -344,20 +346,20 @@ public class ConnectorManager {
 	 * Gets the configured connectors.
 	 * @return the configured connectors
 	 */
-	private ConnectorPropertiesTreeMap getConfiguredConnectors() {
-		if (configuredConnectors==null) {
-			configuredConnectors = new ConnectorPropertiesTreeMap();
+	private ConnectorPropertiesTreeMap getConnectorPropertiesTreeMap() {
+		if (connectorPropertiesTreeMap==null) {
+			connectorPropertiesTreeMap = new ConnectorPropertiesTreeMap();
 		}
-		return configuredConnectors;
+		return connectorPropertiesTreeMap;
 	}
 	
 	/**
 	 * Gets the properties for the specified connector.
 	 * @param connectorName the connector name
-	 * @return the connector properies
+	 * @return the connector properties
 	 */
-	public Properties getConnectorProperies(String connectorName) {
-		return this.getConfiguredConnectors().get(connectorName);
+	public Properties getConnectorProperties(String connectorName) {
+		return this.getConnectorPropertiesTreeMap().get(connectorName);
 	}
 	
 	/**
@@ -366,7 +368,18 @@ public class ConnectorManager {
 	 * @param newProperties the new properties
 	 */
 	public void updateConnectorProperties(String connectorName, Properties newProperties) {
-		this.getConfiguredConnectors().put(connectorName, newProperties);
+		
+		String newConnectorName = newProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME);
+		this.getConnectorPropertiesTreeMap().put(newConnectorName, newProperties);
+		if (newConnectorName.equals(connectorName)==false) {
+			AbstractConnector connectorInstance = this.getAvailableConnectors().remove(connectorName);
+			if (connectorInstance!=null) {
+				this.getAvailableConnectors().put(newConnectorName, connectorInstance);
+			}
+			this.getConnectorPropertiesTreeMap().remove(connectorName);
+			PropertyChangeEvent connectorRenamedEvent = new PropertyChangeEvent(this, CONNECTOR_RENAMED, connectorName, newConnectorName);
+			this.notifyListeners(connectorRenamedEvent);
+		}
 		this.saveConfigurationsToDefaultFile();
 	}
 	
@@ -375,14 +388,32 @@ public class ConnectorManager {
 	 * @param protocolName the protocol name
 	 * @return the connectors by protocol
 	 */
-	private ArrayList<Properties> getConnectorsByProtocol(String protocolName){
+	private ArrayList<Properties> getConnectorPropertiesByProtocol(String protocolName){
+		
 		ArrayList<Properties> foundConnectors = new ArrayList<>();
-		for (Properties connectorProperties : this.getConfiguredConnectors().values()) {
-			if (connectorProperties.getStringValue(AbstractConnectorConfiguration.PROPERTY_KEY__CONNECTOR_PROTOCOL).equals(protocolName)) {
+		for (Properties connectorProperties : this.getConnectorPropertiesTreeMap().values()) {
+			String protocol = connectorProperties.getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL);
+			if (protocol!=null && protocol.equals(protocolName)) {
 				foundConnectors.add(connectorProperties);
 			}
 		}
 		return foundConnectors;
+	}
+	
+	/**
+	 * Gets all available connectors for the specified protocol.
+	 * @param protocolName the protocol name
+	 * @return the connectors by protocol
+	 */
+	public ArrayList<AbstractConnector> getConnectorsByProtocol(String protocolName){
+
+		ArrayList<AbstractConnector> connectorsList = new ArrayList<>();
+		for (AbstractConnector connector : this.getAvailableConnectors().values()) {
+			if (connector.getProtocolName().equals(protocolName)) {
+				connectorsList.add(connector);
+			}
+		}
+		return connectorsList;
 	}
 
 	/**
@@ -394,7 +425,6 @@ public class ConnectorManager {
 		if (newStartOnLevel.ordinal()>this.currentStartOnLevel.ordinal()) {
 			this.startConnectionsWithStartLevel(newStartOnLevel);
 		}
-		
 		this.currentStartOnLevel = newStartOnLevel;
 	}
 	

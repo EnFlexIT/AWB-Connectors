@@ -14,7 +14,8 @@
 
 	<modules>	
 		<module>de.enflexit.connector.core.feature</module>
-		<module>de.enflexit.connector.mqtt.feature</module>	
+		<module>de.enflexit.connector.mqtt.feature</module>
+		<module>de.enflexit.connector.opcua.feature</module>		
 	</modules>
 	
 	<build>
