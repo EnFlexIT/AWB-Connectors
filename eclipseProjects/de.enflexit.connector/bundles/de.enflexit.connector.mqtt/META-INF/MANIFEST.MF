@@ -121,7 +121,8 @@ Export-Package: com.hivemq.client.annotations,
  com.hivemq.client.rx,
  com.hivemq.client.rx.reactivestreams,
  com.hivemq.client.util,
- de.enflexit.connector.mqtt
+ de.enflexit.connector.mqtt,
+ org.intellij.lang.annotations
 Require-Bundle: de.enflexit.common,
  de.enflexit.connector.core
 Automatic-Module-Name: de.enflexit.connector.mqtt
