@@ -10,7 +10,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import agentgui.core.application.Application;
-import agentgui.core.config.GlobalInfo;
 import agentgui.core.project.Project;
 import agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
@@ -20,6 +19,7 @@ import de.enflexit.awbRemote.jsonCommand.AwbCommand;
 import de.enflexit.awbRemote.jsonCommand.AwbNotification;
 import de.enflexit.awbRemote.jsonCommand.Parameter;
 import de.enflexit.awbRemote.jsonCommand.Parameter.ParamName;
+import de.enflexit.common.GlobalRuntimeValues;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.core.manager.ConnectorManager;
@@ -322,7 +322,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 	private DateTimeFormatter getDateTimeFormatter() {
 		if (dateTimeFormatter==null) {
 			Application.getGlobalInfo();
-			dateTimeFormatter = DateTimeFormatter.ofPattern(this.getDateTimeFormatString()).withZone(GlobalInfo.getCurrentZoneId());
+			dateTimeFormatter = DateTimeFormatter.ofPattern(this.getDateTimeFormatString()).withZone(GlobalRuntimeValues.getZoneId());
 		}
 		return dateTimeFormatter;
 	}
