@@ -257,7 +257,7 @@ public class ConnectorManager {
 		for (String connectorName : this.getAvailableConnectors().keySet()) {
 			AbstractConnector connector = this.getAvailableConnectors().get(connectorName);
 			if (connector.isConnected()==false && connector.getStartOn()==startOn) {
-				boolean success = connector.connect();
+				boolean success = connector.openConnection();
 				if (success==false) {
 					System.err.println("[" + this.getClass().getSimpleName() + "] Error connecting " + connectorName + " at " + startOn);
 				}
@@ -338,7 +338,7 @@ public class ConnectorManager {
 				if (this.debug==true) {
 					this.debugPrint("Starting connector " + conectorName + " with start level " + startOn);
 				}
-				connector.connect();
+				connector.openConnection();
 			} else {
 				this.debugPrint("Skipping " + conectorName + " due to higher start level " + startOn);
 			}

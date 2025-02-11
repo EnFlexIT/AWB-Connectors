@@ -1,8 +1,11 @@
 package de.enflexit.connector.core;
 
+import java.util.ArrayList;
+
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import de.enflexit.common.properties.Properties;
+import de.enflexit.connector.core.ConnectorEvent.Event;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
@@ -16,6 +19,8 @@ public abstract class AbstractConnector {
 	public static final String PROPERTY_KEY_CONNECTOR_START_ON = "Connector.startOn";
 	public static final String PROPERTY_KEY_SERVER_HOST = "Server.host" ;
 	public static final String PROPERTY_KEY_SERVER_PORT = "Server.port";
+	
+	private ArrayList<ConnectorListener> connectorListeners;
 	
 	public enum StartOn {
 		AwbStart,
@@ -70,6 +75,14 @@ public abstract class AbstractConnector {
 		return this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_NAME);
 	}
 	
+	public final boolean openConnection() {
+		boolean success = this.connect();
+		if (success==true) {
+			this.notifyListeners(new ConnectorEvent(this, Event.CONNECTED));
+		}
+		return success;
+	}
+	
 	/**
 	 * Establishes the connection.
 	 * @return true, if successful
@@ -81,6 +94,11 @@ public abstract class AbstractConnector {
 	 * @return 
 	 */
 	public abstract boolean isConnected();
+	
+	
+	public final void closeConnection() {
+		this.notifyListeners(new ConnectorEvent(this, Event.DISCONNECTED));
+	}
 	
 	/**
 	 * Closes the connection.
@@ -128,5 +146,43 @@ public abstract class AbstractConnector {
 	 * Overwrite to dispose the UI (if any).
 	 */
 	public void disposeUI() { }
+	
+	private ArrayList<ConnectorListener> getConnectorListeners() {
+		if (connectorListeners==null) {
+			connectorListeners = new ArrayList<>();
+		}
+		return connectorListeners;
+	}
+	
+	/**
+	 * Adds a connector listener to the list.
+	 * @param listener the listener
+	 */
+	public void addConnectorListener(ConnectorListener listener) {
+		if (this.getConnectorListeners().contains(listener)==false) {
+			this.getConnectorListeners().add(listener);
+		}
+	}
+	
+	/**
+	 * Removes a connector listener from the  list.
+	 * @param listener the listener
+	 */
+	public void removeConnectorListener(ConnectorListener listener) {
+		if (this.getConnectorListeners().contains(listener)==true) {
+			this.getConnectorListeners().remove(listener);
+		}
+		
+	}
+
+	/**
+	 * Notifies all listeners about a {@link ConnectorEvent}.
+	 * @param connectorEvent the connector event
+	 */
+	protected void notifyListeners(ConnectorEvent connectorEvent) {
+		for (ConnectorListener listener : this.getConnectorListeners()) {
+			listener.onConnectorEvent(connectorEvent);
+		}
+	}
 	
 }

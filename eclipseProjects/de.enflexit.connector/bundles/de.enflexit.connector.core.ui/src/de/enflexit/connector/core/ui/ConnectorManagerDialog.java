@@ -26,7 +26,7 @@ import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
  */
 public class ConnectorManagerDialog extends JDialog {
 	
-	public static final String TITLE = "Connector Manager";
+	public static final String TITLE = "Connection Manager";
 	
 	private static final long serialVersionUID = 7253191266415274699L;
 	

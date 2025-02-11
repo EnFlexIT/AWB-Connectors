@@ -120,7 +120,7 @@ public class AwbRemoteControlMQTT extends AwbRemoteControl implements MQTTSubscr
 		}
 		
 		if (mqttConnector != null && mqttConnector.isConnected()==false) {
-			mqttConnector.connect();
+			mqttConnector.openConnection();
 		}
 		
 		return mqttConnector;
