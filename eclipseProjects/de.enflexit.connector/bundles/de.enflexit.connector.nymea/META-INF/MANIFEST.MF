@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nymea Connector
+Bundle-SymbolicName: de.enflexit.connector.nymea
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: com.google.gson,
+ de.enflexit.common,
+ de.enflexit.connector.core
+Bundle-Vendor: EnFlex.IT
+Automatic-Module-Name: de.enflexit.connector.nymea
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Service-Component: OSGI-INF/nymeaConnectorService.xml
