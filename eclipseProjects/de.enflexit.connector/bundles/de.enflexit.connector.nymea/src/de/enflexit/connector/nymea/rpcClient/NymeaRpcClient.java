@@ -6,8 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -27,8 +27,9 @@ public class NymeaRpcClient {
 	private static final String RPC_METHOD_INTROSPECT = "JSONRPC.Introspect";
 	private static final String RPC_METHOD_POWER_BALANCE = "Energy.GetPowerBalance";
 	private static final String RPC_METHOD_POWER_LOGS = "Energy.GetPowerBalanceLogs";
+	private static final String RPC_METHOD_GET_THINGS = "Integrations.GetThings";
 	
-	private boolean debug = true;
+	private boolean debug = false;
 	
 	private NymeaConnectorSettings connectionSettings;
 	private String authToken;
@@ -330,42 +331,24 @@ public class NymeaRpcClient {
 	}
 	
 	/**
-	 * Prints the details of all methods, as provided by the server's answer to an introspection request.
+	 * Gets the available things from the HEMS system.
+	 * @return the available things
 	 */
-	public void printMethodsOverview() {
-		HashMap<String, Object> introspectionResult = this.sendIntrospectionRequest();
-		if (introspectionResult!=null) {
-			Map<?,?> methodsMap = (Map<?, ?>) introspectionResult.get("methods");
-			this.printMapContents(methodsMap, "");
+	public ArrayList<?> getAvailableThings(){
+		JsonRpcRequest thingsRequest = this.prepareRequest();
+		thingsRequest.setMethod(RPC_METHOD_GET_THINGS);
+		
+		JsonRpcResponse thingsResponse = this.sendRequest(thingsRequest);
+		
+		if (thingsResponse!=null && thingsResponse.isSuccess()) {
+			return (ArrayList<?>) thingsResponse.getParameter("things");
+		} else {
+			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
+			return null;
 		}
+		
 	}
 	
-	/**
-	 * Prints the contents of a map data structure, recursively including sub-maps if present.
-	 * Expected key type is String (everything with a proper toString() implementation should work, too)
-	 * Expected value types are Strings or sub-maps.
-	 * @param map the map
-	 * @param recursionPrefix the recursion prefix
-	 */
-	private void printMapContents(Map<?,?> map, String recursionPrefix) {
-		for (Object key: map.keySet()) {
-			Object value = map.get(key);
-			if (recursionPrefix.isBlank()==false) {
-				// --- Prefix to indicate recursion depths ----------
-				System.out.print(recursionPrefix + " ");
-			}
-			if (value instanceof String) {
-				// --- Single string value --------------------------
-				System.out.println(key + ": " + value);
-			} else if (value instanceof Map<?,?>) {
-				// --- Sub-map --------------------------------------
-				System.out.println(key);
-				this.printMapContents((Map<?, ?>) value, recursionPrefix + "-");
-			} else {
-				System.out.println(key + ": Unexpected data type " + value.getClass().getSimpleName());
-			}
-		}
-	}
 	
 	/**
 	 * Helper method to print debug messages.
@@ -391,5 +374,16 @@ public class NymeaRpcClient {
 	 */
 	public boolean isAuthenticated() {
 		return (this.authToken!=null);
+	}
+	
+	public JsonRpcResponse executeRpcMethod(String method, HashMap<String, String> parameters) {
+		JsonRpcRequest request = this.prepareRequest();
+		request.setMethod(method);
+		for (String paramName : parameters.keySet()) {
+			request.addParameter(paramName, parameters.get(paramName));
+		}
+		
+		JsonRpcResponse response = this.sendRequest(request);
+		return response;
 	}
 }

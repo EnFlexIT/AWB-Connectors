@@ -75,6 +75,10 @@ public abstract class AbstractConnector {
 		return this.getConnectorProperties().getStringValue(PROPERTY_KEY_CONNECTOR_NAME);
 	}
 	
+	/**
+	 * Opens the connection.
+	 * @return true, if successful
+	 */
 	public final boolean openConnection() {
 		boolean success = this.connect();
 		if (success==true) {
@@ -96,7 +100,11 @@ public abstract class AbstractConnector {
 	public abstract boolean isConnected();
 	
 	
+	/**
+	 * Closes the connection.
+	 */
 	public final void closeConnection() {
+		this.disconnect();
 		this.notifyListeners(new ConnectorEvent(this, Event.DISCONNECTED));
 	}
 	

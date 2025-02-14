@@ -2,6 +2,7 @@ package de.enflexit.connector.nymea;
 
 import java.time.Instant;
 import java.time.Period;
+import java.util.HashMap;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -11,6 +12,8 @@ import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;
 import de.enflexit.connector.nymea.rpcClient.NymeaRpcClient;
 import de.enflexit.connector.nymea.ui.IntrospectionPanel;
+import de.enflexit.connector.nymea.ui.BrowseThingsPanel;
+import de.enflexit.connector.nymea.ui.ExecuteMethodsPanel;
 
 /**
  * This class implements a nymea connector, as used by Consolinno's Leaflet HEMS.
@@ -32,6 +35,8 @@ public class NymeaConnector extends AbstractConnector {
 	private NymeaRpcClient nymeaClient;
 	
 	private JTabbedPane configurationUIComponent;
+	
+	private HashMap<String, Object> introspectionData;
 	
 	private boolean connected;
 
@@ -68,6 +73,7 @@ public class NymeaConnector extends AbstractConnector {
 //				this.sendTestCalls();
 //				this.getNymeaClient().printMethodsOverview();
 //				this.notifyListeners(new ConnectorEvent(this, Event.CONNECTED));
+//				this.sendTestCalls();
 			}
 		}
 		return this.connected;
@@ -99,7 +105,6 @@ public class NymeaConnector extends AbstractConnector {
 	public void disconnect() {
 		this.getNymeaClient().closeConnection();
 		this.connected = false;
-//		this.notifyListeners(new ConnectorEvent(this, Event.DISCONNECTED));
 	}
 	
 	public NymeaConnectorSettings getConnectorSettings() {
@@ -107,6 +112,17 @@ public class NymeaConnector extends AbstractConnector {
 			connectorSettings = new NymeaConnectorSettings(this.getConnectorProperties());
 		}
 		return connectorSettings;
+	}
+	
+	/**
+	 * Gets the introspection data.
+	 * @return the introspection data
+	 */
+	public HashMap<String, Object> getIntrospectionData() {
+		if (introspectionData==null && this.isConnected()) {
+			introspectionData = this.getNymeaClient().sendIntrospectionRequest();
+		}
+		return introspectionData;
 	}
 	
 	/**
@@ -130,11 +146,12 @@ public class NymeaConnector extends AbstractConnector {
 			configurationUIComponent = new JTabbedPane();
 			configurationUIComponent.addTab(" Properties ", baseConfigPanel);
 			configurationUIComponent.addTab(" API Introspection  ", new IntrospectionPanel(this));
+			configurationUIComponent.addTab(" Browse Things  ", new BrowseThingsPanel(this));
+			configurationUIComponent.addTab(" Methods Execution ", new ExecuteMethodsPanel(this));
 		}
 		
 		return configurationUIComponent;
 	}
-	
 	
 	
 }

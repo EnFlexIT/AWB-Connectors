@@ -3,6 +3,7 @@ package de.enflexit.connector.nymea.rpcClient;
 import java.util.HashMap;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * This class implements a JSON RPC response as used  by Nymea/Consolinno, which 
@@ -100,7 +101,21 @@ public class JsonRpcResponse {
 	 * @return the JSON string
 	 */
 	public String toJsonString() {
-		Gson gson = new Gson();
+		return this.toJsonString(false);
+	}
+	
+	/**
+	 * Gets a JSON string representing this {@link JsonRpcRequest}. Optionally uses pretty printing.
+	 * @param prettyPrint specifies if pretty printing should be enabled.
+	 * @return the JSON string
+	 */
+	public String toJsonString(boolean prettyPrint) {
+		Gson gson;
+		if (prettyPrint==true) {
+			gson  = new GsonBuilder().setPrettyPrinting().create();
+		} else {
+			gson = new Gson();
+		}
 		return gson.toJson(this);
 	}
 	
