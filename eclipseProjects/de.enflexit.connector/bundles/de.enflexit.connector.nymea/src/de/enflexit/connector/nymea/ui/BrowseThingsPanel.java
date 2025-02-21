@@ -3,13 +3,27 @@ package de.enflexit.connector.nymea.ui;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JToolTip;
+
 import java.awt.BorderLayout;
-import java.util.ArrayList;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.JTree;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 import de.enflexit.connector.core.ConnectorEvent;
 import de.enflexit.connector.core.ConnectorEvent.Event;
@@ -62,64 +76,33 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 		if (thingsTree == null) {
 			thingsTree = new JTree();
 			thingsTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode(NODE_TEXT_EMPTY_TREE)));
+			thingsTree.setToolTipText("Right click on a node to copy its value to the clipboard");
+			thingsTree.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent me) {
+					if (SwingUtilities.isRightMouseButton(me)) {
+						DefaultMutableTreeNode clickedNode = BrowseThingsPanel.this.getClickedNode(me.getX(), me.getY());
+						if (clickedNode!=null && clickedNode.isLeaf()==true) {
+							String nodeContent = (String) clickedNode.getUserObject();
+							String[] parts = nodeContent.split(": ");
+							if (parts.length==2) {
+								String nodeValue = parts[1];
+								StringSelection stringSelection = new StringSelection(nodeValue);
+								Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+								clipboard.setContents(stringSelection, null);
+								BrowseThingsPanel.this.showSuccessMessage(nodeValue, me.getXOnScreen(), me.getYOnScreen());
+							}
+							
+						} else {
+							System.err.println("Couldn't identify node!");
+						}
+					}
+				}
+			});
 		}
 		return thingsTree;
 	}
 	
-	/**
-	 * Adds child nodes for the provided map contents to the parent node. Map values are expected
-	 * to be either Strings or sub-maps. While strings will be added directly, the method will be
-	 * called recursively for sub-maps.  
-	 * @param map the map containing the data for the child nodes
-	 * @param parentNode the parent node
-	 */
-	private void addMapContentChildNodes(Map<?,?> map, DefaultMutableTreeNode parentNode) {
-		for (Object key : map.keySet()) {
-			Object value = map.get(key);
-			
-			if (value instanceof String || value instanceof Boolean || value instanceof Double || value instanceof Integer) {
-				// --- Single string value - add to parent ----------
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key + ": " + value);
-				parentNode.add(childNode);
-			} else if (value instanceof Map<?,?>) {
-				// --- Map structure - add as sub tree --------------
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key);
-				this.addMapContentChildNodes((Map<?, ?>) value, childNode);
-				parentNode.add(childNode);
-			} else if (value instanceof ArrayList<?>) {
-				// --- List of values - add to the parent node directly
-				ArrayList<?> valueList = (ArrayList<?>)value;
-				if (valueList.size()>0) {
-					DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key + " (List)");
-					this.addListContentChildNodes((ArrayList<?>) value, childNode);
-					parentNode.add(childNode);
-				}
-			} else {
-				// --- Unknown type - add error message (should not occur)
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key + ": " + " Unexpected data type " + value.getClass().getSimpleName());
-				parentNode.add(childNode);
-			}
-		}
-	}
-	
-	private void addListContentChildNodes(ArrayList<?> list, DefaultMutableTreeNode parentNode) {
-		for (int i=0; i<list.size(); i++) {
-			DefaultMutableTreeNode childNode = new DefaultMutableTreeNode();
-			Object listElement = list.get(i);
-			if (listElement instanceof String) {
-				childNode.setUserObject(listElement);
-				parentNode.add(childNode);
-			} else if (listElement instanceof Map<?,?>) {
-				childNode.setUserObject("Entry " + (i+1));
-				this.addMapContentChildNodes((Map<?, ?>) listElement, childNode);
-			}
-			else {
-				childNode.setUserObject("Unexpected data type: " + listElement.getClass().getSimpleName());
-			}
-			parentNode.add(childNode);
-		}
-	}
-
 	/**
 	 * Reloads tree model.
 	 */
@@ -127,14 +110,14 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 		
 		DefaultMutableTreeNode rootNode = null;
 		
-		ArrayList<?> thingsList = this.connector.getNymeaClient().getAvailableThings();
+		List<?> thingsList = this.connector.getNymeaClient().getAvailableThings();
 		if (thingsList!=null) {
 			rootNode = new DefaultMutableTreeNode("Available things for the connected HEMS system");
 			
 			for (int i=0; i<thingsList.size(); i++) {
 				Map<?,?> thingDetails = (Map<?, ?>) thingsList.get(i);
 				DefaultMutableTreeNode thingNode = new DefaultMutableTreeNode(thingDetails.get("name"));
-				this.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode);
+				BrowserTreeHelper.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode);
 				rootNode.add(thingNode);
 			}
 			
@@ -157,4 +140,38 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 			}
 		}
 	}
+	
+	
+	private DefaultMutableTreeNode getClickedNode(int clickX, int clickY) {
+        TreePath path = this.getThingsTree().getPathForLocation(clickX, clickY);
+        if (path!=null) {
+        	Object node = path.getLastPathComponent();
+        	if (node instanceof DefaultMutableTreeNode) {
+        		return (DefaultMutableTreeNode) node;
+        	}
+        }
+        return null;
+	}
+	
+	private void showSuccessMessage(String copiedText, int posX, int posY) {
+		
+		JToolTip toolTip = this.getThingsTree().createToolTip();
+		toolTip.setTipText("Copied " + copiedText + " to the clipboard.");
+		
+		Popup popup = PopupFactory.getSharedInstance().getPopup(this.getThingsTree(), toolTip, posX, posY);
+		popup.show();
+	    // create a timer to hide the popup later
+	    Timer timer = new Timer(1500, new ActionListener() {
+
+	        @Override
+	        public void actionPerformed(ActionEvent e) {
+	        	popup.hide();
+
+	        }
+	    });
+	    timer.setRepeats(false);
+	    timer.start();
+		//TODO show in a popup/tooltip or similar 
+	}
+	
 }

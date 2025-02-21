@@ -302,6 +302,9 @@ public class ExecuteMethodsPanel extends JPanel implements ActionListener, Conne
 		this.getMethodResultsPanel().setResults(selectedMethod, response);
 	}
 
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.ConnectorListener#onConnectorEvent(de.enflexit.connector.core.ConnectorEvent)
+	 */
 	@Override
 	public void onConnectorEvent(ConnectorEvent connectorEvent) {
 		if (connectorEvent.getSource()==this.getNymeaConnector() && connectorEvent.getEvent()==Event.CONNECTED) {

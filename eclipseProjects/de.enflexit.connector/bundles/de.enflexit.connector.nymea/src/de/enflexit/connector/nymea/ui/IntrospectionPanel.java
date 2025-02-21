@@ -4,10 +4,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -67,51 +64,6 @@ public class IntrospectionPanel extends JPanel implements ConnectorListener {
 		return introspectionTree;
 	}
 	
-	/**
-	 * Adds child nodes for the provided map contents to the parent node. Map values are expected
-	 * to be either Strings or sub-maps. While strings will be added directly, the method will be
-	 * called recursively for sub-maps.  
-	 * @param map the map containing the data for the child nodes
-	 * @param parentNode the parent node
-	 */
-	private void addMapContentChildNodes(Map<?,?> map, DefaultMutableTreeNode parentNode) {
-		for (Object key : map.keySet()) {
-			Object value = map.get(key);
-			
-			if (value instanceof String) {
-				// --- Single string value - add to parent ----------
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key + ": " + value);
-				parentNode.add(childNode);
-			} else if (value instanceof Map<?,?>) {
-				// --- Map structure - add as sub tree --------------
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key);
-				this.addMapContentChildNodes((Map<?, ?>) value, childNode);
-				parentNode.add(childNode);
-			} else if (value instanceof ArrayList<?>) {
-				// --- List of values - add to the parent node directly
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key);
-				this.addListContentChildNodes((ArrayList<?>) value, childNode);
-				parentNode.add(childNode);
-			} else {
-				// --- Unknown type - add error message (should not occur)
-				DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(key + ": " + " Unexpected data type " + value.getClass().getSimpleName());
-				parentNode.add(childNode);
-			}
-		}
-	}
-	
-	private void addListContentChildNodes(ArrayList<?> list, DefaultMutableTreeNode parentNode) {
-		for (Object listElement : list) {
-			DefaultMutableTreeNode childNode = new DefaultMutableTreeNode();
-			if (listElement instanceof String) {
-				childNode.setUserObject(listElement);
-			} else {
-				childNode.setUserObject("Unexpected data type: " + listElement.getClass().getSimpleName());
-			}
-			
-			parentNode.add(childNode);
-		}
-	}
 
 	/**
 	 * Reloads tree model.
@@ -123,7 +75,7 @@ public class IntrospectionPanel extends JPanel implements ConnectorListener {
 		HashMap<String, Object> introspectionResults = this.connector.getNymeaClient().sendIntrospectionRequest();
 		if (introspectionResults!=null) {
 			rootNode = new DefaultMutableTreeNode("API info from " + this.connector.getConnectorSettings().getServerHost());
-			this.addMapContentChildNodes(introspectionResults, rootNode);
+			BrowserTreeHelper.addMapContentChildNodes(introspectionResults, rootNode);
 			this.getIntrospectionTree().setModel(new DefaultTreeModel(rootNode));
 		} else {
 			JOptionPane.showMessageDialog(this, "Loading introspection data from the server failed! Please check your conenciton settings!", "Unable to load server infos!", JOptionPane.ERROR_MESSAGE);
