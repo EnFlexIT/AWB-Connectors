@@ -16,7 +16,6 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JTree;
 import javax.swing.Popup;
 import javax.swing.PopupFactory;
 import javax.swing.SwingUtilities;
@@ -41,7 +40,7 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 	private static final String NODE_TEXT_EMPTY_TREE = "Start the connection to request the available things from the HEMS";
 
 	private JScrollPane thingsTreeScrollPane;
-	private JTree thingsTree;
+	private ObjectBrowserTree thingsTree;
 	
 	private NymeaConnector connector;
 
@@ -72,9 +71,9 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 		}
 		return thingsTreeScrollPane;
 	}
-	private JTree getThingsTree() {
+	private ObjectBrowserTree getThingsTree() {
 		if (thingsTree == null) {
-			thingsTree = new JTree();
+			thingsTree = new ObjectBrowserTree();
 			thingsTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode(NODE_TEXT_EMPTY_TREE)));
 			thingsTree.setToolTipText("Right click on a node to copy its value to the clipboard");
 			thingsTree.addMouseListener(new MouseAdapter() {
@@ -117,7 +116,7 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 			for (int i=0; i<thingsList.size(); i++) {
 				Map<?,?> thingDetails = (Map<?, ?>) thingsList.get(i);
 				DefaultMutableTreeNode thingNode = new DefaultMutableTreeNode(thingDetails.get("name"));
-				BrowserTreeHelper.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode);
+				ObjectBrowserTree.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode);
 				rootNode.add(thingNode);
 			}
 			

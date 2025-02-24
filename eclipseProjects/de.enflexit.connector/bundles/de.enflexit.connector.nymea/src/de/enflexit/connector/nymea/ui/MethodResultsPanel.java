@@ -6,12 +6,16 @@ import javax.swing.JLabel;
 import java.awt.GridBagConstraints;
 import java.awt.Font;
 import java.awt.Insets;
-import javax.swing.JTextArea;
-
 import de.enflexit.connector.nymea.rpcClient.JsonRpcResponse;
 import javax.swing.JScrollPane;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 public class MethodResultsPanel extends JPanel{
+	
+	public enum ExecutionState{
+		NotStarted, Running, Successful, Failed
+	}
 	
 	private static final long serialVersionUID = -2936982409463991843L;
 	private static final String INITIAL_METHOD_NAME = "None";
@@ -21,9 +25,9 @@ public class MethodResultsPanel extends JPanel{
 	private JLabel jLabelExecutionResultCaption;
 	private JLabel jLabelExecutionResult;
 	private JLabel jLabelResponse;
-	private JTextArea jTextAreaServerResponse;
 	private JScrollPane jScrollPaneServerResponse;
 	private JLabel jLabelLastMethodCall;
+	private ObjectBrowserTree responseTreeView;
 	
 	public MethodResultsPanel() {
 		initialize();
@@ -74,7 +78,6 @@ public class MethodResultsPanel extends JPanel{
 		add(getJScrollPaneServerResponse(), gbc_jScrollPaneServerResponse);
 	}
 
-
 	private JLabel getJLabelLastMethodCaption() {
 		if (jLabelLastMethodCaption == null) {
 			jLabelLastMethodCaption = new JLabel("Last executed method:");
@@ -103,33 +106,25 @@ public class MethodResultsPanel extends JPanel{
 		}
 		return jLabelResponse;
 	}
-	private JTextArea getJTextAreaServerResponse() {
-		if (jTextAreaServerResponse == null) {
-			jTextAreaServerResponse = new JTextArea();
-			jTextAreaServerResponse.setEditable(false);
-		}
-		return jTextAreaServerResponse;
+	
+	public void setExecutionState(ExecutionState executionState) {
+		this.getJLabelExecutionResult().setText(executionState.toString());
 	}
 	
 	public void setResults(String method, JsonRpcResponse response) {
 		this.getJLabelLastMethodCall().setText(method);
 		if (response!=null) {
-			this.getJLabelExecutionResult().setText((response.isSuccess()) ? "Successful" : "Failed");
-			this.getJTextAreaServerResponse().setText(response.toJsonString(true));
+			this.setExecutionState((response.isSuccess()) ? ExecutionState.Successful : ExecutionState.Failed);
 		} else {
 			this.getJLabelExecutionResult().setText("Failed");
-			this.getJTextAreaServerResponse().setText(null);
 		}
+		this.updateResultsTreeView(response);
 	}
 	
-	public void clearResults() {
-		this.getJLabelExecutionResult().setText(INITIAL_EXECUTION_RESULT);
-		this.getJTextAreaServerResponse().setText(null);
-	}
 	private JScrollPane getJScrollPaneServerResponse() {
 		if (jScrollPaneServerResponse == null) {
 			jScrollPaneServerResponse = new JScrollPane();
-			jScrollPaneServerResponse.setViewportView(getJTextAreaServerResponse());
+			jScrollPaneServerResponse.setViewportView(getResponseTreeView());
 		}
 		return jScrollPaneServerResponse;
 	}
@@ -139,5 +134,25 @@ public class MethodResultsPanel extends JPanel{
 			jLabelLastMethodCall.setFont(new Font("Dialog", Font.PLAIN, 12));
 		}
 		return jLabelLastMethodCall;
+	}
+	private ObjectBrowserTree getResponseTreeView() {
+		if (responseTreeView == null) {
+			responseTreeView = new ObjectBrowserTree();
+			this.updateResultsTreeView(null);
+		}
+		return responseTreeView;
+	}
+	
+	private void updateResultsTreeView(JsonRpcResponse response) {
+		DefaultMutableTreeNode rootNode;
+		if (response==null) {
+			rootNode = new DefaultMutableTreeNode("Execute a method to show the results here!");
+		} else if (response.isError()==true){
+			rootNode = new DefaultMutableTreeNode("Method execution failed!");
+		} else {
+			rootNode = new DefaultMutableTreeNode("Method results");
+			ObjectBrowserTree.addMapContentChildNodes(response.getParams(), rootNode);
+		}
+		this.getResponseTreeView().setModel(new DefaultTreeModel(rootNode));
 	}
 }

@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-
 import javax.swing.JPanel;
 import java.awt.GridBagLayout;
 import javax.swing.JLabel;
@@ -26,6 +25,7 @@ import de.enflexit.connector.core.ConnectorListener;
 import de.enflexit.connector.nymea.NymeaConnector;
 import de.enflexit.connector.nymea.dataModel.JsonRpcMethod;
 import de.enflexit.connector.nymea.rpcClient.JsonRpcResponse;
+import de.enflexit.connector.nymea.ui.MethodResultsPanel.ExecutionState;
 
 public class ExecuteMethodsPanel extends JPanel implements ActionListener, ConnectorListener {
 	
@@ -298,8 +298,22 @@ public class ExecuteMethodsPanel extends JPanel implements ActionListener, Conne
 	private void executeSelectedMethod() {
 		String selectedMethod = (String) this.getJComboBoxMethodSelection().getSelectedItem();
 		HashMap<String, String> parameters = this.getMethodDetailsPanel().getParamValues();
-		JsonRpcResponse response = this.getNymeaConnector().getNymeaClient().executeRpcMethod(selectedMethod, parameters);
-		this.getMethodResultsPanel().setResults(selectedMethod, response);
+		
+		this.getMethodResultsPanel().setExecutionState(ExecutionState.Running);
+		this.getJButtonExecute().setEnabled(false);
+		
+		Thread waitingThread = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				JsonRpcResponse response = ExecuteMethodsPanel.this.getNymeaConnector().getNymeaClient().executeRpcMethod(selectedMethod, parameters);
+				ExecuteMethodsPanel.this.getMethodResultsPanel().setResults(selectedMethod, response);
+				ExecuteMethodsPanel.this.getJButtonExecute().setEnabled(true);
+			}
+		});
+		
+		waitingThread.start();
+		
 	}
 
 	/* (non-Javadoc)

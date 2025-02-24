@@ -28,6 +28,7 @@ public class NymeaRpcClient {
 	private static final String RPC_METHOD_POWER_BALANCE = "Energy.GetPowerBalance";
 	private static final String RPC_METHOD_POWER_LOGS = "Energy.GetPowerBalanceLogs";
 	private static final String RPC_METHOD_GET_THINGS = "Integrations.GetThings";
+	private static final String RPC_METHOD_GET_THING_CLASSES = "Integrations.GetThingClasses";
 	
 	private boolean debug = false;
 	
@@ -346,7 +347,20 @@ public class NymeaRpcClient {
 			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
 			return null;
 		}
+	}
+	
+	public ArrayList<?> getThingClasses(){
+		JsonRpcRequest classesRequest = this.prepareRequest();
+		classesRequest.setMethod(RPC_METHOD_GET_THING_CLASSES);
 		
+		JsonRpcResponse classesResponse = this.sendRequest(classesRequest);
+		
+		if (classesResponse!=null && classesResponse.isSuccess()) {
+			return (ArrayList<?>) classesResponse.getParameter("things");
+		} else {
+			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
+			return null;
+		}
 	}
 	
 	

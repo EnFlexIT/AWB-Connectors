@@ -5,7 +5,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
 import java.util.HashMap;
-import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -25,7 +24,7 @@ public class IntrospectionPanel extends JPanel implements ConnectorListener {
 	private static final String NODE_TEXT_EMPTY_TREE = "Start the connection to load API information from the server";
 
 	private JScrollPane introspectionTreeScrollPane;
-	private JTree introspectionTree;
+	private ObjectBrowserTree introspectionTree;
 	
 	private NymeaConnector connector;
 
@@ -56,9 +55,9 @@ public class IntrospectionPanel extends JPanel implements ConnectorListener {
 		}
 		return introspectionTreeScrollPane;
 	}
-	private JTree getIntrospectionTree() {
+	private ObjectBrowserTree getIntrospectionTree() {
 		if (introspectionTree == null) {
-			introspectionTree = new JTree();
+			introspectionTree = new ObjectBrowserTree();
 			introspectionTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Start the connection to load the model")));
 		}
 		return introspectionTree;
@@ -75,7 +74,7 @@ public class IntrospectionPanel extends JPanel implements ConnectorListener {
 		HashMap<String, Object> introspectionResults = this.connector.getNymeaClient().sendIntrospectionRequest();
 		if (introspectionResults!=null) {
 			rootNode = new DefaultMutableTreeNode("API info from " + this.connector.getConnectorSettings().getServerHost());
-			BrowserTreeHelper.addMapContentChildNodes(introspectionResults, rootNode);
+			ObjectBrowserTree.addMapContentChildNodes(introspectionResults, rootNode);
 			this.getIntrospectionTree().setModel(new DefaultTreeModel(rootNode));
 		} else {
 			JOptionPane.showMessageDialog(this, "Loading introspection data from the server failed! Please check your conenciton settings!", "Unable to load server infos!", JOptionPane.ERROR_MESSAGE);
