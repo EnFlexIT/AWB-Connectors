@@ -356,7 +356,7 @@ public class NymeaRpcClient {
 		JsonRpcResponse classesResponse = this.sendRequest(classesRequest);
 		
 		if (classesResponse!=null && classesResponse.isSuccess()) {
-			return (ArrayList<?>) classesResponse.getParameter("things");
+			return (ArrayList<?>) classesResponse.getParameter("thingClasses");
 		} else {
 			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
 			return null;

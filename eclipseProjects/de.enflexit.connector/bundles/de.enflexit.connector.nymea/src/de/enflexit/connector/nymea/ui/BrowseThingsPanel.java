@@ -13,9 +13,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import javax.swing.Popup;
 import javax.swing.PopupFactory;
 import javax.swing.SwingUtilities;
@@ -43,6 +46,8 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 	private ObjectBrowserTree thingsTree;
 	
 	private NymeaConnector connector;
+	
+	private CompletableFuture<HashMap<String, String>> thingsClassesFuture;
 
 	/**
 	 * Added for window builder compatibility only. Use the other constructor for actual instantiation.
@@ -117,6 +122,12 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 				Map<?,?> thingDetails = (Map<?, ?>) thingsList.get(i);
 				DefaultMutableTreeNode thingNode = new DefaultMutableTreeNode(thingDetails.get("name"));
 				ObjectBrowserTree.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode);
+				
+				if (thingDetails.get("thingClassId")!=null) {
+					String thingClassID = (String) thingDetails.get("thingClassId");
+					this.addThingClassNameNode(thingNode, thingClassID);
+				}
+				
 				rootNode.add(thingNode);
 			}
 			
@@ -128,18 +139,72 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 		this.getThingsTree().setModel(new DefaultTreeModel(rootNode));
 		this.getThingsTree().repaint();
 	}
+	
+	/**
+	 * Add a child node with the thing class name.
+	 * @param thingNode the thing node
+	 * @param thingClassID the thing class ID
+	 */
+	private void addThingClassNameNode(DefaultMutableTreeNode thingNode, String thingClassID) {
+		
+		// --- Add a temporary node while requesting the things classes from the server
+		DefaultMutableTreeNode tempNode = new DefaultMutableTreeNode("thingClassName: Pending...");
+		thingNode.add(tempNode);
+		
+		// --- Request the thing classes, replace the temporary node when done
+		Thread waitingThread = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				try {
+					HashMap<String, String> thingsClassesHashMap = BrowseThingsPanel.this.getThingsClassesFuture().get();
+					String thingClassName = thingsClassesHashMap.get(thingClassID);
+					
+					if (thingClassName!=null) {
+						thingNode.remove(tempNode);
+						thingNode.add(new DefaultMutableTreeNode("thingClassName: " + thingClassName));
+					}
+					
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		waitingThread.start();
+	}
+	
 
 	@Override
 	public void onConnectorEvent(ConnectorEvent connectorEvent) {
 		if (connectorEvent.getSource()==this.connector) {
 			if (connectorEvent.getEvent()==Event.CONNECTED) {
 				this.reloadTreeModel();
+				
 			} else if (connectorEvent.getEvent()==Event.DISCONNECTED) {
 				this.getThingsTree().setModel(new DefaultTreeModel(new DefaultMutableTreeNode(NODE_TEXT_EMPTY_TREE)));
 			}
 		}
 	}
 	
+	private HashMap<String, String> loadThingsClasses() {
+		HashMap<String, String> thingsClassNames = new HashMap<>();
+		List<?> thingsClasses = this.connector.getNymeaClient().getThingClasses();
+		if (thingsClasses!=null) {
+			System.out.println("Received " + thingsClasses.size() + " things classes");
+			for (Object thingClass : thingsClasses) {
+				Map<?,?> thingClassMap = (Map<?, ?>) thingClass;
+				String id = (String) thingClassMap.get("id");
+				String name = (String) thingClassMap.get("displayName");
+				thingsClassNames.put(id, name);
+			}
+		} else {
+			System.out.println("Obtaining things classes failed!");
+		}
+		return thingsClassNames;
+	}
 	
 	private DefaultMutableTreeNode getClickedNode(int clickX, int clickY) {
         TreePath path = this.getThingsTree().getPathForLocation(clickX, clickY);
@@ -170,7 +235,24 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener {
 	    });
 	    timer.setRepeats(false);
 	    timer.start();
-		//TODO show in a popup/tooltip or similar 
+	}
+	
+	public synchronized CompletableFuture<HashMap<String, String>> getThingsClassesFuture() {
+		if (thingsClassesFuture==null) {
+			thingsClassesFuture = new CompletableFuture<HashMap<String,String>>();
+			
+			Runnable fetchTask = new Runnable() {
+				
+				@Override
+				public void run() {
+					HashMap<String, String> thingsClasses = BrowseThingsPanel.this.loadThingsClasses();
+					thingsClassesFuture.complete(thingsClasses);
+				}
+			};
+
+			Executors.newSingleThreadExecutor().submit(fetchTask);
+		}
+		return thingsClassesFuture;
 	}
 	
 }
