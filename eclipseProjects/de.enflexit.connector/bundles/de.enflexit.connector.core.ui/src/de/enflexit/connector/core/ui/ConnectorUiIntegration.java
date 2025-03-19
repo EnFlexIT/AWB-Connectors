@@ -9,11 +9,10 @@ import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
-
-import org.agentgui.gui.swing.MainWindowExtension;
-
-import agentgui.core.application.Application;
-import agentgui.core.gui.MainWindow.WorkbenchMenu;
+import de.enflexit.awb.baseUI.SeparatorPosition;
+import de.enflexit.awb.core.Application;
+import de.enflexit.awb.desktop.mainWindow.MainWindow.WorkbenchMenu;
+import de.enflexit.awb.desktop.mainWindow.MainWindowExtension;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**

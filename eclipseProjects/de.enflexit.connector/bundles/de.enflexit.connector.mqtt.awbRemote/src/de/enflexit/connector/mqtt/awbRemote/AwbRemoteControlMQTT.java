@@ -8,13 +8,12 @@ import java.util.ArrayList;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-
-import agentgui.core.application.Application;
-import agentgui.core.project.Project;
-import agentgui.simulationService.transaction.AbstractDiscreteSimulationStepController;
+import de.enflexit.awb.core.Application;
+import de.enflexit.awb.core.project.Project;
 import de.enflexit.awb.remoteControl.AwbRemoteControl;
 import de.enflexit.awb.remoteControl.AwbSimulationSettings;
 import de.enflexit.awb.remoteControl.AwbState;
+import de.enflexit.awb.simulation.transaction.AbstractDiscreteSimulationStepController;
 import de.enflexit.awbRemote.jsonCommand.AwbCommand;
 import de.enflexit.awbRemote.jsonCommand.AwbNotification;
 import de.enflexit.awbRemote.jsonCommand.Parameter;

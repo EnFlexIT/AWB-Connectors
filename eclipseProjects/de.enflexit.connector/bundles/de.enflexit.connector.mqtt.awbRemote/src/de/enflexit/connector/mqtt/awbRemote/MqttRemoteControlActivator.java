@@ -3,7 +3,7 @@ package de.enflexit.connector.mqtt.awbRemote;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import agentgui.core.application.Application;
+import de.enflexit.awb.core.Application;
 
 /**
  * This activator class starts and stops the MQTT remote control.

@@ -9,9 +9,11 @@ Require-Bundle: com.google.gson,
  de.enflexit.common,
  de.enflexit.connector.core,
  de.enflexit.connector.mqtt,
- org.agentgui.core,
  org.eclipse.osgi
 Automatic-Module-Name: de.enflexit.connector.mqtt.awbRemote
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: de.enflexit.connector.mqtt.awbRemote.MqttRemoteControlActivator
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: de.enflexit.awb.core,
+ de.enflexit.awb.core.project,
+ de.enflexit.awb.simulation.transaction

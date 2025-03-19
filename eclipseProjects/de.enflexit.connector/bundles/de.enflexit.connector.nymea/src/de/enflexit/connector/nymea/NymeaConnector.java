@@ -79,6 +79,7 @@ public class NymeaConnector extends AbstractConnector {
 		return this.connected;
 	}
 	
+	@SuppressWarnings("unused")
 	private void sendTestCalls() {
 		
 		// --- Current power balance ----------------------

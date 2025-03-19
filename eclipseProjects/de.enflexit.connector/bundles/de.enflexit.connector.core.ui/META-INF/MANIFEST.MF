@@ -4,11 +4,15 @@ Bundle-Name: AWB Connector - UI
 Bundle-SymbolicName: de.enflexit.connector.core.ui;singleton:=true
 Bundle-Vendor: EnFlex.IT
 Bundle-Version: 1.1.0.qualifier
-Require-Bundle: org.agentgui.core,
- de.enflexit.connector.core,
+Require-Bundle: de.enflexit.connector.core,
  de.enflexit.common,
  org.eclipse.osgi,
  org.eclipse.equinox.preferences
 Automatic-Module-Name: de.enflexit.connector.core.ui
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: de.enflexit.awb.baseUI,
+ de.enflexit.awb.baseUI.systemtray,
+ de.enflexit.awb.core,
+ de.enflexit.awb.core.config,
+ de.enflexit.awb.desktop.mainWindow

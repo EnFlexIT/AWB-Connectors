@@ -1,6 +1,7 @@
 package de.enflexit.connector.core.ui;
 
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -15,8 +16,7 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
-
-import agentgui.core.application.Application;
+import de.enflexit.awb.core.Application;
 import de.enflexit.common.swing.WindowSizeAndPostionController;
 import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
 
@@ -43,7 +43,7 @@ public class ConnectorManagerDialog extends JDialog {
 	 * Instantiates a new connector manager dialog.
 	 */
 	public ConnectorManagerDialog() {
-		super(Application.getMainWindow());
+		super((Window)Application.getMainWindow());
 		initialize();
 	}
 	

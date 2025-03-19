@@ -7,8 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import agentgui.core.application.Application;
+import de.enflexit.awb.core.Application;
 import de.enflexit.common.ServiceFinder;
 import de.enflexit.common.properties.Properties;
 import de.enflexit.connector.core.AbstractConnector;

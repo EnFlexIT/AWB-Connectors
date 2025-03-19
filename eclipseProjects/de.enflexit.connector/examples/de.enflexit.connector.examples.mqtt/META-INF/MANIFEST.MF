@@ -7,12 +7,16 @@ Bundle-Version: 1.0.0.qualifier
 Export-Package: de.enflexit.connector.examples.mqtt,
  de.enflexit.connector.examples.mqtt.classLoadService
 Require-Bundle: de.enflexit.common,
- org.agentgui.core,
  de.enflexit.connector.core,
  de.enflexit.connector.mqtt,
- org.agentgui.lib.jade
+ de.enflexit.jade
 Automatic-Module-Name: de.enflexit.connector.examples.mqtt
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Service-Component: OSGI-INF/awbClassLoadService.xml
+Import-Package: de.enflexit.awb.core.classLoadService,
+ de.enflexit.awb.core.project,
+ de.enflexit.awb.core.project.plugins,
+ de.enflexit.awb.simulation.balancing,
+ de.enflexit.awb.simulation.environment.time
 

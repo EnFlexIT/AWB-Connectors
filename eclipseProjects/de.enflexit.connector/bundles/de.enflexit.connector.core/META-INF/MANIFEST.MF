@@ -5,14 +5,15 @@ Bundle-SymbolicName: de.enflexit.connector.core
 Bundle-Version: 1.1.0.qualifier
 Export-Package: de.enflexit.connector.core,
  de.enflexit.connector.core.manager
-Import-Package: jakarta.xml.bind,
+Import-Package: de.enflexit.awb.core,
+ de.enflexit.awb.core.config,
+ jakarta.xml.bind,
  jakarta.xml.bind.annotation
 Require-Bundle: com.google.gson,
  de.enflexit.common,
- org.agentgui.core,
  org.eclipse.osgi
 Bundle-Vendor: EnFlex.IT
 Automatic-Module-Name: de.enflexit.connector.core
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: de.enflexit.connector.core.manager.ConnectorManagerActivator
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
