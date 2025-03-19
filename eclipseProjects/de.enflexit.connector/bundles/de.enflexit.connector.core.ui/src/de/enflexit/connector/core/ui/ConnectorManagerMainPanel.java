@@ -10,7 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.ListSelectionModel;
@@ -114,6 +113,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		}
 	}
 	
+	
+	// ----------------------------------------------------
+	// --- Getter methods for the swing components --------
+	
 	private JToolBar getMainToolBar() {
 		if (mainToolBar == null) {
 			mainToolBar = new JToolBar();
@@ -210,10 +213,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	
-	private void showJPopupMenuAddNewConnection() {
-		this.getJPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
-	}
-	
+	/**
+	 * Gets the popup menu for creating new connections.
+	 * @return the popup menu
+	 */
 	private JPopupMenu getJPopupMenuNewConnection() {
 		if (jPopupMenuNewConnection==null) {
 			jPopupMenuNewConnection = new JPopupMenu();
@@ -224,6 +227,13 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			}
 		}
 		return jPopupMenuNewConnection;
+	}
+	
+	/**
+	 * Shows the popup menu for creating new connections.
+	 */
+	private void showJPopupMenuAddNewConnection() {
+		this.getJPopupMenuNewConnection().show(this.getJButtonAdd(), 0, this.getJButtonAdd().getHeight());
 	}
 
 	/**
@@ -283,12 +293,17 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return connectorsListModel;
 	}
 	
+	/**
+	 * Gets the sub-panel for configuring a connector instance.
+	 * @return the connector configuration panel
+	 */
 	private ConnectorConfigurationPanel getConnectorConfigurationPanel() {
 		if (connectorConfigurationPanel == null) {
 			connectorConfigurationPanel = new ConnectorConfigurationPanel();
 		}
 		return connectorConfigurationPanel;
 	}
+	
 
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
@@ -435,7 +450,7 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	}
 	
 	/**
-	 * Gets the index of list element.
+	 * Gets the index of the provided list element.
 	 * @param element the element
 	 * @return the index of list element
 	 */
@@ -448,6 +463,9 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		return -1;
 	}
 
+	/**
+	 * Enabled or disables the buttons, according to the current selection and state-
+	 */
 	private void updateButtonState() {
 		if (this.selectedConnectorName==null) {
 			// --- No connector selected ----------------------------
@@ -479,9 +497,12 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		}
 	}
 	
+	/**
+	 * Starts the selected connection.
+	 */
 	private void startConnection() {
 		if (this.getSelectedConnector()!=null) {
-			boolean success = this.getSelectedConnector().connect();
+			boolean success = this.getSelectedConnector().openConnection();
 			if (success==false) {
 				JOptionPane.showMessageDialog(this, "Failed to open the connection! Please check your settings.", "Connection failed", JOptionPane.ERROR_MESSAGE);
 			} else {
@@ -490,20 +511,21 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		} else {
 			JOptionPane.showMessageDialog(this, "Failed to instantiate the connector! Is there a connector service for the cnfigured protocol?", "Not available", JOptionPane.ERROR_MESSAGE);
 		}
-		
-		ArrayList<AbstractConnector> connectors = ConnectorManager.getInstance().getConnectorsByProtocol("MQTT");
-		for (AbstractConnector connector : connectors) {
-			System.out.println(connector.getConnectorProperties().getStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_NAME) + " - connected: " + connector.isConnected());
-		}
-		
 	}
+	
+	/**
+	 * Stops the selected connection.
+	 */
 	private void stopConnection() {
 		if (this.getSelectedConnector()!=null) {
-			this.getSelectedConnector().disconnect();
+			this.getSelectedConnector().closeConnection();
 			this.updateButtonState();
 		}
 	}
 	
+	/**
+	 * Deletes the selected connection.
+	 */
 	private void deleteConnection() {
 		if (this.isCurrentlyConnected()==true) {
 			JOptionPane.showMessageDialog(this, "The selected connection is currently active! Please disconnect before deleting.", "Currently connected!", JOptionPane.WARNING_MESSAGE);
@@ -517,6 +539,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		}
 	}
 	
+	/**
+	 * Gets the currently selected connector instance.
+	 * @return the selected connector
+	 */
 	private AbstractConnector getSelectedConnector() {
 		if (this.selectedConnectorName!=null) {
 			return ConnectorManager.getInstance().getConnectorByName(this.selectedConnectorName);
@@ -525,6 +551,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		}
 	}
 	
+	/**
+	 * Checks if the selected connector is currently connected.
+	 * @return true, if is currently connected
+	 */
 	private boolean isCurrentlyConnected() {
 		if (this.getSelectedConnector()!=null) {
 			return this.getSelectedConnector().isConnected();
@@ -543,6 +573,10 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 		
 		private ConnectorService connectorService;
 
+		/**
+		 * Instantiates a new create action for the provided connector service.
+		 * @param connectorService the connector service
+		 */
 		public CreateConnectorAction(ConnectorService connectorService) {
 			super("New " + connectorService.getProtocolName() + " connection");
 			this.connectorService = connectorService;
@@ -628,8 +662,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				String message = "The connection you modified is currently active! Reconnect now to apply the changes immediately?";
 				int userResponse = JOptionPane.showConfirmDialog(this, message, "Reconnect now?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (userResponse==JOptionPane.YES_OPTION) {
-					connector.disconnect();
-					connector.connect();
+					connector.closeConnection();
+					connector.openConnection();
 				}
 			}
 		}

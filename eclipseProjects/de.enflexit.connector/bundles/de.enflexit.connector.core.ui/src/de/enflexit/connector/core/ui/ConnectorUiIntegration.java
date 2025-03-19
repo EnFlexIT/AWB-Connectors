@@ -76,7 +76,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	private JButton getToolbarButton() {
 		if (toolbarButton==null) {
 			toolbarButton = new JButton(this.getImageIcon());
-			toolbarButton.setToolTipText("Configure connector settings");
+			toolbarButton.setToolTipText("Configure connections");
 			toolbarButton.addActionListener(this);
 		}
 		return toolbarButton;
