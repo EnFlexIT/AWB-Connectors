@@ -1,7 +1,5 @@
 package de.enflexit.connector.nymea;
 
-import java.time.Instant;
-import java.time.Period;
 import java.util.HashMap;
 
 import javax.swing.JComponent;
@@ -79,17 +77,6 @@ public class NymeaConnector extends AbstractConnector {
 		return this.connected;
 	}
 	
-	private void sendTestCalls() {
-		
-		// --- Current power balance ----------------------
-		this.getNymeaClient().getPowerBalance();
-		
-		// --- Power logs of the last week ----------------
-		Instant now = Instant.now();
-		Instant oneWeekAgo = now.minus(Period.ofDays(7));
-		this.getNymeaClient().getPowerBalanceLogs(oneWeekAgo.toEpochMilli(), now.toEpochMilli(), "SampleRate15Mins");
-	}
-
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#isConnected()
 	 */

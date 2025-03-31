@@ -1,6 +1,7 @@
 package de.enflexit.connector.nymea.rpcClient;
 
 import java.util.HashMap;
+import java.util.List;
 
 import com.google.gson.Gson;
 
@@ -111,12 +112,21 @@ public class JsonRpcRequest {
 	}
 	
 	/**
-	 * Adds a parameter to the list.
+	 * Adds a single value parameter to the request.
 	 * @param name the parameter name
 	 * @param value the parameter value
 	 */
 	public void addParameter(String name, String value) {
 		this.getParamsNotNull().put(name, value);
+	}
+	
+	/**
+	 * Adds a list value parameter to the request.
+	 * @param name the name
+	 * @param valuesList the values list
+	 */
+	public void addListParameter(String name, List<String> valuesList) {
+		this.getParamsNotNull().put(name, valuesList);
 	}
 	
 	/**
