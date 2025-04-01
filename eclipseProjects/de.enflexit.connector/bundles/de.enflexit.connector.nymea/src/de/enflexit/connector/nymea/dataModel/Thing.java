@@ -9,7 +9,7 @@ public class Thing {
 	private String thingClassID;
 	private String type;
 	
-	private ArrayList<State> statesList;
+	private ArrayList<StateVariable> statesList;
 	
 	public String getId() {
 		return id;
@@ -42,9 +42,9 @@ public class Thing {
 		return this.getName();
 	}
 	
-	public ArrayList<State> getStatesList() {
+	public ArrayList<StateVariable> getStatesList() {
 		if (statesList==null) {
-			statesList = new ArrayList<State>();
+			statesList = new ArrayList<StateVariable>();
 		}
 		return statesList;
 	}

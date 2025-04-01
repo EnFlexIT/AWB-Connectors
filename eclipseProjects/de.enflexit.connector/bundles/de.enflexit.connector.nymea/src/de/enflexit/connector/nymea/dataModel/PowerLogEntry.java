@@ -1,7 +1,5 @@
 package de.enflexit.connector.nymea.dataModel;
 
-import java.util.Map;
-
 /**
  * This class represents a power log entry, as used by nymea/consolinno HEMS systems.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
@@ -9,7 +7,7 @@ import java.util.Map;
 public class PowerLogEntry {
 	
 	private long timestamp;
-	private String thingID;
+	private String thingId;
 	private double currentPower;
 	private double totalConsumption;
 	private double totalProduction;
@@ -20,11 +18,11 @@ public class PowerLogEntry {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	public String getThingID() {
-		return thingID;
+	public String getThingId() {
+		return thingId;
 	}
-	public void setThingID(String thingID) {
-		this.thingID = thingID;
+	public void setThingId(String thingID) {
+		this.thingId = thingID;
 	}
 	public double getCurrentPower() {
 		return currentPower;
@@ -45,19 +43,4 @@ public class PowerLogEntry {
 		this.totalProduction = totalProduction;
 	}
 	
-	public static PowerLogEntry fromGsonMap(Map<?,?> gsonMap) {
-		PowerLogEntry powerLogEntry = new PowerLogEntry();
-		String thingID = (String) gsonMap.get("thingId");
-		powerLogEntry.setThingID(thingID);
-		Double timestamp = (Double) gsonMap.get("timestamp");
-		powerLogEntry.setTimestamp(Double.valueOf(timestamp).longValue());
-		Double currentPower = (Double) gsonMap.get("currentPower");
-		powerLogEntry.setCurrentPower(currentPower);
-		Double totalConsumption = (Double) gsonMap.get("totalConsumption");
-		powerLogEntry.setTotalConsumption(totalConsumption);
-		Double totalProduction = (Double)gsonMap.get("totalProduction");
-		powerLogEntry.setTotalProduction(totalProduction);
-		
-		return powerLogEntry;
-	}
 }

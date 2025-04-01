@@ -13,6 +13,8 @@ import java.util.Map;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.google.gson.Gson;
+
 import de.enflexit.connector.nymea.NymeaConnectorSettings;
 import de.enflexit.connector.nymea.dataModel.PowerLogEntry;
 import de.enflexit.connector.nymea.dataModel.SampleRate;
@@ -320,31 +322,46 @@ public class NymeaRpcClient {
 		
 	}
 	
+	/**
+	 * Gets the power log entries for one specific thing for a time range.   
+	 * @param thingID the thing ID
+	 * @param from the beginning of the time range
+	 * @param to the end of the time range
+	 * @param sampleRate the sample rate 
+	 * @return the resulting power log entries
+	 */
 	public ArrayList<PowerLogEntry> getThingPowerLogs(String thingID, long from, long to, SampleRate sampleRate) {
+		
+		// --- Nymea expects time stamps in seconds -------
 		long fromSeconds = from/1000;
 		long toSeconds = to/1000;
 		
+		// --- Thing IDs must be provided as list --------- 
 		ArrayList<String> thingIDsList = new ArrayList<String>();
 		thingIDsList.add(thingID);
 		
+		// --- Prepare the request ------------------------
 		JsonRpcRequest powerLogsRequest = this.prepareRequest();
 		powerLogsRequest.setMethod(RPC_METHOD_POWER_LOGS_FOR_THING);
 		powerLogsRequest.addParameter(RpcParams.FROM.getName(), String.valueOf(fromSeconds));
 		powerLogsRequest.addParameter(RpcParams.TO.getName(), String.valueOf(toSeconds));
 		powerLogsRequest.addParameter(RpcParams.SAMPLE_RATE.getName(), sampleRate.getValue());
 		powerLogsRequest.addListParameter(RpcParams.THING_IDS.getName(), thingIDsList);
-		
+
+		// --- Send the request ---------------------------
 		JsonRpcResponse powerLogsResponse = this.sendRequest(powerLogsRequest);
-		
 		if (powerLogsResponse!=null && powerLogsResponse.isSuccess()==true) {
 			
+			// --- Extract the actual payload -------------
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> entries = (ArrayList<Object>) powerLogsResponse.getParameter("thingPowerLogEntries");
-			
 			ArrayList<PowerLogEntry> powerLogEntries = new ArrayList<PowerLogEntry>();
 			
+			// --- Convert the generic elements back to json first, to parse to the correct class then.
+			Gson gson = new Gson();
 			for (Object entry : entries) {
-				PowerLogEntry ple = PowerLogEntry.fromGsonMap((Map<?, ?>) entry);
+				String plsJson = gson.toJson(entry);
+				PowerLogEntry ple = gson.fromJson(plsJson, PowerLogEntry.class);
 				powerLogEntries.add(ple);
 			}
 			

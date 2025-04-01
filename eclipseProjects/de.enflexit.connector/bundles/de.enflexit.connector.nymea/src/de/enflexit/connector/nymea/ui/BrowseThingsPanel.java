@@ -2,6 +2,7 @@ package de.enflexit.connector.nymea.ui;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -42,8 +43,9 @@ import de.enflexit.connector.core.ConnectorEvent;
 import de.enflexit.connector.core.ConnectorEvent.Event;
 import de.enflexit.connector.core.ConnectorListener;
 import de.enflexit.connector.nymea.NymeaConnector;
+import de.enflexit.connector.nymea.dataModel.PowerLogEntry;
 import de.enflexit.connector.nymea.dataModel.SampleRate;
-import de.enflexit.connector.nymea.dataModel.State;
+import de.enflexit.connector.nymea.dataModel.StateVariable;
 import de.enflexit.connector.nymea.dataModel.StateType;
 import de.enflexit.connector.nymea.dataModel.Thing;
 
@@ -70,6 +72,8 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	
 	private Thing selectedThing;
 	private ArrayList<String> skipChildNodesList;
+	
+	private HashMap<String, String> thingsClassNames;
 
 	/**
 	 * Added for window builder compatibility only. Use the other constructor for actual instantiation.
@@ -107,7 +111,7 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			toolbarButtonLoadThings = new JButton(new ImageIcon(this.getClass().getResource("/icons/Refresh.png")));
 			toolbarButtonLoadThings.setToolTipText("Get the available \"things\" from the HEMS system.");
 			toolbarButtonLoadThings.addActionListener(this);
-			toolbarButtonLoadThings.setEnabled(false);
+//			toolbarButtonLoadThings.setEnabled(false);
 		}
 		return toolbarButtonLoadThings;
 	}
@@ -135,8 +139,14 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			thingsTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode(NODE_TEXT_EMPTY_TREE)));
 			thingsTree.setToolTipText("Right click on a node to copy its value to the clipboard");
 			thingsTree.addMouseListener(new MouseAdapter() {
+				
+				/* (non-Javadoc)
+				 * @see java.awt.event.MouseAdapter#mouseClicked(java.awt.event.MouseEvent)
+				 */
 				@Override
 				public void mouseClicked(MouseEvent me) {
+					
+					// --- Copy the node value on right click -------
 					if (SwingUtilities.isRightMouseButton(me)) {
 						DefaultMutableTreeNode clickedNode = BrowseThingsPanel.this.getClickedNode(me.getX(), me.getY());
 						if (clickedNode!=null && clickedNode.isLeaf()==true) {
@@ -164,37 +174,43 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	}
 	
 	/**
-	 * Reloads tree model.
+	 * Reloads the tree model.
 	 */
 	private void reloadTreeModel() {
 		
 		DefaultMutableTreeNode rootNode = null;
 		
+		// --- Request the list of things from the HEMS system.
 		List<?> thingsList = this.connector.getNymeaClient().getAvailableThings();
 		if (thingsList!=null) {
-			rootNode = new DefaultMutableTreeNode("Available things for the connected HEMS system");
+			rootNode = new DefaultMutableTreeNode("Available \"things\" for the connected HEMS system");
 			
 			for (int i=0; i<thingsList.size(); i++) {
 				Map<?,?> thingDetails = (Map<?, ?>) thingsList.get(i);
 				
+				// --- Create an object containing the relevant information
 				Thing thing = new Thing();
 				thing.setName((String) thingDetails.get("name"));
 				thing.setId((String) thingDetails.get("id"));
 				thing.setThingClassID((String) thingDetails.get("thingClassId"));
 
+				// --- Create a tree node for the thing -----------------------
 				DefaultMutableTreeNode thingNode = new DefaultMutableTreeNode(thing);
+				// --- Automatically create child nodes for the thing properties, except those excluded by the skip list 
 				ObjectBrowserTree.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode, this.getSkipChildNodesList());
 				
-				if (thing.getThingClassID()!=null) {
-					String thingClassID = thing.getThingClassID();
-					this.addThingClassNameNode(thingNode, thingClassID);
+				String thingsClassName = this.getThingsClassNames().get(thing.getThingClassID());
+				if (thingsClassName==null) {
+					thingsClassName = "Pending...";
 				}
+				thingNode.add(new DefaultMutableTreeNode("thingClassName: " + thingsClassName));
 				
+				// --- Handle the thing's "states" (actually state-describing variables)
 				if (thingDetails.get("states")!=null) {
 					@SuppressWarnings("unchecked")
 					ArrayList<Map<?,?>> states = (ArrayList<Map<?,?>>) thingDetails.get("states");
 					for (Map<?,?> stateMap : states) {
-						State state = new State();
+						StateVariable state = new StateVariable();
 						state.setStateTypeID((String) stateMap.get("stateTypeId"));
 						state.setValue(stateMap.get("value"));
 						thing.getStatesList().add(state);
@@ -211,33 +227,26 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 		
 		this.getThingsTree().setModel(new DefaultTreeModel(rootNode));
 		this.getThingsTree().repaint();
+		
+		if (this.getThingsClassNames().size()==0) {
+			this.getThingsClassNamesFromHEMS();
+		}
 	}
 	
 	/**
-	 * Add a child node with the thing class name.
-	 * @param thingNode the thing node
-	 * @param thingClassID the thing class ID
+	 * Gets the things class names from the HEMS system. Adds them to the tree when done.
 	 */
-	private void addThingClassNameNode(DefaultMutableTreeNode thingNode, String thingClassID) {
+	private void getThingsClassNamesFromHEMS() {
+		// --- Request the thing classes, replace in the temporary nodes when done
 		
-		// --- Add a temporary node while requesting the things classes from the server
-		DefaultMutableTreeNode tempNode = new DefaultMutableTreeNode("thingClassName: Pending...");
-		thingNode.add(tempNode);
-		
-		// --- Request the thing classes, replace the temporary node when done
-		Thread waitingThread = new Thread(new Runnable() {
+		SwingUtilities.invokeLater(new Runnable() {
 			
 			@Override
 			public void run() {
 				
 				try {
-					HashMap<String, String> thingsClassesHashMap = BrowseThingsPanel.this.getThingsClassesFuture().get();
-					String thingClassName = thingsClassesHashMap.get(thingClassID);
-					
-					if (thingClassName!=null) {
-						thingNode.remove(tempNode);
-						thingNode.add(new DefaultMutableTreeNode("thingClassName: " + thingClassName));
-					}
+					BrowseThingsPanel.this.thingsClassNames = BrowseThingsPanel.this.getThingsClassesFuture().get();
+					BrowseThingsPanel.this.addThingsClassNames();
 					
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
@@ -246,21 +255,39 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			}
 		});
 		
-		waitingThread.start();
 	}
 	
+	private void addThingsClassNames() {
+		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) this.getThingsTree().getModel().getRoot();
+		for (int i=0; i<rootNode.getChildCount(); i++) {
+			DefaultMutableTreeNode thingNode = (DefaultMutableTreeNode) rootNode.getChildAt(i);
+			Thing thing = (Thing) thingNode.getUserObject();
+			DefaultMutableTreeNode temporaryNode = (DefaultMutableTreeNode) thingNode.getLastChild();
+			if (temporaryNode.getUserObject().equals("thingClassName: Pending...")) {
+				temporaryNode.setUserObject("thingClassName: " + this.getThingsClassNames().get(thing.getThingClassID()));
+			}
+		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.enflexit.connector.core.ConnectorListener#onConnectorEvent(de.enflexit.connector.core.ConnectorEvent)
+	 */
 	@Override
 	public void onConnectorEvent(ConnectorEvent connectorEvent) {
 		if (connectorEvent.getSource()==this.connector) {
 			if (connectorEvent.getEvent()==Event.CONNECTED) {
+//				this.reloadTreeModel();
 				this.getToolbarButtonLoadThings().setEnabled(true);
-				
 			} else if (connectorEvent.getEvent()==Event.DISCONNECTED) {
 				this.getThingsTree().setModel(new DefaultTreeModel(new DefaultMutableTreeNode(NODE_TEXT_EMPTY_TREE)));
 			}
 		}
 	}
 	
+	/**
+	 * Loads the things classes from the HEMS, returns a HashMap mapping class IDs to display names..
+	 * @return the hash map
+	 */
 	private HashMap<String, String> loadThingsClasses() {
 		HashMap<String, String> thingsClassNames = new HashMap<>();
 		List<?> thingsClasses = this.connector.getNymeaClient().getThingClasses();
@@ -273,11 +300,16 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 				thingsClassNames.put(id, name);
 			}
 		} else {
-			System.out.println("[" + this.getClass().getSimpleName() + "]Obtaining things classes failed!");
+			System.out.println("[" + this.getClass().getSimpleName() + "] Obtaining things classes failed!");
 		}
 		return thingsClassNames;
 	}
 	
+	/**
+	 * Loads the StateType instances for the specified ThingClass from the HEMS system.
+	 * @param thingClassID the thing class ID
+	 * @return a mapping from the stateTypeIDs to the corresponding StateType objects. 
+	 */
 	private HashMap<String, StateType> loadStateTypes(String thingClassID){
 		HashMap<String, StateType> stateTypes = new HashMap<String, StateType>();
 		List<StateType> stateTypesList = this.connector.getNymeaClient().getStateTypes(thingClassID);
@@ -291,6 +323,12 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 		return stateTypes;
 	}
 	
+	/**
+	 * Gets the tree node for a clicked position. May be null if there is no node at that position.
+	 * @param clickX the click X
+	 * @param clickY the click Y
+	 * @return the clicked node
+	 */
 	private DefaultMutableTreeNode getClickedNode(int clickX, int clickY) {
         TreePath path = this.getThingsTree().getPathForLocation(clickX, clickY);
         if (path!=null) {
@@ -302,6 +340,12 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
         return null;
 	}
 	
+	/**
+	 * Shows a message to indicate something was copied.
+	 * @param copiedText the copied text
+	 * @param posX the pos X
+	 * @param posY the pos Y
+	 */
 	private void showSuccessMessage(String copiedText, int posX, int posY) {
 		
 		JToolTip toolTip = this.getThingsTree().createToolTip();
@@ -322,6 +366,10 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	    timer.start();
 	}
 	
+	/**
+	 * This {@link CompletableFuture} requests the things classes from the HEMS, and returns the result 
+	 * @return the things classes future
+	 */
 	public synchronized CompletableFuture<HashMap<String, String>> getThingsClassesFuture() {
 		if (thingsClassesFuture==null) {
 			thingsClassesFuture = new CompletableFuture<HashMap<String,String>>();
@@ -340,37 +388,28 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 		return thingsClassesFuture;
 	}
 	
-	public synchronized CompletableFuture<HashMap<String, StateType>> getStateTypesFuture(String thingClassID){
-		CompletableFuture<HashMap<String, StateType>> stateTypesFuture = new CompletableFuture<HashMap<String,StateType>>();
-		Runnable fetchTask = new Runnable() {
-			
-			@Override
-			public void run() {
-				HashMap<String, StateType> stateTypes = BrowseThingsPanel.this.loadStateTypes(thingClassID);
-				stateTypesFuture.complete(stateTypes);
-			}
-		};
-		
-		Executors.newSingleThreadExecutor().submit(fetchTask);
-		return stateTypesFuture;
-	}
-
+	/* (non-Javadoc)
+	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==this.getToolbarButtonLoadThings()) {
 			this.reloadTreeModel();
 		} else if (ae.getSource()==this.getToolbarButtonPowerLogs()) {
 			if (this.selectedThing!=null) {
-				String thingID = selectedThing.getId();
 				SampleRate sampleRate = SampleRate.SAMPLE_RATE_15_MINS;
 				long timeTo = Instant.now().toEpochMilli();
 				long timeFrom = Instant.now().minus(Duration.ofDays(7)).toEpochMilli();
 				
-				this.connector.getNymeaClient().getThingPowerLogs(thingID, timeFrom, timeTo, sampleRate);
+				ArrayList<PowerLogEntry> logEntries = this.connector.getNymeaClient().getThingPowerLogs(selectedThing.getId(), timeFrom, timeTo, sampleRate);
+				this.showPowerLogs(this.connector, selectedThing, logEntries);
 			}
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see javax.swing.event.TreeSelectionListener#valueChanged(javax.swing.event.TreeSelectionEvent)
+	 */
 	@Override
 	public void valueChanged(TreeSelectionEvent tse) {
 		TreePath selectionPath = tse.getPath();
@@ -378,15 +417,24 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			DefaultMutableTreeNode thingNode = (DefaultMutableTreeNode) selectionPath.getPathComponent(1);
 			Thing thing = (Thing) thingNode.getUserObject();
 			this.setSelectedThing(thing);
+		} else {
+			this.setSelectedThing(null);
 		}
-		System.out.println("TreeSelectionEvent - Selected path: " + selectionPath);
 	}
 
+	/**
+	 * Sets the currently selected thing.
+	 * @param selectedThing the new selected thing
+	 */
 	private void setSelectedThing(Thing selectedThing) {
 		this.selectedThing = selectedThing;
 		this.getToolbarButtonPowerLogs().setEnabled(selectedThing!=null);
 	}
 
+	/**
+	 * Specifies a list of response parameters that are excluded from the automatic tree generation.
+	 * @return the skip child nodes list
+	 */
 	private ArrayList<String> getSkipChildNodesList() {
 		if (skipChildNodesList==null) {
 			skipChildNodesList = new ArrayList<String>();
@@ -394,28 +442,68 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 		}
 		return skipChildNodesList;
 	}
+	
+	/**
+	 * Gets the things class names.
+	 * @return the things class names
+	 */
+	private HashMap<String, String> getThingsClassNames() {
+		if (thingsClassNames==null) {
+			thingsClassNames = new HashMap<String, String>();
+		}
+		return thingsClassNames;
+	}
 
+	/* (non-Javadoc)
+	 * @see javax.swing.event.TreeWillExpandListener#treeWillExpand(javax.swing.event.TreeExpansionEvent)
+	 */
 	@Override
 	public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+		
+		// --- Do some pre-processing when handling a thing node
 		DefaultMutableTreeNode nodeToExpand = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
 		if (nodeToExpand.getUserObject() instanceof Thing) {
+			
+			// --- Request the corresponding StateType objects, which contain descriptive information for the states (actually system variables)
 			Thing thing = (Thing) nodeToExpand.getUserObject();
 			HashMap<String, StateType> stateTypes = this.loadStateTypes(thing.getThingClassID());
 			
-			DefaultMutableTreeNode stateVarsNode = new DefaultMutableTreeNode("State variables");
-			
-			for (State state : thing.getStatesList()) {
-				state.setDisplayName(stateTypes.get(state.getStateTypeID()).getDisplayName());
-				stateVarsNode.add(new DefaultMutableTreeNode(state));
+			DefaultMutableTreeNode stateVarsNode = new DefaultMutableTreeNode("Current State");
+
+			// --- Add child nodes for the States, enriched with information from the StateTypes
+			for (StateVariable stateVariable : thing.getStatesList()) {
+				StateType stateType =stateTypes.get(stateVariable.getStateTypeID());
+				stateVariable.setDisplayName(stateType.getDisplayName());
+				stateVariable.setUnit(stateType.getUnit());
+				
+				stateVarsNode.add(new DefaultMutableTreeNode(stateVariable));
 			}
 			
 			nodeToExpand.add(stateVarsNode);
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see javax.swing.event.TreeWillExpandListener#treeWillCollapse(javax.swing.event.TreeExpansionEvent)
+	 */
 	@Override
 	public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
 		// --- Not required ----------------------------
+	}
+	
+	/**
+	 * Opens a dialog to view the power logs for the selected thing
+	 * @param connector the connector
+	 * @param thingID the thing ID
+	 * @param logEntries the log entries
+	 */
+	private void showPowerLogs(NymeaConnector connector, Thing thing, ArrayList<PowerLogEntry> logEntries) {
+		PowerLogsPanel powerLogsPanel = new PowerLogsPanel(connector, thing, logEntries);
+		JDialog powerLogsDialog = new JDialog(SwingUtilities.getWindowAncestor(this));
+		powerLogsDialog.setContentPane(powerLogsPanel);
+		powerLogsDialog.setTitle("Power logs for " + thing.getName());
+		powerLogsDialog.setSize(750, 480);
+		powerLogsDialog.setVisible(true);
 	}
 	
 }
