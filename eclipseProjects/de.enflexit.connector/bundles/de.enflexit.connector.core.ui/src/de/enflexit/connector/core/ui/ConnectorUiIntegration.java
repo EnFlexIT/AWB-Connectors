@@ -43,9 +43,9 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 		switch (this.getIntegrationType()) {
 		case APPLICATION:
 			// --- Tool bar and tray icon menu ------------
-			this.addToolbarComponent(this.getToolbarButton(), 8, SeparatorPosition.NoSeparator);
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
-			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 7, SeparatorPosition.NoSeparator);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, SeparatorPosition.SeparatorAfter);
+			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 6, SeparatorPosition.NoSeparator);
+			this.addToolbarComponent(this.getToolbarButton(), 7, SeparatorPosition.SeparatorAfter);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
