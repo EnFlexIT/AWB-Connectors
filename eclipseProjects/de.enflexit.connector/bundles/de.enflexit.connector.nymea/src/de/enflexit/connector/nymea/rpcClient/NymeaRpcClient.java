@@ -8,10 +8,17 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.google.gson.Gson;
+
 import de.enflexit.connector.nymea.NymeaConnectorSettings;
+import de.enflexit.connector.nymea.dataModel.PowerLogEntry;
+import de.enflexit.connector.nymea.dataModel.SampleRate;
+import de.enflexit.connector.nymea.dataModel.StateType;
 
 /**
  * This class implements a JSON RPC client, as required for the communication with a Nymea/Consolinno HEMS.
@@ -27,8 +34,10 @@ public class NymeaRpcClient {
 	private static final String RPC_METHOD_INTROSPECT = "JSONRPC.Introspect";
 	private static final String RPC_METHOD_POWER_BALANCE = "Energy.GetPowerBalance";
 	private static final String RPC_METHOD_POWER_LOGS = "Energy.GetPowerBalanceLogs";
+	private static final String RPC_METHOD_POWER_LOGS_FOR_THING = "Energy.GetThingPowerLogs";
 	private static final String RPC_METHOD_GET_THINGS = "Integrations.GetThings";
 	private static final String RPC_METHOD_GET_THING_CLASSES = "Integrations.GetThingClasses";
+	private static final String RPC_METHOD_GET_STATE_TYPES = "Integrations.GetStateTypes";
 	
 	private boolean debug = false;
 	
@@ -292,7 +301,7 @@ public class NymeaRpcClient {
 	 * @param sampleRate the sample rate
 	 * @return the power balance logs
 	 */
-	public boolean getPowerBalanceLogs(long from, long to, String sampleRate) {
+	public boolean getPowerBalanceLogs(long from, long to, SampleRate sampleRate) {
 		
 		// --- The backend expects timestamps in seconds ----------------------
 		long fromSeconds = from/1000;
@@ -302,7 +311,7 @@ public class NymeaRpcClient {
 		powerLogsRequest.setMethod(RPC_METHOD_POWER_LOGS);
 		powerLogsRequest.addParameter(RpcParams.FROM.getName(), String.valueOf(fromSeconds));
 		powerLogsRequest.addParameter(RpcParams.TO.getName(), String.valueOf(toSeconds));
-		powerLogsRequest.addParameter(RpcParams.SAMPLE_RATE.getName(), sampleRate);
+		powerLogsRequest.addParameter(RpcParams.SAMPLE_RATE.getName(), sampleRate.getValue());
 		
 		JsonRpcResponse powerLogsResponse = this.sendRequest(powerLogsRequest);
 		
@@ -311,6 +320,54 @@ public class NymeaRpcClient {
 		}
 		return false;
 		
+	}
+	
+	/**
+	 * Gets the power log entries for one specific thing for a time range.   
+	 * @param thingID the thing ID
+	 * @param from the beginning of the time range
+	 * @param to the end of the time range
+	 * @param sampleRate the sample rate 
+	 * @return the resulting power log entries
+	 */
+	public ArrayList<PowerLogEntry> getThingPowerLogs(String thingID, long from, long to, SampleRate sampleRate) {
+		
+		// --- Nymea expects time stamps in seconds -------
+		long fromSeconds = from/1000;
+		long toSeconds = to/1000;
+		
+		// --- Thing IDs must be provided as list --------- 
+		ArrayList<String> thingIDsList = new ArrayList<String>();
+		thingIDsList.add(thingID);
+		
+		// --- Prepare the request ------------------------
+		JsonRpcRequest powerLogsRequest = this.prepareRequest();
+		powerLogsRequest.setMethod(RPC_METHOD_POWER_LOGS_FOR_THING);
+		powerLogsRequest.addParameter(RpcParams.FROM.getName(), String.valueOf(fromSeconds));
+		powerLogsRequest.addParameter(RpcParams.TO.getName(), String.valueOf(toSeconds));
+		powerLogsRequest.addParameter(RpcParams.SAMPLE_RATE.getName(), sampleRate.getValue());
+		powerLogsRequest.addListParameter(RpcParams.THING_IDS.getName(), thingIDsList);
+
+		// --- Send the request ---------------------------
+		JsonRpcResponse powerLogsResponse = this.sendRequest(powerLogsRequest);
+		if (powerLogsResponse!=null && powerLogsResponse.isSuccess()==true) {
+			
+			// --- Extract the actual payload -------------
+			@SuppressWarnings("unchecked")
+			ArrayList<Object> entries = (ArrayList<Object>) powerLogsResponse.getParameter("thingPowerLogEntries");
+			ArrayList<PowerLogEntry> powerLogEntries = new ArrayList<PowerLogEntry>();
+			
+			// --- Convert the generic elements back to json first, to parse to the correct class then.
+			Gson gson = new Gson();
+			for (Object entry : entries) {
+				String plsJson = gson.toJson(entry);
+				PowerLogEntry ple = gson.fromJson(plsJson, PowerLogEntry.class);
+				powerLogEntries.add(ple);
+			}
+			
+			return powerLogEntries;
+		}
+		return null;
 	}
 	
 	/**
@@ -357,6 +414,29 @@ public class NymeaRpcClient {
 		
 		if (classesResponse!=null && classesResponse.isSuccess()) {
 			return (ArrayList<?>) classesResponse.getParameter("thingClasses");
+		} else {
+			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
+			return null;
+		}
+	}
+	
+	public ArrayList<StateType> getStateTypes(String thingClassID){
+		JsonRpcRequest stateTypeRequest = this.prepareRequest();
+		stateTypeRequest.setMethod(RPC_METHOD_GET_STATE_TYPES);
+		stateTypeRequest.addParameter("thingClassId", thingClassID);
+		
+		JsonRpcResponse stateTypesResponse = this.sendRequest(stateTypeRequest);
+		
+		if (stateTypesResponse!=null && stateTypesResponse.isSuccess()) {
+			
+			ArrayList<?> resultList = (ArrayList<?>)stateTypesResponse.getParameter("stateTypes");
+			
+			ArrayList<StateType> stateTypes = new ArrayList<StateType>();
+			for (Object stateType : resultList) {
+				Map<?,?> gsonMap = (Map<?, ?>) stateType;
+				stateTypes.add(StateType.fromGsonMap(gsonMap));
+			}
+			return stateTypes;
 		} else {
 			System.err.println("[" + this.getClass().getSimpleName() + "] Introspection request failed!");
 			return null;

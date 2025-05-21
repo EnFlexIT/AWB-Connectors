@@ -13,7 +13,8 @@ public enum RpcParams {
 	PASSWORD("password"),
 	FROM("from"),
 	TO("to"),
-	SAMPLE_RATE("sampleRate")
+	SAMPLE_RATE("sampleRate"),
+	THING_IDS("thingIds")
 	;
 	
 	private String name;
