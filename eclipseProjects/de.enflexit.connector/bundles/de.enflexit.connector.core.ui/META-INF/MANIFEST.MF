@@ -10,7 +10,7 @@ Require-Bundle: de.enflexit.connector.core,
  org.eclipse.equinox.preferences
 Automatic-Module-Name: de.enflexit.connector.core.ui
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: de.enflexit.awb.baseUI,
  de.enflexit.awb.baseUI.mainWindow,
  de.enflexit.awb.baseUI.systemtray,

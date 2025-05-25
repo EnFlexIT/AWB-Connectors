@@ -147,5 +147,5 @@ Bundle-ClassPath: .,
  lib/netty-transport-native-unix-common-4.1.99.Final.jar,
  lib/reactive-streams-1.0.4.jar,
  lib/rxjava-2.2.21.jar
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Service-Component: OSGI-INF/mqttConnectorService.xml
