@@ -5,7 +5,7 @@ pipeline {
       steps {
         echo 'Start Snapshot Build and Deployment of AWB Connector Features ...'
         sh 'mvn --version'
-        sh 'mvn clean install -P p2DeployClean -f eclipseProjects/de.enflexit.connector -Dtycho.localArtifacts=ignore -Dtycho.p2.transport.min-cache-minutes=0'
+        sh 'mvn clean install -P p2Deploy -f eclipseProjects/de.enflexit.connector -Dtycho.localArtifacts=ignore -Dtycho.p2.transport.min-cache-minutes=0'
         echo 'Build & Deployment of AWB Connector Features!'
       }
     }
