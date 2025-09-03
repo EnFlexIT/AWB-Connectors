@@ -54,6 +54,17 @@ public class NymeaConnector extends AbstractConnector {
 		Properties properties = new Properties();
 		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_PROTOCOL, PROTOCOL_NAME);
 		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, AbstractConnector.StartOn.ManualStart.toString());
+		
+		// --- No useful defaults available, but adding empty entries  to show what can/should be configured
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST, "");
+		properties.setIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT, 0);
+		
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_USERNAME, "");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_PASSWORD, "");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_UUID, "");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_NAME, "");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_SERVER_UUID, "");
+		
 		return properties;
 	}
 
@@ -77,18 +88,6 @@ public class NymeaConnector extends AbstractConnector {
 		return this.connected;
 	}
 	
-//	@SuppressWarnings("unused")
-//	private void sendTestCalls() {
-//		
-//		// --- Current power balance ----------------------
-//		this.getNymeaClient().getPowerBalance();
-//		
-//		// --- Power logs of the last week ----------------
-//		Instant now = Instant.now();
-//		Instant oneWeekAgo = now.minus(Period.ofDays(7));
-//		this.getNymeaClient().getPowerBalanceLogs(oneWeekAgo.toEpochMilli(), now.toEpochMilli(), "SampleRate15Mins");
-//	}
-
 	/* (non-Javadoc)
 	 * @see de.enflexit.connector.core.AbstractConnector#isConnected()
 	 */
