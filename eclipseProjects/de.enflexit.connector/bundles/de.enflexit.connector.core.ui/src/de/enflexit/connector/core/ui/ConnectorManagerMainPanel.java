@@ -21,6 +21,8 @@ import de.enflexit.common.properties.PropertiesEvent;
 import de.enflexit.common.properties.PropertiesListener;
 import de.enflexit.common.properties.PropertiesPanel;
 import de.enflexit.connector.core.AbstractConnector;
+import de.enflexit.connector.core.ConnectorEvent;
+import de.enflexit.connector.core.ConnectorListener;
 import de.enflexit.connector.core.ConnectorService;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -38,7 +40,7 @@ import javax.swing.JComponent;
  * The main panel for the {@link ConnectorManager}'s configuration UI.
  * @author Nils Loose - SOFTEC - Paluno - University of Duisburg-Essen
  */
-public class ConnectorManagerMainPanel extends JPanel implements ActionListener, ListSelectionListener, PropertyChangeListener, PropertiesListener {
+public class ConnectorManagerMainPanel extends JPanel implements ActionListener, ListSelectionListener, PropertyChangeListener, PropertiesListener, ConnectorListener {
 	
 	private static final long serialVersionUID = 3162788243111915591L;
 	
@@ -706,6 +708,16 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 	@Override
 	public void onPropertiesEvent(PropertiesEvent propertiesEvent) {
 		this.setConfigChanged(true);
+	}
+
+	/**
+	 * On connector event.
+	 *
+	 * @param connectorEvent the connector event
+	 */
+	@Override
+	public void onConnectorEvent(ConnectorEvent connectorEvent) {
+		ConnectorManagerMainPanel.this.getConnectorsList().repaint();
 	}
 	
 }

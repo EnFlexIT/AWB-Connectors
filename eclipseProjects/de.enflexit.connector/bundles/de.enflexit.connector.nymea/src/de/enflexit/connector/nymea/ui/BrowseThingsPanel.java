@@ -57,7 +57,7 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	
 	private static final long serialVersionUID = -6158151344814720644L;
 	
-	private static final String NODE_TEXT_EMPTY_TREE = "Start the connection to request the available things from the HEMS";
+	private static final String NODE_TEXT_EMPTY_TREE = "Refresh to load the available things from the HEMS";
 
 	private JToolBar thingsBrowserToolBar;
 	private JButton toolbarButtonLoadThings;

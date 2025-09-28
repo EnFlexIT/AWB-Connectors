@@ -17,6 +17,7 @@ import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
 import de.enflexit.awb.core.Application;
+import de.enflexit.common.swing.AwbThemeImageIcon;
 import de.enflexit.common.swing.WindowSizeAndPostionController;
 import de.enflexit.common.swing.WindowSizeAndPostionController.JDialogPosition;
 
@@ -30,6 +31,9 @@ public class ConnectorManagerDialog extends JDialog {
 	
 	private static final long serialVersionUID = 7253191266415274699L;
 	
+	private static final String ICON_PATH_LIGHT_MODE = "/icons/Connection_LightMode.png";
+	private static final String ICON_PATH_DARK_MODE = "/icons/Connection_DarkMode.png";
+	
 	private static final String PREF_CONNECTOR_DIALOG_X = "Connector-Dialog-X";
 	private static final String PREF_CONNECTOR_DIALOG_Y = "Connector-Dialog-Y";
 	private static final String PREF_CONNECTOR_DIALOG_WIDTH  = "Connector-Dialog-WIDTH";
@@ -38,6 +42,8 @@ public class ConnectorManagerDialog extends JDialog {
 	private ConnectorManagerMainPanel connectorMainPanel;
 	
 	private Timer sizePositionWaitTimer;
+	
+	private AwbThemeImageIcon themedIcon;
 	
 	/**
 	 * Instantiates a new connector manager dialog.
@@ -54,7 +60,7 @@ public class ConnectorManagerDialog extends JDialog {
 		
 		this.setContentPane(this.getMainPanel());
 		this.setTitle(TITLE);
-		this.setIconImage(new ImageIcon(this.getClass().getResource("/icons/Connection.png")).getImage());
+		this.setIconImage(this.getThemedIcon().getImage());
 		
 		this.loadAndApplyDialogSizeAndPosition();
 		this.registerEscapeKeyStroke();
@@ -107,6 +113,15 @@ public class ConnectorManagerDialog extends JDialog {
 			connectorMainPanel = new ConnectorManagerMainPanel();
 		}
 		return connectorMainPanel;
+	}
+	
+	private AwbThemeImageIcon getThemedIcon() {
+		if (themedIcon==null) {
+			ImageIcon imageIconLightMode = new ImageIcon(this.getClass().getResource(ICON_PATH_LIGHT_MODE));
+			ImageIcon imageIconDarkMode = new ImageIcon(this.getClass().getResource(ICON_PATH_DARK_MODE));
+			themedIcon = new AwbThemeImageIcon(imageIconLightMode, imageIconDarkMode);
+		}
+		return themedIcon;
 	}
 	
 	/**

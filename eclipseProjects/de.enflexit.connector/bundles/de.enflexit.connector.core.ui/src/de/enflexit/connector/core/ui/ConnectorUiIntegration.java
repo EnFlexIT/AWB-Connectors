@@ -13,6 +13,7 @@ import de.enflexit.awb.baseUI.SeparatorPosition;
 import de.enflexit.awb.baseUI.mainWindow.MainWindowExtension;
 import de.enflexit.awb.core.Application;
 import de.enflexit.awb.core.ui.AwbMainWindowMenu;
+import de.enflexit.common.swing.AwbThemeImageIcon;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
 /**
@@ -25,9 +26,10 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 		APPLICATION, TRAY_ICON, NONE
 	}
 	
-	private static final String ICON_PATH = "/icons/Connection.png";
+	private static final String ICON_PATH_LIGHT_MODE = "/icons/Connection_LightMode.png";
+	private static final String ICON_PATH_DARK_MODE = "/icons/Connection_DarkMode.png";
 	
-	private ImageIcon imageIcon;
+	private AwbThemeImageIcon themedIcon;
 	private JButton toolbarButton;
 	private JMenuItem menuItem;
 	private MenuItem trayIconMenuItem;
@@ -62,11 +64,13 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 * Gets the image icon.
 	 * @return the image icon
 	 */
-	private ImageIcon getImageIcon() {
-		if (imageIcon==null) {
-			imageIcon = new ImageIcon(this.getClass().getResource(ICON_PATH));
+	private AwbThemeImageIcon getThemedIcon() {
+		if (themedIcon==null) {
+			ImageIcon imageIconLightMode = new ImageIcon(this.getClass().getResource(ICON_PATH_LIGHT_MODE));
+			ImageIcon imageIconDarkMode = new ImageIcon(this.getClass().getResource(ICON_PATH_DARK_MODE));
+			themedIcon = new AwbThemeImageIcon(imageIconLightMode, imageIconDarkMode);
 		}
-		return imageIcon;
+		return themedIcon;
 	}
 	/**
 	 * Gets the toolbar button.
@@ -74,7 +78,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 */
 	private JButton getToolbarButton() {
 		if (toolbarButton==null) {
-			toolbarButton = new JButton(this.getImageIcon());
+			toolbarButton = new JButton(this.getThemedIcon());
 			toolbarButton.setToolTipText("Configure connections");
 			toolbarButton.addActionListener(this);
 		}
@@ -86,7 +90,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 	 */
 	private JMenuItem getJMenuItem() {
 		if (menuItem==null) {
-			menuItem = new JMenuItem(ConnectorManagerDialog.TITLE, this.getImageIcon());
+			menuItem = new JMenuItem(ConnectorManagerDialog.TITLE, this.getThemedIcon());
 			menuItem.addActionListener(this);
 		}
 		return menuItem;

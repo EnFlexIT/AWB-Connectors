@@ -58,6 +58,11 @@ public class ConnectorsListCellRenderer extends DefaultListCellRenderer {
 		}
 	}
 	
+	/**
+	 * Provides a string describing the current connector state, for building tooltip strings.
+	 * @param connector the connector
+	 * @return the connector state suffix
+	 */
 	private String getConnectorStateSuffix(AbstractConnector connector) {
 		if (connector==null) {
 			return " - not available";

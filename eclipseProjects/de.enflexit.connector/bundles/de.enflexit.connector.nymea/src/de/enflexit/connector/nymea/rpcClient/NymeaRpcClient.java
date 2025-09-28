@@ -55,6 +55,10 @@ public class NymeaRpcClient {
 		this.connectionSettings = connectionSettings;
 	}
 	
+	/**
+	 * Open the connection to the nymea HEMS.
+	 * @return true, if successful
+	 */
 	public boolean openConnection() {
 		//TODO Check if all necessary infos are available
 		
@@ -480,4 +484,5 @@ public class NymeaRpcClient {
 		JsonRpcResponse response = this.sendRequest(request);
 		return response;
 	}
+	
 }

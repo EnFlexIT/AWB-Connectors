@@ -129,7 +129,7 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 		add(getJComboBoxSampleRate(), gbc_jComboBoxSampleRate);
 		GridBagConstraints gbc_jButtonReload = new GridBagConstraints();
 		gbc_jButtonReload.anchor = GridBagConstraints.EAST;
-		gbc_jButtonReload.insets = new Insets(10, 5, 5, 10);
+		gbc_jButtonReload.insets = new Insets(10, 5, 5, 5);
 		gbc_jButtonReload.gridx = 6;
 		gbc_jButtonReload.gridy = 0;
 		add(getJButtonReload(), gbc_jButtonReload);
@@ -195,7 +195,7 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 	private JButton getJButtonStoreResults() {
 		if (jButtonStoreResults == null) {
 			jButtonStoreResults = new JButton(new ImageIcon(this.getClass().getResource("/icons/Save.png")));
-			jButtonStoreResults.setToolTipText("Reload the table contents, according to the settings made.");
+			jButtonStoreResults.setToolTipText("Store the table data as CSV");
 			jButtonStoreResults.addActionListener(this);
 		}
 		return jButtonStoreResults;
@@ -305,17 +305,22 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 		// --- Choose file
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
+		fileChooser.setAcceptAllFileFilterUsed(false);
 		if (fileChooser.showSaveDialog(this)==JFileChooser.APPROVE_OPTION) {
 			
-			// --- If file exists, confirm overwrite
 			File csvFile = fileChooser.getSelectedFile();
+			// --- Add suffix if missing ----------------------------
+			if (csvFile.getName().endsWith(".csv")==false) {
+				csvFile = new File(csvFile.getAbsolutePath() + ".csv");
+			}
+			// --- If file exists, confirm overwrite ------
 			if (csvFile.exists()) {
 				if (JOptionPane.showConfirmDialog(this, "The selected file already exists, overwrite?", "Overwrite file?", JOptionPane.YES_NO_OPTION)==JOptionPane.NO_OPTION) {
 					return;
 				}
 			}
 			
-			// --- Save ti the selected file using the CsvDataController 
+			// --- Save to the selected file using the CsvDataController 
 			CsvDataController csvController = new CsvDataController();
 			csvController.setTableModel(this.getTableModel());
 			csvController.setFile(csvFile);
