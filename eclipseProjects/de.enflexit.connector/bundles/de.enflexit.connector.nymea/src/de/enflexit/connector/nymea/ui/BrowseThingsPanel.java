@@ -48,6 +48,8 @@ import de.enflexit.connector.nymea.dataModel.SampleRate;
 import de.enflexit.connector.nymea.dataModel.StateVariable;
 import de.enflexit.connector.nymea.dataModel.StateType;
 import de.enflexit.connector.nymea.dataModel.Thing;
+import de.enflexit.connector.nymea.dataModel.ThingProperty;
+import de.enflexit.connector.nymea.dataModel.ThingsClass;
 
 /**
  * This panels allows to browse the servers API information, as provided by nymea's JSONRPC.Introspect method. 
@@ -68,12 +70,12 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	
 	private NymeaConnector connector;
 	
-	private CompletableFuture<HashMap<String, String>> thingsClassesFuture;
+	private CompletableFuture<HashMap<String, ThingsClass>> thingsClassesFuture;
 	
 	private Thing selectedThing;
 	private ArrayList<String> skipChildNodesList;
 	
-	private HashMap<String, String> thingsClassNames;
+	private HashMap<String, ThingsClass> thingsClasses;
 
 	/**
 	 * Added for window builder compatibility only. Use the other constructor for actual instantiation.
@@ -193,16 +195,36 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 				thing.setName((String) thingDetails.get("name"));
 				thing.setId((String) thingDetails.get("id"));
 				thing.setThingClassID((String) thingDetails.get("thingClassId"));
+				
+				@SuppressWarnings("unchecked")
+				ArrayList<Map<?, ?>> paramsList = (ArrayList<Map<?, ?>>) thingDetails.get("params");
+				if (paramsList!=null) {
+					for (Map<?,?> paramMap : paramsList) {
+						thing.getThingParameters().add(this.convertToThingProperty(paramMap));
+					}
+				}
+				
+				@SuppressWarnings("unchecked")
+				ArrayList<Map<?, ?>> settingsList = (ArrayList<Map<?, ?>>) thingDetails.get("settings");
+				if (settingsList!=null) {
+					for (Map<?,?> settingMap : settingsList) {
+						thing.getThingSettings().add(this.convertToThingProperty(settingMap));
+					}
+				}
 
 				// --- Create a tree node for the thing -----------------------
 				DefaultMutableTreeNode thingNode = new DefaultMutableTreeNode(thing);
 				// --- Automatically create child nodes for the thing properties, except those excluded by the skip list 
 				ObjectBrowserTree.addMapContentChildNodes((Map<?, ?>) thingsList.get(i), thingNode, this.getSkipChildNodesList());
 				
-				String thingsClassName = this.getThingsClassNames().get(thing.getThingClassID());
-				if (thingsClassName==null) {
+				String thingsClassName = null;
+				ThingsClass thingsClass = this.getThingsClasses().get(thing.getThingClassID());
+				if (thingsClass!=null) {
+					thingsClassName = thingsClass.getName();
+				} else {
 					thingsClassName = "Pending...";
 				}
+				
 				thingNode.add(new DefaultMutableTreeNode("thingClassName: " + thingsClassName));
 				
 				// --- Handle the thing's "states" (actually state-describing variables)
@@ -228,9 +250,18 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 		this.getThingsTree().setModel(new DefaultTreeModel(rootNode));
 		this.getThingsTree().repaint();
 		
-		if (this.getThingsClassNames().size()==0) {
+		if (this.getThingsClasses().size()==0) {
 			this.getThingsClassNamesFromHEMS();
 		}
+	}
+	
+	private ThingProperty convertToThingProperty(Map<?,?> paramAsMap) {
+		String paramID = (String) paramAsMap.get("paramTypeId");
+		Object paramValue = paramAsMap.get("value");
+		ThingProperty thingParam = new ThingProperty();
+		thingParam.setParameterTypeID(paramID);
+		thingParam.setValue(paramValue);
+		return thingParam;
 	}
 	
 	/**
@@ -245,8 +276,10 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			public void run() {
 				
 				try {
-					BrowseThingsPanel.this.thingsClassNames = BrowseThingsPanel.this.getThingsClassesFuture().get();
+					BrowseThingsPanel.this.thingsClasses = BrowseThingsPanel.this.getThingsClassesFuture().get();
 					BrowseThingsPanel.this.addThingsClassNames();
+					BrowseThingsPanel.this.addThingsClassParams();
+					BrowseThingsPanel.this.addThingsClassSettings();
 					
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
@@ -264,9 +297,79 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			Thing thing = (Thing) thingNode.getUserObject();
 			DefaultMutableTreeNode temporaryNode = (DefaultMutableTreeNode) thingNode.getLastChild();
 			if (temporaryNode.getUserObject().equals("thingClassName: Pending...")) {
-				temporaryNode.setUserObject("thingClassName: " + this.getThingsClassNames().get(thing.getThingClassID()));
+				temporaryNode.setUserObject("thingClassName: " + this.getThingsClasses().get(thing.getThingClassID()).getName());
 			}
 		}
+	}
+	
+	private void addThingsClassParams() {
+		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) this.getThingsTree().getModel().getRoot();
+		for (int i=0; i<rootNode.getChildCount(); i++) {
+			DefaultMutableTreeNode thingNode = (DefaultMutableTreeNode) rootNode.getChildAt(i);
+			Thing thing = (Thing) thingNode.getUserObject();
+			ThingsClass thingsClass = this.getThingsClasses().get(thing.getThingClassID());
+			for (int j=0; j<thingNode.getChildCount(); j++) {
+				DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) thingNode.getChildAt(j);
+				if(childNode.getUserObject().equals("params")) {
+					
+					childNode.removeAllChildren();
+					
+					for (ThingProperty param : thing.getThingParameters()) {
+						String paramName = this.getParamNameForID(param.getParameterTypeID(), thingsClass);
+						DefaultMutableTreeNode paramNode = new DefaultMutableTreeNode();
+						paramNode.setUserObject(paramName + ": " + param.getValue());
+						childNode.add(paramNode);
+					}
+				}
+			}
+		}
+	}
+	
+	private void addThingsClassSettings() {
+		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) this.getThingsTree().getModel().getRoot();
+		for (int i=0; i<rootNode.getChildCount(); i++) {
+			DefaultMutableTreeNode thingNode = (DefaultMutableTreeNode) rootNode.getChildAt(i);
+			Thing thing = (Thing) thingNode.getUserObject();
+			ThingsClass thingsClass = this.getThingsClasses().get(thing.getThingClassID());
+			for (int j=0; j<thingNode.getChildCount(); j++) {
+				DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) thingNode.getChildAt(j);
+				if(childNode.getUserObject().equals("settings")) {
+					
+					childNode.removeAllChildren();
+					
+					for (ThingProperty param : thing.getThingSettings()) {
+						String paramName = this.getSettingNameForID(param.getParameterTypeID(), thingsClass);
+						DefaultMutableTreeNode paramNode = new DefaultMutableTreeNode();
+						paramNode.setUserObject(paramName + ": " + param.getValue());
+						childNode.add(paramNode);
+					}
+				}
+			}
+		}
+	}
+	
+	private  String getParamNameForID(String paramID, ThingsClass thingsClass) {
+		Object params = thingsClass.getParams();
+		@SuppressWarnings("unchecked")
+		ArrayList<Map<?,?>> paramMaps = (ArrayList<Map<?,?>>)params;
+		for (Map<?,?> paramMap : paramMaps) {
+			if (paramMap.get("id").equals(paramID)) {
+				return (String) paramMap.get("displayName");
+			}
+		}
+		return "";
+	}
+	
+	private  String getSettingNameForID(String paramID, ThingsClass thingsClass) {
+		Object params = thingsClass.getSettings();
+		@SuppressWarnings("unchecked")
+		ArrayList<Map<?,?>> paramMaps = (ArrayList<Map<?,?>>)params;
+		for (Map<?,?> paramMap : paramMaps) {
+			if (paramMap.get("id").equals(paramID)) {
+				return (String) paramMap.get("displayName");
+			}
+		}
+		return "";
 	}
 	
 	/* (non-Javadoc)
@@ -288,16 +391,22 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	 * Loads the things classes from the HEMS, returns a HashMap mapping class IDs to display names..
 	 * @return the hash map
 	 */
-	private HashMap<String, String> loadThingsClasses() {
-		HashMap<String, String> thingsClassNames = new HashMap<>();
+	private HashMap<String, ThingsClass> loadThingsClasses() {
+		HashMap<String, ThingsClass> thingsClassNames = new HashMap<>();
 		List<?> thingsClasses = this.connector.getNymeaClient().getThingClasses();
 		if (thingsClasses!=null) {
 			System.out.println("Received " + thingsClasses.size() + " things classes");
 			for (Object thingClass : thingsClasses) {
 				Map<?,?> thingClassMap = (Map<?, ?>) thingClass;
-				String id = (String) thingClassMap.get("id");
-				String name = (String) thingClassMap.get("displayName");
-				thingsClassNames.put(id, name);
+				
+				ThingsClass thingsClass = new ThingsClass();
+				thingsClass.setId((String) thingClassMap.get("id"));
+				thingsClass.setName((String)thingClassMap.get("displayName"));
+				thingsClass.setParams(thingClassMap.get("paramTypes"));
+				thingsClass.setSettings(thingClassMap.get("settingsTypes"));
+				
+				thingsClassNames.put(thingsClass.getId(), thingsClass);
+				
 			}
 		} else {
 			System.out.println("[" + this.getClass().getSimpleName() + "] Obtaining things classes failed!");
@@ -370,15 +479,15 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	 * This {@link CompletableFuture} requests the things classes from the HEMS, and returns the result 
 	 * @return the things classes future
 	 */
-	public synchronized CompletableFuture<HashMap<String, String>> getThingsClassesFuture() {
+	public synchronized CompletableFuture<HashMap<String, ThingsClass>> getThingsClassesFuture() {
 		if (thingsClassesFuture==null) {
-			thingsClassesFuture = new CompletableFuture<HashMap<String,String>>();
+			thingsClassesFuture = new CompletableFuture<HashMap<String,ThingsClass>>();
 			
 			Runnable fetchTask = new Runnable() {
 				
 				@Override
 				public void run() {
-					HashMap<String, String> thingsClasses = BrowseThingsPanel.this.loadThingsClasses();
+					HashMap<String, ThingsClass> thingsClasses = BrowseThingsPanel.this.loadThingsClasses();
 					thingsClassesFuture.complete(thingsClasses);
 				}
 			};
@@ -447,11 +556,11 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 	 * Gets the things class names.
 	 * @return the things class names
 	 */
-	private HashMap<String, String> getThingsClassNames() {
-		if (thingsClassNames==null) {
-			thingsClassNames = new HashMap<String, String>();
+	private HashMap<String, ThingsClass> getThingsClasses() {
+		if (thingsClasses==null) {
+			thingsClasses = new HashMap<String, ThingsClass>();
 		}
-		return thingsClassNames;
+		return thingsClasses;
 	}
 
 	/* (non-Javadoc)
@@ -473,10 +582,11 @@ public class BrowseThingsPanel extends JPanel implements ConnectorListener, Acti
 			// --- Add child nodes for the States, enriched with information from the StateTypes
 			for (StateVariable stateVariable : thing.getStatesList()) {
 				StateType stateType =stateTypes.get(stateVariable.getStateTypeID());
-				stateVariable.setDisplayName(stateType.getDisplayName());
-				stateVariable.setUnit(stateType.getUnit());
-				
-				stateVarsNode.add(new DefaultMutableTreeNode(stateVariable));
+				if (stateType!=null) {
+					stateVariable.setDisplayName(stateType.getDisplayName());
+					stateVariable.setUnit(stateType.getUnit());
+					stateVarsNode.add(new DefaultMutableTreeNode(stateVariable));
+				}
 			}
 			
 			nodeToExpand.add(stateVarsNode);

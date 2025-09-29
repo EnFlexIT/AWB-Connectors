@@ -10,6 +10,8 @@ public class Thing {
 	private String type;
 	
 	private ArrayList<StateVariable> statesList;
+	private ArrayList<ThingProperty> thingParameters;
+	private ArrayList<ThingProperty> thingSettings;
 	
 	public String getId() {
 		return id;
@@ -48,5 +50,19 @@ public class Thing {
 		}
 		return statesList;
 	}
+	public ArrayList<ThingProperty> getThingParameters() {
+		if (thingParameters==null) {
+			thingParameters = new ArrayList<ThingProperty>();
+		}
+		return thingParameters;
+	}
+	public ArrayList<ThingProperty> getThingSettings() {
+		if (thingSettings==null) {
+			thingSettings = new ArrayList<ThingProperty>();
+		}
+		return thingSettings;
+	}
+	
+	
 	
 }

@@ -290,6 +290,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 			connectorsListModel = new DefaultListModel<String>();
 			for (String connectorName : ConnectorManager.getInstance().getConfiguredConnectorNames()) {
 				connectorsListModel.addElement(connectorName);
+				AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(connectorName);
+				connector.addConnectorListener(this);
 			}
 		}
 		return connectorsListModel;
@@ -322,6 +324,8 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				if (newElementIndex>=0) {
 					this.getConnectorsList().setSelectedIndex(newElementIndex);
 				}
+				AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(newConnectorName);
+				connector.addConnectorListener(this);
 				
 			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_REMOVED)) {
 				String removedConnectorName = (String) evt.getOldValue();
@@ -329,6 +333,11 @@ public class ConnectorManagerMainPanel extends JPanel implements ActionListener,
 				if (elementIndex>-1) {
 					this.getConnectorsList().clearSelection();
 					this.getConnectorsListModel().remove(elementIndex);
+				}
+				
+				AbstractConnector connector = ConnectorManager.getInstance().getConnectorByName(removedConnectorName);
+				if (connector!=null) {
+					connector.removeConnectorListener(this);
 				}
 				
 			} else if (evt.getPropertyName().equals(ConnectorManager.CONNECTOR_RENAMED)) {
