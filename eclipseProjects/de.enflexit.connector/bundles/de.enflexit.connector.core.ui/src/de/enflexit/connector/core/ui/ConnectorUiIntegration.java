@@ -9,7 +9,8 @@ import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
-import de.enflexit.awb.baseUI.SeparatorPosition;
+
+import de.enflexit.awb.baseUI.ToolBarGroup;
 import de.enflexit.awb.baseUI.mainWindow.MainWindowExtension;
 import de.enflexit.awb.core.Application;
 import de.enflexit.awb.core.ui.AwbMainWindowMenu;
@@ -45,13 +46,13 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 		switch (this.getIntegrationType()) {
 		case APPLICATION:
 			// --- Tool bar and tray icon menu ------------
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, SeparatorPosition.SeparatorAfter);
-			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 6, SeparatorPosition.NoSeparator);
-			this.addToolbarComponent(this.getToolbarButton(), 7, SeparatorPosition.SeparatorAfter);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, false);
+			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 6, false);
+			this.addToolbarComponent(this.getToolbarButton(), null, true, ToolBarGroup.ExtraTools);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
-			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, SeparatorPosition.SeparatorInFrontOf);
+			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 4, true);
 			break;
 		case NONE:
 			// --- Nothing to do here ---------------------
