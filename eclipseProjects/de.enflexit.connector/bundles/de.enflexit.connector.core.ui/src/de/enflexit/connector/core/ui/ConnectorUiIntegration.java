@@ -48,7 +48,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 			// --- Tool bar and tray icon menu ------------
 			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, false);
 			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 6, false);
-			this.addToolbarComponent(this.getToolbarButton(), null, true, ToolBarGroup.ExtraTools);
+			this.addToolbarComponent(this.getToolbarButton(), null, false, ToolBarGroup.ExtraTools);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
