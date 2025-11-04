@@ -32,9 +32,11 @@ public class NymeaConnector extends AbstractConnector {
 	private NymeaConnectorSettings connectorSettings;
 	private NymeaRpcClient nymeaClient;
 	
-	private JTabbedPane configurationUIComponent;
-	
 	private HashMap<String, Object> introspectionData;
+	
+	private IntrospectionPanel introspectionPanel;
+	private BrowseThingsPanel browseThingsPanel;
+	private ExecuteMethodsPanel executeMethodsPanel;
 	
 	private boolean connected;
 
@@ -140,16 +142,50 @@ public class NymeaConnector extends AbstractConnector {
 	@Override
 	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
 
-		if (configurationUIComponent==null) {
-			configurationUIComponent = new JTabbedPane();
-			configurationUIComponent.addTab(" Properties ", baseConfigPanel);
-			configurationUIComponent.addTab(" API Introspection  ", new IntrospectionPanel(this));
-			configurationUIComponent.addTab(" Browse Things  ", new BrowseThingsPanel(this));
-			configurationUIComponent.addTab(" Methods Execution ", new ExecuteMethodsPanel(this));
-		}
+		// --- To solve the problem of the "lost" properties panel after switching connectors, always create a new tabbed pane, but remember the sub panels   
+		JTabbedPane configurationUIComponent = new JTabbedPane();
+		configurationUIComponent.addTab(" Properties ", baseConfigPanel);
+		configurationUIComponent.addTab(" API Introspection  ", this.getIntrospectionPanel());
+		configurationUIComponent.addTab(" Browse Things  ", this.getBrowseThingsPanel());
+		configurationUIComponent.addTab(" Methods Execution ", this.getExecuteMethodsPanel());
 		
 		return configurationUIComponent;
 	}
+
+	/**
+	 * Gets the introspection panel.
+	 * @return the introspection panel
+	 */
+	private IntrospectionPanel getIntrospectionPanel() {
+		if (introspectionPanel==null) {
+			introspectionPanel = new IntrospectionPanel(this);
+		}
+		return introspectionPanel;
+	}
+
+	/**
+	 * Gets the browse things panel.
+	 * @return the browse things panel
+	 */
+	private BrowseThingsPanel getBrowseThingsPanel() {
+		if (browseThingsPanel==null) {
+			browseThingsPanel = new BrowseThingsPanel(this);
+		}
+		return browseThingsPanel;
+	}
+
+	/**
+	 * Gets the execute methods panel.
+	 * @return the execute methods panel
+	 */
+	private ExecuteMethodsPanel getExecuteMethodsPanel() {
+		if (executeMethodsPanel == null) {
+			executeMethodsPanel = new ExecuteMethodsPanel(this);
+		}
+		return executeMethodsPanel;
+	}
+
+	
 	
 	
 }
