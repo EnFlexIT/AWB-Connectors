@@ -10,10 +10,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
 
-import de.enflexit.awb.baseUI.ToolBarGroup;
 import de.enflexit.awb.baseUI.mainWindow.MainWindowExtension;
 import de.enflexit.awb.core.Application;
 import de.enflexit.awb.core.ui.AwbMainWindowMenu;
+import de.enflexit.awb.core.ui.AwbMainWindowToolBarGroup;
 import de.enflexit.common.swing.AwbThemeImageIcon;
 import de.enflexit.connector.core.manager.ConnectorManager;
 
@@ -48,7 +48,7 @@ public class ConnectorUiIntegration extends MainWindowExtension implements Actio
 			// --- Tool bar and tray icon menu ------------
 			this.addTrayIconMenuItem(this.getTrayIconMenuItem(), 5, false);
 			this.addJMenuItem(AwbMainWindowMenu.MenuExtra, this.getJMenuItem(), 6, false);
-			this.addToolbarComponent(this.getToolbarButton(), null, false, ToolBarGroup.ExtraTools);
+			this.addToolbarComponent(this.getToolbarButton(), null, false, AwbMainWindowToolBarGroup.ExtraTools);
 			break;
 		case TRAY_ICON:
 			// --- Tray icon menu only --------------------
