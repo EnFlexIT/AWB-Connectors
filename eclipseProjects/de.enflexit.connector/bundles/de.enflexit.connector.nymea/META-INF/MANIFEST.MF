@@ -3,6 +3,8 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Nymea Connector
 Bundle-SymbolicName: de.enflexit.connector.nymea
 Bundle-Version: 1.0.0.qualifier
+Import-Package: de.enflexit.awb.core,
+ de.enflexit.awb.core.config
 Require-Bundle: com.google.gson,
  de.enflexit.common,
  de.enflexit.connector.core
