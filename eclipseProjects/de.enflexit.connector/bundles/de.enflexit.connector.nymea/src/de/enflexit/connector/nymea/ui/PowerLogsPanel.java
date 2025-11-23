@@ -11,6 +11,7 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 
+import de.enflexit.awb.core.Application;
 import de.enflexit.common.csv.CsvDataController;
 import de.enflexit.connector.nymea.NymeaConnector;
 import de.enflexit.connector.nymea.dataModel.PowerLogEntry;
@@ -289,6 +290,10 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 		// --- Request power logs as specified --------
 		ArrayList<PowerLogEntry> logEntries = this.connector.getNymeaClient().getThingPowerLogs(this.thing.getId(), from.toEpochMilli(), to.toEpochMilli(), sampleRate);
 		
+		if (logEntries.size()==0) {
+			JOptionPane.showMessageDialog(this, "No data found for the specified time frame with the desired sample rate. If requesting older data, try wider steps since the data might have been aggregated.", "Empty Rsult!", JOptionPane.WARNING_MESSAGE);
+		}
+		
 		// --- Reset the table model ------------------
 		if (logEntries!=null) {
 			this.logEntries = logEntries;
@@ -306,6 +311,7 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
 		fileChooser.setAcceptAllFileFilterUsed(false);
+		fileChooser.setCurrentDirectory(Application.getGlobalInfo().getLastSelectedFolder());
 		if (fileChooser.showSaveDialog(this)==JFileChooser.APPROVE_OPTION) {
 			
 			File csvFile = fileChooser.getSelectedFile();
@@ -316,9 +322,13 @@ public class PowerLogsPanel extends JPanel implements ActionListener {
 			// --- If file exists, confirm overwrite ------
 			if (csvFile.exists()) {
 				if (JOptionPane.showConfirmDialog(this, "The selected file already exists, overwrite?", "Overwrite file?", JOptionPane.YES_NO_OPTION)==JOptionPane.NO_OPTION) {
+					// --- Abort if not confirmed ---------
 					return;
 				}
 			}
+			
+			// --- Remember the selected folder -----------
+			Application.getGlobalInfo().setLastSelectedFolder(csvFile.getParentFile());
 			
 			// --- Save to the selected file using the CsvDataController 
 			CsvDataController csvController = new CsvDataController();

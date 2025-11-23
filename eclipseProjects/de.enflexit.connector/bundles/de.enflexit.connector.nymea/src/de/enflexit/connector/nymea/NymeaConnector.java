@@ -32,9 +32,11 @@ public class NymeaConnector extends AbstractConnector {
 	private NymeaConnectorSettings connectorSettings;
 	private NymeaRpcClient nymeaClient;
 	
-	private JTabbedPane configurationUIComponent;
-	
 	private HashMap<String, Object> introspectionData;
+	
+	private IntrospectionPanel introspectionPanel;
+	private BrowseThingsPanel browseThingsPanel;
+	private ExecuteMethodsPanel executeMethodsPanel;
 	
 	private boolean connected;
 
@@ -56,13 +58,13 @@ public class NymeaConnector extends AbstractConnector {
 		properties.setStringValue(AbstractConnector.PROPERTY_KEY_CONNECTOR_START_ON, AbstractConnector.StartOn.ManualStart.toString());
 		
 		// --- No useful defaults available, but adding empty entries  to show what can/should be configured
-		properties.setStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST, "");
-		properties.setIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT, 0);
+		properties.setStringValue(AbstractConnector.PROPERTY_KEY_SERVER_HOST, "hems-remoteproxy.services.consolinno.de");
+		properties.setIntegerValue(AbstractConnector.PROPERTY_KEY_SERVER_PORT, 2213);
 		
 		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_USERNAME, "");
 		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_PASSWORD, "");
-		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_UUID, "");
-		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_NAME, "");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_UUID, "4739d245-3768-4cab-b4a5-b48af19d70da");
+		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_CLIENT_NAME, "Java-Client UDE");
 		properties.setStringValue(NymeaConnector.PROPERTY_KEY_NYMEA_SERVER_UUID, "");
 		
 		return properties;
@@ -73,16 +75,18 @@ public class NymeaConnector extends AbstractConnector {
 	 */
 	@Override
 	public boolean connect() {
+		// --- Establish the connection -----------------------------
 		this.connected = this.getNymeaClient().openConnection();
 		if (this.connected) {
+			
+			// --- Authenticate -------------------------------------
 			if (this.getNymeaClient().isAuthenticated()==false) {
 				this.getNymeaClient().authenticateUser();
 			}
-			if (this.getNymeaClient().isAuthenticated()) {
-//				this.sendTestCalls();
-//				this.getNymeaClient().printMethodsOverview();
-//				this.notifyListeners(new ConnectorEvent(this, Event.CONNECTED));
-//				this.sendTestCalls();
+			
+			// --- CLose connection if authentication failed -------- 
+			if (this.getNymeaClient().isAuthenticated()==false) {
+				this.disconnect();
 			}
 		}
 		return this.connected;
@@ -105,8 +109,13 @@ public class NymeaConnector extends AbstractConnector {
 		this.connected = false;
 	}
 	
+	/**
+	 * Gets the connector settings.
+	 * @return the connector settings
+	 */
 	public NymeaConnectorSettings getConnectorSettings() {
 		if (connectorSettings==null) {
+			// --- Initialize with the connector properties ---------
 			connectorSettings = new NymeaConnectorSettings(this.getConnectorProperties());
 		}
 		return connectorSettings;
@@ -140,16 +149,50 @@ public class NymeaConnector extends AbstractConnector {
 	@Override
 	public JComponent getConfigurationUIComponent(JPanel baseConfigPanel) {
 
-		if (configurationUIComponent==null) {
-			configurationUIComponent = new JTabbedPane();
-			configurationUIComponent.addTab(" Properties ", baseConfigPanel);
-			configurationUIComponent.addTab(" API Introspection  ", new IntrospectionPanel(this));
-			configurationUIComponent.addTab(" Browse Things  ", new BrowseThingsPanel(this));
-			configurationUIComponent.addTab(" Methods Execution ", new ExecuteMethodsPanel(this));
-		}
+		// --- To solve the problem of the "lost" properties panel after switching connectors, always create a new tabbed pane, but remember the sub panels   
+		JTabbedPane configurationUIComponent = new JTabbedPane();
+		configurationUIComponent.addTab(" Properties ", baseConfigPanel);
+		configurationUIComponent.addTab(" API Introspection  ", this.getIntrospectionPanel());
+		configurationUIComponent.addTab(" Browse Things  ", this.getBrowseThingsPanel());
+		configurationUIComponent.addTab(" Methods Execution ", this.getExecuteMethodsPanel());
 		
 		return configurationUIComponent;
 	}
+
+	/**
+	 * Gets the introspection panel.
+	 * @return the introspection panel
+	 */
+	private IntrospectionPanel getIntrospectionPanel() {
+		if (introspectionPanel==null) {
+			introspectionPanel = new IntrospectionPanel(this);
+		}
+		return introspectionPanel;
+	}
+
+	/**
+	 * Gets the browse things panel.
+	 * @return the browse things panel
+	 */
+	private BrowseThingsPanel getBrowseThingsPanel() {
+		if (browseThingsPanel==null) {
+			browseThingsPanel = new BrowseThingsPanel(this);
+		}
+		return browseThingsPanel;
+	}
+
+	/**
+	 * Gets the execute methods panel.
+	 * @return the execute methods panel
+	 */
+	private ExecuteMethodsPanel getExecuteMethodsPanel() {
+		if (executeMethodsPanel == null) {
+			executeMethodsPanel = new ExecuteMethodsPanel(this);
+		}
+		return executeMethodsPanel;
+	}
+
+	
 	
 	
 }
